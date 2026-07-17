@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/project-record.schema.json",
+  "title": "aa-project-record",
+  "x-contract-version": "1.0",
+  "description": "The canonical project manifest. Portable, hash-verifiable, and rebuildable into a projection.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "name", "state", "layoutVersion"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "project_record" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "state": { "$ref": "common.schema.json#/$defs/stateProject" },
+    "layoutVersion": { "type": "string", "maxLength": 32 },
+    "authorityId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "replicaIds": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/identifier" },
+      "maxItems": 256
+    },
+    "records": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/reference" },
+      "maxItems": 100000
+    },
+    "revision": { "type": "integer", "minimum": 0 },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true
+}

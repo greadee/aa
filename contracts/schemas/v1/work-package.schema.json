@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/work-package.schema.json",
+  "title": "aa-work-package",
+  "x-contract-version": "1.0",
+  "description": "A bounded, verifiable unit of engineering work.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "title", "state", "acceptance"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "work_package" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "description": { "type": "string", "maxLength": 16384 },
+    "state": { "$ref": "common.schema.json#/$defs/stateWorkPackage" },
+    "trade": { "type": "string", "maxLength": 64 },
+    "role": { "type": "string", "maxLength": 64 },
+    "dependencies": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/identifier" },
+      "maxItems": 4096
+    },
+    "inputs": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/reference" },
+      "maxItems": 1024
+    },
+    "deliverables": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 512 },
+      "maxItems": 256
+    },
+    "acceptance": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 1024 },
+      "minItems": 1,
+      "maxItems": 256
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "allowed": { "type": "array", "items": { "type": "string" }, "maxItems": 1024 },
+        "inspect": { "type": "array", "items": { "type": "string" }, "maxItems": 1024 },
+        "forbidden": { "type": "array", "items": { "type": "string" }, "maxItems": 1024 }
+      },
+      "additionalProperties": true
+    },
+    "budget": { "$ref": "common.schema.json#/$defs/budget" },
+    "risk": { "enum": ["low", "moderate", "high", "critical"] },
+    "revision": { "type": "integer", "minimum": 0 },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true
+}

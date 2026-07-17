@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/strategy.schema.json",
+  "title": "aa-strategy",
+  "x-contract-version": "1.0",
+  "description": "A validated, reusable approach. Strategies are promoted from learning candidates; only ACTIVE strategies may be cited by the context compiler.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "title", "lifecycle", "guidance"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "strategy" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "lifecycle": { "$ref": "common.schema.json#/$defs/memoryLifecycle" },
+    "guidance": { "type": "string", "minLength": 1, "maxLength": 65536 },
+    "whenToUse": { "type": "string", "maxLength": 16384 },
+    "whenNotToUse": { "type": "string", "maxLength": 16384 },
+    "applicability": {
+      "type": "object",
+      "properties": {
+        "roles": { "type": "array", "items": { "type": "string" }, "maxItems": 64 },
+        "trades": { "type": "array", "items": { "type": "string" }, "maxItems": 64 },
+        "tags": { "type": "array", "items": { "type": "string" }, "maxItems": 256 }
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/reference" },
+      "maxItems": 1024
+    },
+    "supersedes": { "$ref": "common.schema.json#/$defs/identifier" },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true
+}

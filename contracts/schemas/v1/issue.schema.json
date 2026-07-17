@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/issue.schema.json",
+  "title": "aa-issue",
+  "x-contract-version": "1.0",
+  "description": "A canonical issue, deficiency, or finding. aa-memory owns the durable record; aa-forge owns the live execution surface.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "title", "type", "status"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "issue" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "type": { "enum": ["feature", "user_story", "bug", "tech_debt", "refactor", "test", "documentation", "audit", "investigation", "deficiency"] },
+    "status": { "$ref": "common.schema.json#/$defs/stateIssue" },
+    "severity": { "enum": ["P0", "P1", "P2", "P3", "none"] },
+    "body": { "type": "string", "maxLength": 65536 },
+    "milestone": { "type": "string", "maxLength": 128 },
+    "forgeRef": { "$ref": "common.schema.json#/$defs/reference" },
+    "links": {
+      "type": "object",
+      "properties": {
+        "workPackages": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/identifier" }, "maxItems": 1024 },
+        "commits": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "maxItems": 4096 },
+        "pullRequests": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/reference" }, "maxItems": 1024 },
+        "adrs": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "maxItems": 256 }
+      },
+      "additionalProperties": true
+    },
+    "deferredTo": { "$ref": "common.schema.json#/$defs/identifier" },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true
+}

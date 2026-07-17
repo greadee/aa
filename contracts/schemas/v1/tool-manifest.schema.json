@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/tool-manifest.schema.json",
+  "title": "aa-tool-manifest",
+  "x-contract-version": "1.0",
+  "description": "Declaration for a tool, plugin, or MCP server. Invocation requires a grant intersecting declared capabilities with the caller's execution contract.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "name", "toolKind", "version", "capabilities"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "tool_manifest" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "toolKind": { "enum": ["tool", "plugin", "mcp", "builtin"] },
+    "version": { "type": "string", "maxLength": 64 },
+    "description": { "type": "string", "maxLength": 8192 },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 64 },
+      "maxItems": 64
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 64 },
+      "maxItems": 64
+    },
+    "inputSchema": { "type": "object", "additionalProperties": true },
+    "outputSchema": { "type": "object", "additionalProperties": true },
+    "sandbox": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "boolean" },
+        "kind": { "enum": ["none", "process", "container", "os"] },
+        "network": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "endpoint": { "type": "string", "maxLength": 2048 },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true
+}

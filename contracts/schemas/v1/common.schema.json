@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/common.schema.json",
+  "title": "aa-common",
+  "x-contract-version": "1.0",
+  "description": "Shared definitions for all aa cross-module contract objects. Objects are open by default; consumers must ignore unknown properties.",
+  "$defs": {
+    "contractVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "MAJOR.MINOR contract version."
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@+-]*$",
+      "maxLength": 256,
+      "description": "Opaque, stable, never reused."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC."
+    },
+    "reference": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "id": { "$ref": "#/$defs/identifier" },
+        "version": { "type": "string", "maxLength": 64 }
+      },
+      "additionalProperties": true
+    },
+    "actor": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "enum": ["human", "agent", "system", "service"] },
+        "id": { "$ref": "#/$defs/identifier" },
+        "role": { "type": "string", "maxLength": 64 },
+        "trade": { "type": "string", "maxLength": 64 },
+        "workerId": { "$ref": "#/$defs/identifier" },
+        "model": { "type": "string", "maxLength": 128 }
+      },
+      "additionalProperties": true
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source", "producedAt"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "producedAt": { "$ref": "#/$defs/timestamp" },
+        "producedBy": { "$ref": "#/$defs/actor" },
+        "confidence": { "enum": ["exact", "correlated", "observed", "inferred"] },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reference" },
+          "maxItems": 256
+        },
+        "contentHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": true
+    },
+    "envelope": {
+      "type": "object",
+      "required": ["contractVersion", "kind", "id"],
+      "properties": {
+        "contractVersion": { "$ref": "#/$defs/contractVersion" },
+        "kind": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "id": { "$ref": "#/$defs/identifier" },
+        "projectId": { "$ref": "#/$defs/identifier" },
+        "createdAt": { "$ref": "#/$defs/timestamp" },
+        "revision": { "type": "integer", "minimum": 0 },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      },
+      "additionalProperties": true
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "maxCalls": { "type": "integer", "minimum": 0 },
+        "maxTokens": { "type": "integer", "minimum": 0 },
+        "maxCostUsd": { "type": "number", "minimum": 0 },
+        "maxDurationSeconds": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "stateProject": {
+      "enum": ["CREATED", "DISCOVERY", "PLANNING", "EXECUTING", "VERIFYING", "COMPLETE", "BLOCKED", "FAILED", "CANCELLED", "PAUSED"]
+    },
+    "stateWorkPackage": {
+      "enum": ["PROPOSED", "READY", "QUEUED", "RUNNING", "COMPLETE", "VERIFYING", "VERIFIED", "DEFICIENT"]
+    },
+    "stateAssignment": {
+      "enum": ["planned", "leased", "preparing", "running", "paused", "collecting", "awaiting_gates", "accepted", "failed", "canceled", "expired"]
+    },
+    "stateReadiness": {
+      "enum": ["blocked", "ready", "dispatched", "satisfied"]
+    },
+    "stateIssue": {
+      "enum": ["open", "in_progress", "review", "closed", "deferred", "cancelled"]
+    },
+    "memoryLifecycle": {
+      "enum": ["EPHEMERAL", "CANDIDATE", "VALIDATED", "ACTIVE", "SUPERSEDED", "ARCHIVED"]
+    }
+  }
+}
