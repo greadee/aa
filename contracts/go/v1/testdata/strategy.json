@@ -1,0 +1,11 @@
+{
+  "contractVersion": "1.0",
+  "kind": "strategy",
+  "id": "str_01HLLL0001",
+  "title": "Contracts before behavior",
+  "lifecycle": "ACTIVE",
+  "guidance": "Extract cross-module types into contracts before moving behavior so modules can be cut over incrementally.",
+  "whenToUse": "Any multi-module refactor.",
+  "whenNotToUse": "Single-module changes with no cross-module surface.",
+  "applicability": { "roles": ["Architect"], "trades": ["backend"] }
+}

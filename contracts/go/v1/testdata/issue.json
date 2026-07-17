@@ -1,0 +1,12 @@
+{
+  "contractVersion": "1.0",
+  "kind": "issue",
+  "id": "iss_01HCCC0001",
+  "projectId": "prj_01HAAA0001",
+  "title": "Define the contract spine",
+  "type": "feature",
+  "status": "in_progress",
+  "severity": "none",
+  "body": "Add schemas, specs, and bindings for cross-module contracts.",
+  "links": { "workPackages": ["wp_01HBBB0001"], "adrs": ["ADR-P1-001"] }
+}

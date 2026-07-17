@@ -1,0 +1,10 @@
+{
+  "contractVersion": "1.0",
+  "kind": "route_request",
+  "id": "rrq_01HMMM0001",
+  "projectId": "prj_01HAAA0001",
+  "attemptId": "att_01HHHH0001",
+  "prompt": "Add a unit test for the router.",
+  "policy": "local_first",
+  "budget": { "maxCalls": 3, "maxCostUsd": 1.0 }
+}

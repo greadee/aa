@@ -1,0 +1,14 @@
+{
+  "contractVersion": "1.0",
+  "kind": "telemetry",
+  "id": "tel_01HJJJ0001",
+  "projectId": "prj_01HAAA0001",
+  "attemptId": "att_01HHHH0001",
+  "assignmentId": "asg_01HFFF0001",
+  "metricVersion": "1.0",
+  "outcome": "succeeded",
+  "calls": { "total": 2, "local": 0, "cloud": 2, "retries": 0 },
+  "tokens": { "input": 1200, "output": 400 },
+  "costUsd": 0.012,
+  "durationMs": 8400
+}

@@ -1,0 +1,15 @@
+{
+  "contractVersion": "1.0",
+  "kind": "memory_record",
+  "id": "mem_01HKKK0001",
+  "projectId": "prj_01HAAA0001",
+  "level": "project",
+  "lifecycle": "VALIDATED",
+  "title": "Contract-first extraction works",
+  "content": {
+    "summary": "Define schemas before moving behavior between modules.",
+    "tags": ["contracts", "migration"]
+  },
+  "applicability": { "roles": ["Architect"], "trades": ["backend"] },
+  "confidence": 0.8
+}

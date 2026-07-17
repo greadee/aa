@@ -1,0 +1,12 @@
+{
+  "contractVersion": "1.0",
+  "kind": "tool_manifest",
+  "id": "tool_01HOOO0001",
+  "name": "git",
+  "toolKind": "builtin",
+  "version": "1.0",
+  "description": "Git operations scoped to the worktree.",
+  "capabilities": ["write_workspace", "create_artifact"],
+  "permissions": ["filesystem:workspace"],
+  "sandbox": { "required": false, "kind": "process" }
+}
