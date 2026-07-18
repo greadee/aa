@@ -267,3 +267,17 @@ main ---------------- M
 ```
 
 Avoid replacing an entire phase with one giant squash commit unless explicitly requested.
+
+## Branch Retention
+
+Merged phase branches are **never deleted**. They are the durable, browsable work history of the phase and are kept on the remote after the phase PR merges.
+
+Rules:
+
+- Do not enable GitHub's "automatically delete head branches" for this repository.
+- Do not delete a phase branch after merge, and do not rewrite it after merge.
+- The merge into `main` is a normal merge commit that preserves the phase's individual commits (no squash, no rebase).
+- If a phase needs correction after merge, add new commits on a new branch and open a new PR; never force-push the retained branch.
+- The phase summary records the branch name, and the branch remains available for review and audit.
+
+This is a deliberate exception to default Git-hosting cleanup behavior.

@@ -54,6 +54,7 @@ Read [docs/architecture/README.md](docs/architecture/README.md) and the owning m
 9. Do not squash a major phase into one commit unless explicitly requested.
 10. Use the least expensive model class that can reliably complete each slice.
 11. GitHub should make project state understandable without private agent context.
+12. Merged phase branches are retained, never deleted; phase PRs merge normally and preserve commits.
 
 ## Commit Style
 

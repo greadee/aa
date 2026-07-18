@@ -161,3 +161,5 @@ This produces two useful levels of history:
 
 1. detailed child PRs inside the phase;
 2. one coherent milestone merge into `main`.
+
+The phase branch is **retained** after merge and must never be deleted; see [git-workflow.md](git-workflow.md#branch-retention).
