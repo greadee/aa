@@ -10,4 +10,5 @@ use (
 	./toolbox
 	./visualizer
 	./console
+	./tools
 )
