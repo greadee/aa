@@ -207,8 +207,31 @@ func (s *Store) AppendEvent(event []byte) (bool, error) {
 	return true, nil
 }
 
-// Events returns the event log in insertion order.
+// Events returns the event log in insertion order, excluding events at or
+// below the retention floor.
 func (s *Store) Events() ([]EventRecord, error) {
+	all, err := s.allEvents()
+	if err != nil {
+		return nil, err
+	}
+	floor, err := s.Retention()
+	if err != nil {
+		return nil, err
+	}
+	if floor <= 0 {
+		return all, nil
+	}
+	out := make([]EventRecord, 0, len(all))
+	for _, e := range all {
+		if e.Sequence > floor {
+			out = append(out, e)
+		}
+	}
+	return out, nil
+}
+
+// allEvents reads the raw event log without applying retention.
+func (s *Store) allEvents() ([]EventRecord, error) {
 	f, err := os.Open(s.layout.EventsPath())
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -250,7 +273,7 @@ func (s *Store) loadSeen() error {
 	if len(s.seen) > 0 {
 		return nil
 	}
-	events, err := s.Events()
+	events, err := s.allEvents()
 	if err != nil {
 		return err
 	}
