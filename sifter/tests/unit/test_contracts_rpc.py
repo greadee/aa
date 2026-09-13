@@ -74,6 +74,27 @@ def test_health_reports_providers(config):
     assert health["available"] is True
     tiers = {provider["tier"] for provider in health["providers"]}
     assert tiers == {"local", "expert"}
+    assert "recommend" in health["capabilities"]
+
+
+def test_recommend_is_deterministic(config):
+    service = _service(config)
+    params = {
+        "hardware": {
+            "gpu_name": "NVIDIA GeForce RTX 3080",
+            "gpu_vendor": "NVIDIA",
+            "gpu_vram_gb": 10.0,
+            "system_ram_gb": 32.0,
+            "source": "manual",
+        },
+        "goal": "coding",
+    }
+
+    first = service.recommend(params)
+    second = service.recommend(params)
+
+    assert first == second
+    assert first["recommendation"]["profile"]["local"]["model"]
 
 
 async def test_generate_returns_text_and_is_idempotent(config):

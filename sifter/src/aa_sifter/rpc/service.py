@@ -33,6 +33,7 @@ from .envelope import (
 _ROUTE_METHOD = "sifter.route"
 _GENERATE_METHOD = "sifter.generate"
 _HEALTH_METHOD = "sifter.health"
+_RECOMMEND_METHOD = "sifter.recommend"
 
 
 def _tier_name(tier: Tier | None) -> str:
@@ -67,6 +68,8 @@ class SifterService:
                 return success(request_id, await self.generate(params))
             if method == _HEALTH_METHOD:
                 return success(request_id, self.health())
+            if method == _RECOMMEND_METHOD:
+                return success(request_id, self.recommend(params))
         except ContractError as exc:
             return failure(request_id, INVALID_PARAMS, str(exc))
         except ProviderError as exc:
@@ -159,6 +162,28 @@ class SifterService:
             "rpcVersion": RPC_VERSION,
             "contractVersion": CONTRACT_VERSION,
             "contractsAvailable": contracts_available(),
+            "capabilities": ["route", "generate", "health", "recommend"],
+        }
+
+    def recommend(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Deterministic hardware/goal recommendation (advisory only)."""
+        from ..config.schema import HardwareProfile, UserGoal
+        from ..recommend.recommender import recommend_profile
+        from ..system.hardware import detect_hardware
+
+        hardware_data = params.get("hardware")
+        hardware = HardwareProfile(**hardware_data) if hardware_data else detect_hardware()
+        raw_goal = params.get("goal")
+        if isinstance(raw_goal, str):
+            goal = UserGoal(workload=[raw_goal])
+        elif isinstance(raw_goal, dict):
+            goal = UserGoal(**raw_goal)
+        else:
+            goal = UserGoal(workload=["coding"])
+        recommendation = recommend_profile(hardware=hardware, goal=goal)
+        return {
+            "hardware": hardware.model_dump(mode="json"),
+            "recommendation": recommendation.model_dump(mode="json"),
         }
 
     # -- helpers -----------------------------------------------------------

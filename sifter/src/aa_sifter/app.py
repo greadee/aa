@@ -25,6 +25,7 @@ from .decisions.gate import DecisionGate
 from .decisions.policy import StandingRuleEngine
 from .history.sqlite import SqliteHistoryStore
 from .history.store import HistoryStore
+from .memory import MemorySink, NopMemorySink, task_candidate
 from .metrics.trace import Trace, configure_logging
 from .metrics.usage import UsageMetrics, UsageTracker
 from .model_defaults import DEFAULT_EXPERT_MAX_OUTPUT, DEFAULT_LOCAL_MAX_OUTPUT
@@ -114,6 +115,7 @@ class ComputeSifter:
         verifier: Verifier | None = None,
         rules: StandingRuleEngine | None = None,
         trace_sink: Any = None,
+        memory_sink: MemorySink | None = None,
     ):
         self.config = config or SifterConfig.from_env()
         configure_logging(self.config.debug)
@@ -141,6 +143,7 @@ class ComputeSifter:
         self.escalation_policy = EscalationPolicy(self.config)
         self.verifier = verifier or NullVerifier()
         self.trace_sink = trace_sink
+        self.memory_sink: MemorySink = memory_sink or NopMemorySink()
 
     def _default_approval_provider(self) -> ApprovalProvider:
         interactive = sys.stdin is not None and sys.stdin.isatty()
@@ -886,6 +889,22 @@ class ComputeSifter:
         )
         return result.text, result
 
+    def _emit_memory_candidate(self, result: SifterResult) -> None:
+        try:
+            record = task_candidate(
+                trace_id=result.trace_id,
+                status=result.status,
+                route=str(result.route),
+                decision_level=result.decision_level.value,
+                requires_human_approval=result.requires_human_approval,
+                prompt=str(result.metadata.get("prompt", "")),
+                cloud_calls=result.usage.cloud_calls,
+                cloud_cost=result.usage.cloud_cost,
+            )
+            self.memory_sink.emit(record)
+        except Exception:  # noqa: BLE001 - a memory sink must never break a run
+            return None
+
     def _finish(
         self,
         trace: Trace,
@@ -934,6 +953,7 @@ class ComputeSifter:
                 "trace_events": trace.events if self.config.debug else [],
             },
         )
+        self._emit_memory_candidate(result)
         if self.history is not None:
             try:
                 self.history.record_run(
