@@ -30,6 +30,45 @@ def _poll(client: httpx.Client, task_id: str, timeout: float = 8.0) -> dict:
     raise AssertionError("task did not finish")
 
 
+def _wait_for_approval(
+    client: httpx.Client, task_id: str, stage: str, timeout: float = 8.0
+) -> dict:
+    """Wait until an approval request for the given stage is pending."""
+    deadline = time.time() + timeout
+    record: dict = {}
+    while time.time() < deadline:
+        record = client.get(f"/api/tasks/{task_id}").json()
+        request = record.get("approval_request")
+        if request and request.get("stage") == stage:
+            return record
+        if record.get("status") in {"completed", "failed", "cancelled", "stopped", "error"}:
+            break
+        time.sleep(0.05)
+    raise AssertionError(f"approval request (stage={stage}) did not appear")
+
+
+def _resolve(
+    client: httpx.Client, task_id: str, action: str, stage: str, timeout: float = 8.0
+) -> None:
+    """Resolve a pending approval, retrying until the service accepts it.
+
+    The approval future is created just after the request becomes visible, so a
+    single post can race; retrying makes the workflow deterministic in CI.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        record = client.get(f"/api/tasks/{task_id}").json()
+        request = record.get("approval_request")
+        if request and request.get("stage") == stage:
+            response = client.post(f"/api/tasks/{task_id}/approval", json={"action": action})
+            if response.status_code == 200 and response.json().get("ok"):
+                return
+        if record.get("status") in {"completed", "failed", "cancelled", "stopped", "error"}:
+            break
+        time.sleep(0.05)
+    raise AssertionError(f"approval action {action!r} (stage={stage}) was not accepted")
+
+
 @pytest.mark.integration
 def test_scenario_a_successful_startup(isolated_config: Path):
     running = start_server(_service(isolated_config))
@@ -96,18 +135,11 @@ def test_scenario_d_major_approval_via_desktop(isolated_config: Path):
                 "/api/tasks",
                 json={"prompt": "Replace authentication with OAuth while preserving old sessions."},
             ).json()["id"]
-            deadline = time.time() + 8
-            record: dict = {}
-            while time.time() < deadline:
-                record = client.get(f"/api/tasks/{task_id}").json()
-                if record.get("approval_request"):
-                    break
-                time.sleep(0.05)
+            record = _wait_for_approval(client, task_id, "analysis")
             assert record["approval_request"]["category"] == "major"
             assert provider.cloud_calls == 0, "DeepSeek must not run before approval"
-            client.post(f"/api/tasks/{task_id}/approval", json={"action": "allow_expert_analysis"})
-            time.sleep(0.2)
-            client.post(f"/api/tasks/{task_id}/approval", json={"action": "approve"})
+            _resolve(client, task_id, "allow_expert_analysis", "analysis")
+            _resolve(client, task_id, "approve", "implementation")
             final = _poll(client, task_id)
             assert provider.cloud_calls >= 1
             assert final["status"] == "completed"
@@ -131,7 +163,7 @@ def test_scenario_e_reject_major_decision(isolated_config: Path):
                 if record.get("approval_request"):
                     break
                 time.sleep(0.05)
-            client.post(f"/api/tasks/{task_id}/approval", json={"action": "stop_task"})
+            _resolve(client, task_id, "stop_task", "analysis")
             final = _poll(client, task_id)
             assert final["status"] in {"stopped", "failed"}
             assert provider.cloud_calls == 0
