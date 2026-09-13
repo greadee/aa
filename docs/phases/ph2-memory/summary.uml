@@ -1,0 +1,92 @@
+@startuml
+' Phase 2 — Memory: as-built. Copy of plan.uml edited to what was actually built.
+
+title Phase 2 — Memory (as built)
+
+skinparam componentStyle rectangle
+
+package "aa-memory (depends on contracts, obsv)" as memory {
+  component "facade: Open(root)" as facade
+  package "store" as store {
+    component "Record, Canonicalize, HashBytes" as record
+    component "Layout (.aa-project paths)" as layout
+    component "Store: Put/Get/List, AppendEvent" as canonical
+    component "Ingest (idempotent) + Provenance" as ingest
+    component "Retention floor" as retention
+  }
+  package "projection" as projection {
+    component "Projection interface" as piface
+    component "MemProjection (reference)" as pmem
+    component "Rebuild + Digest" as rebuild
+  }
+  package "query" as query {
+    component "ByID/ByKind/Filter/Count" as q
+    component "Work/Project/Job histories" as hist
+  }
+  package "repo" as repo {
+    component "IssueRepository" as issue
+    component "StrategyRepository" as strategy
+    component "promotion state machine" as promote
+  }
+}
+
+package "aa-contracts" as contracts
+package "consumers" as consumers {
+  component "kernel" as kernel
+  component "visualizer" as visualizer
+  component "forge" as forge
+  component "console" as console
+}
+
+contracts --> memory
+facade --> canonical
+facade --> projection
+facade --> repo
+facade --> query
+canonical --> record
+canonical --> layout
+canonical --> ingest
+canonical --> retention
+projection --> rebuild
+projection --> pmem
+projection --> piface
+query --> hist
+query --> q
+repo --> issue
+repo --> strategy
+strategy --> promote
+issue --> promote
+
+memory --> kernel
+memory --> visualizer
+memory --> forge
+memory --> console
+
+note right of store
+  .aa-project/
+    manifest.json
+    events.jsonl        (append-only)
+    records/<kind>/<id>.json
+    retention.json      (event floor)
+end note
+
+note bottom of projection
+  As built: in-memory reference.
+  Deviation from plan: SQLite deferred.
+  Rebuild yields an identical digest.
+end note
+
+note bottom of repo
+  Lifecycle enforced:
+  EPHEMERAL -> CANDIDATE -> VALIDATED
+  -> ACTIVE -> SUPERSEDED -> ARCHIVED
+  Illegal transitions fail closed.
+end note
+
+note bottom of hist
+  Deviation from plan:
+  histories are event-derived only;
+  a git-history reader is deferred.
+end note
+
+@enduml

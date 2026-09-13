@@ -1,6 +1,8 @@
-// Package memory is aa's system of record: work, git, job, and project
-// history, the issue and strategy repositories, and knowledge promotion.
+// Package memory is aa's canonical system of record: work, git, job, and
+// project histories, the issue and strategy repositories, and evidence-based
+// knowledge promotion.
 //
-// It is scaffolded only. The implementation is migrated from existing sources
-// in ph2-memory. See docs/architecture/README.md.
+// Directory records under .aa-project are the source of truth. Projections are
+// derived and disposable, and must rebuild to an identical digest. Nothing here
+// executes work or calls models.
 package memory
