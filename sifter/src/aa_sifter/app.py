@@ -130,11 +130,14 @@ class ComputeSifter:
         self.rules = rules or StandingRuleEngine(self.history)
         self.approval_provider = approval_provider or self._default_approval_provider()
         self.classifier = DecisionClassifier()
-        self.assessor = PreflightAssessor(self.config, classifier=self.classifier)
+        self.handoff = HandoffBuilder(redactor=SecretRedactor(self.config.redact_secrets))
+        self.redactor = self.handoff.redactor
+        self.assessor = PreflightAssessor(
+            self.config, classifier=self.classifier, redactor=self.redactor
+        )
         self.policy_engine = PolicyEngine(self.config)
         self.escalation_policy = EscalationPolicy(self.config)
         self.verifier = verifier or NullVerifier()
-        self.handoff = HandoffBuilder(redactor=SecretRedactor(self.config.redact_secrets))
         self.trace_sink = trace_sink
 
     def _default_approval_provider(self) -> ApprovalProvider:
@@ -771,6 +774,24 @@ class ComputeSifter:
         except BudgetExceeded as exc:
             return answer + f"\n\n[Escalation skipped: {exc}]", False
 
+    @staticmethod
+    def _is_cloud_bound(tier: Tier, model: ModelConfig) -> bool:
+        """True when a call can leave the machine (expert tier or ``:cloud`` model)."""
+        return tier == Tier.EXPERT or str(model.name).endswith(":cloud")
+
+    def _redact_cloud_messages(
+        self, messages: list[Message], trace: Trace, purpose: str
+    ) -> list[Message]:
+        redacted, findings = self.redactor.redact_model_messages(messages)
+        if findings:
+            trace.log(
+                "security",
+                "redacted secrets before cloud handoff",
+                purpose=purpose,
+                patterns=findings,
+            )
+        return redacted
+
     async def _call_tier(
         self,
         tier: Tier,
@@ -786,11 +807,15 @@ class ComputeSifter:
         model = self.local_config() if tier == Tier.LOCAL else self.cloud_config()
         provider = self._provider_for(model)
         tag = "local" if tier == Tier.LOCAL else "expert"
-        if tier == Tier.EXPERT:
+        outbound = self._is_cloud_bound(tier, model)
+        prepared = list(messages)
+        if outbound:
             if not self.config.cloud_allowed:
                 raise ProviderError(
                     "cloud is disabled by the active profile (cloud_allowed = false)"
                 )
+            prepared = self._redact_cloud_messages(prepared, trace, purpose)
+        if tier == Tier.EXPERT:
             budget.check()
         if temperature is None:
             temperature = (
@@ -809,7 +834,7 @@ class ComputeSifter:
         start = time.perf_counter()
         result = await provider.generate(
             model.name,
-            list(messages),
+            prepared,
             temperature=temperature,
             timeout=model.timeout_seconds,
         )
@@ -919,12 +944,20 @@ class ComputeSifter:
         """Low-level inference entry point for aa-sync agents.
 
         Major-decision gating is the caller's responsibility when using this
-        method directly; prefer :meth:`run` for full governance.
+        method directly; prefer :meth:`run` for full governance. Cloud egress is
+        still redacted and the cloud-disabled profile is still enforced.
         """
         selected = Tier.EXPERT if str(tier).lower() in {"expert", "cloud"} else Tier.LOCAL
         model = self.cloud_config() if selected == Tier.EXPERT else self.local_config()
         provider = self._provider_for(model)
-        return await provider.generate(model.name, list(messages), timeout=model.timeout_seconds)
+        prepared = list(messages)
+        if self._is_cloud_bound(selected, model):
+            if not self.config.cloud_allowed:
+                raise ProviderError(
+                    "cloud is disabled by the active profile (cloud_allowed = false)"
+                )
+            prepared, _findings = self.redactor.redact_model_messages(prepared)
+        return await provider.generate(model.name, prepared, timeout=model.timeout_seconds)
 
     def as_inference_layer(self) -> ComputeSifter:
         return self

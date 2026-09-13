@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ..context.handoff import SecretRedactor
 from ..decisions.classifier import (
     DecisionClassification,
     DecisionClassifier,
@@ -102,10 +103,12 @@ class PreflightAssessor:
         *,
         classifier: DecisionClassifier | None = None,
         trace: Trace | None = None,
+        redactor: SecretRedactor | None = None,
     ):
         self.config = config
         self.classifier = classifier or DecisionClassifier()
         self.trace = trace
+        self.redactor = redactor or SecretRedactor(config.redact_secrets)
 
     def assess(
         self,
@@ -202,16 +205,25 @@ class PreflightAssessor:
         classification: DecisionClassification | None = None,
     ) -> PreflightAssessment:
         base = base or self.assess(prompt, context, classification=classification)
+        user_content = (
+            "Assess this task.\n\nTask:\n"
+            + prompt
+            + (f"\n\nContext (truncated):\n{context[:4000]}" if context else "")
+        )
+        redaction = self.redactor.redact(user_content)
+        if redaction.redacted and self.trace is not None:
+            self.trace.log(
+                "security",
+                "redacted secrets before cloud handoff",
+                purpose="preflight",
+                patterns=redaction.findings,
+            )
         messages = [
             Message.system(
                 "You assess software tasks. Respond ONLY with JSON matching the schema. "
                 "Be conservative: if unsure whether a decision is significant or major, choose major."
             ),
-            Message.user(
-                "Assess this task.\n\nTask:\n"
-                + prompt
-                + (f"\n\nContext (truncated):\n{context[:4000]}" if context else "")
-            ),
+            Message.user(redaction.text),
         ]
         try:
             result = await provider.generate_structured(

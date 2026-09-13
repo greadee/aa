@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 
 from pydantic import BaseModel, Field
 
 from ..metrics.trace import Trace
+from ..models.provider import Message
 
 _SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
@@ -73,6 +75,20 @@ class SecretRedactor:
             result = self.redact(message.get("content", ""))
             findings.extend(result.findings)
             output.append({**message, "content": result.text})
+        return output, sorted(set(findings))
+
+    def redact_model_messages(self, messages: Sequence[Message]) -> tuple[list[Message], list[str]]:
+        """Redact typed :class:`Message` objects for an outbound cloud call.
+
+        This is the shared implementation behind the single outbound redaction
+        chokepoint in ``ComputeSifter._call_tier`` and ``generate``.
+        """
+        findings: list[str] = []
+        output: list[Message] = []
+        for message in messages:
+            result = self.redact(message.content)
+            findings.extend(result.findings)
+            output.append(message.model_copy(update={"content": result.text}))
         return output, sorted(set(findings))
 
 

@@ -44,17 +44,26 @@ class Decomposer:
         context: str = "",
         constraints: list[str] | None = None,
     ) -> list[LocalTaskSpec]:
+        task_content = (
+            f"Task:\n{prompt}"
+            + (f"\n\nContext:\n{context[:6000]}" if context else "")
+            + (f"\n\nConstraints: {'; '.join(constraints)}" if constraints else "")
+        )
+        redaction = self.handoff.redactor.redact(task_content)
+        if redaction.redacted and self.trace is not None:
+            self.trace.log(
+                "security",
+                "redacted secrets before cloud handoff",
+                purpose="decompose",
+                patterns=redaction.findings,
+            )
         messages = [
             Message.system(
                 "Break the task into at most 6 independent or sequentially dependent "
                 "implementation subtasks. Respond ONLY with JSON matching the schema. "
                 "Always include explicit human constraints in every subtask that may affect them."
             ),
-            Message.user(
-                f"Task:\n{prompt}"
-                + (f"\n\nContext:\n{context[:6000]}" if context else "")
-                + (f"\n\nConstraints: {'; '.join(constraints)}" if constraints else "")
-            ),
+            Message.user(redaction.text),
         ]
         try:
             result = await provider.generate_structured(
