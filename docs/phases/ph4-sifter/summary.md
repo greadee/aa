@@ -25,7 +25,8 @@
 - Starting ref: `main @ da00db0` (after phase 3 merge).
 - Tracking issue: none (phase executed via the phase PR).
 - Milestone: none (matches phases 0–3 on this repository).
-- Phase PR: [#5](https://github.com/greadee/aa1/pull/5)
+- Phase PR: [#5](https://github.com/greadee/aa1/pull/5) — merged
+- Merge commit: `c0ec723`
 - Branch: `ph4-sifter` (retained after merge on `aa1`)
 - Migrated source of record: the standalone `compute-sifter` project (63 package files, ~60 test files)
 
