@@ -1,0 +1,14 @@
+{
+  "contractVersion": "1.0",
+  "kind": "route_response",
+  "id": "rrs_01HNNN0001",
+  "requestId": "rrq_01HMMM0001",
+  "route": "local",
+  "decisionLevel": "routine",
+  "plannerTier": "none",
+  "executorTier": "local",
+  "reviewTier": "none",
+  "requiresHumanApproval": false,
+  "estimatedCostUsd": 0.0,
+  "reasons": ["low complexity", "local viable"]
+}

@@ -1,0 +1,15 @@
+{
+  "contractVersion": "1.0",
+  "kind": "execution_contract",
+  "id": "ec_01HEEE0001",
+  "projectId": "prj_01HAAA0001",
+  "workPackageId": "wp_01HBBB0001",
+  "assignmentId": "asg_01HFFF0001",
+  "capabilities": ["read_project", "write_workspace", "run_tests"],
+  "denied": ["deploy", "read_secrets"],
+  "runtime": { "kind": "codex", "provider": "openai-compatible" },
+  "workspace": { "required": true, "kind": "git_worktree" },
+  "budget": { "maxCalls": 5, "maxCostUsd": 2.0 },
+  "gates": ["tests", "human_review"],
+  "expiresAt": "2026-09-12T12:00:00Z"
+}

@@ -1,0 +1,10 @@
+{
+  "contractVersion": "1.0",
+  "kind": "project_record",
+  "id": "prj_01HAAA0001",
+  "name": "aa",
+  "state": "EXECUTING",
+  "layoutVersion": "1.0",
+  "authorityId": "node_authority_01H",
+  "replicaIds": ["node_replica_01H"]
+}

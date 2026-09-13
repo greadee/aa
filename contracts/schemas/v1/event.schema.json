@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/event.schema.json",
+  "title": "aa-event",
+  "x-contract-version": "1.0",
+  "description": "A canonical orchestration/execution event. Observation events are owned by aa-obsv and referenced, not redefined. Consumers must ignore unknown event types.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "sequence", "occurredAt", "type", "aggregate", "actor"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "event" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "occurredAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "recordedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "type": { "$ref": "#/$defs/eventType" },
+    "aggregate": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "enum": ["project", "work_package", "assignment", "attempt", "artifact", "issue", "strategy", "memory", "tool", "workflow"] },
+        "id": { "$ref": "common.schema.json#/$defs/identifier" },
+        "version": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "actor": { "$ref": "common.schema.json#/$defs/actor" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "causationId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "correlationId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "payload": { "type": "object", "additionalProperties": true },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "PROJECT_REGISTERED",
+        "PROJECT_UPDATED",
+        "WORK_PACKAGE_CREATED",
+        "WORK_PACKAGE_READY",
+        "WORK_PACKAGE_COMPLETED",
+        "DEPENDENCY_GRAPH_REVISED",
+        "EXECUTION_PLANNED",
+        "EXECUTION_LEASED",
+        "EXECUTION_STARTED",
+        "EXECUTION_PAUSED",
+        "EXECUTION_RESUMED",
+        "EXECUTION_COMPLETED",
+        "EXECUTION_FAILED",
+        "EXECUTION_EXPIRED",
+        "RESULT_RECORDED",
+        "TEST_RECORDED",
+        "REVIEW_RECORDED",
+        "HANDOFF_CREATED",
+        "ARTIFACT_RECORDED",
+        "WORK_ACCEPTED",
+        "WORK_REJECTED",
+        "DEFICIENCY_RAISED",
+        "TELEMETRY_RECORDED",
+        "MEMORY_CANDIDATE_CREATED",
+        "MEMORY_VALIDATED",
+        "MEMORY_PROMOTED",
+        "MEMORY_SUPERSEDED",
+        "MEMORY_ARCHIVED"
+      ]
+    }
+  }
+}

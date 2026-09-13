@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/execution-contract.schema.json",
+  "title": "aa-execution-contract",
+  "x-contract-version": "1.0",
+  "description": "The immutable, least-privilege authority under which an attempt runs. Granted capabilities are the intersection of requested and permitted capabilities.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "workPackageId", "assignmentId", "capabilities", "budget"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "execution_contract" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "workPackageId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "assignmentId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "capabilities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability" },
+      "maxItems": 64
+    },
+    "denied": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability" },
+      "maxItems": 64
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "maxLength": 64 },
+        "provider": { "type": "string", "maxLength": 64 },
+        "model": { "type": "string", "maxLength": 128 },
+        "nodeId": { "$ref": "common.schema.json#/$defs/identifier" }
+      },
+      "additionalProperties": true
+    },
+    "workspace": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "boolean" },
+        "kind": { "enum": ["none", "git_worktree", "sandbox"] },
+        "root": { "type": "string", "maxLength": 1024 }
+      },
+      "additionalProperties": true
+    },
+    "budget": { "$ref": "common.schema.json#/$defs/budget" },
+    "gates": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 64 },
+      "maxItems": 64
+    },
+    "expiresAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "capability": {
+      "type": "string",
+      "enum": [
+        "read_project",
+        "write_workspace",
+        "execute_command",
+        "run_tests",
+        "network_access",
+        "install_dependencies",
+        "call_model",
+        "read_secrets",
+        "create_artifact",
+        "open_pull_request",
+        "merge",
+        "deploy"
+      ]
+    }
+  }
+}

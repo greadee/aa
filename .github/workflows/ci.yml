@@ -51,8 +51,30 @@ jobs:
         working-directory: ${{ matrix.module }}
         run: go test ./...
 
-  python:
-    name: python (sifter)
+  boundaries:
+    name: architecture boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+
+      - name: Boundary check
+        working-directory: tools
+        run: go run ./cmd/archtest -root ..
+
+      - name: Tool tests
+        working-directory: tools
+        run: go test ./...
+
+  contracts-python:
+    name: contracts (python)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,5 +85,61 @@ jobs:
           python-version: "3.12"
 
       - name: Validate pyproject
+        run: python -c "import tomllib, pathlib; tomllib.loads(pathlib.Path('sifter/pyproject.toml').read_text())"
+
+      - name: Compile bindings
+        working-directory: contracts/python
+        run: python -m compileall aa_contracts
+
+      - name: Bindings tests
+        working-directory: contracts/python
+        run: python -m unittest discover -s tests -t .
+
+  contracts-typescript:
+    name: contracts (typescript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install compiler
+        working-directory: contracts/typescript
+        run: npm install --no-save --no-package-lock typescript@5.6.3
+
+      - name: Typecheck
+        working-directory: contracts/typescript
+        run: npx tsc --noEmit
+
+  schemas:
+    name: schemas and specs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate JSON schemas
         run: |
-          python -c "import tomllib, pathlib; tomllib.loads(pathlib.Path('sifter/pyproject.toml').read_text())"
+          python - <<'PY'
+          import glob, json, sys
+          files = glob.glob("contracts/schemas/v1/*.json")
+          assert files, "no schemas found"
+          for f in files:
+              d = json.load(open(f, encoding="utf-8"))
+              assert d.get("$schema", "").endswith("2020-12/schema"), f
+              assert d.get("$id"), f
+              assert d.get("x-contract-version"), f
+          print("validated", len(files), "schemas")
+          PY
+
+      - name: Validate OpenAPI
+        run: |
+          python -m pip install --quiet pyyaml
+          python -c "import yaml, pathlib; d = yaml.safe_load(pathlib.Path('contracts/openapi/control-plane-v1.yaml').read_text()); assert d['openapi'].startswith('3.'); assert '/health' in d['paths']; print('openapi ok')"

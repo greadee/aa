@@ -1,0 +1,14 @@
+{
+  "contractVersion": "1.0",
+  "kind": "workflow",
+  "id": "wf_01HPPP0001",
+  "name": "supervised-change",
+  "version": "1.0",
+  "budget": { "maxCalls": 10, "maxCostUsd": 5.0 },
+  "steps": [
+    { "id": "plan", "kind": "task", "role": "Planner", "retries": 1, "onFailure": "fail" },
+    { "id": "implement", "kind": "task", "role": "Builder", "dependsOn": ["plan"], "retries": 2, "onFailure": "retry" },
+    { "id": "verify", "kind": "gate", "dependsOn": ["implement"], "gates": ["tests"] },
+    { "id": "approve", "kind": "human_approval", "dependsOn": ["verify"], "onFailure": "fail" }
+  ]
+}

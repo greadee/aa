@@ -1,0 +1,70 @@
+@startuml
+' Phase 1 — Contracts: as-built. Copy of plan.uml edited to what was actually built.
+
+title Phase 1 — Contracts (as built)
+
+skinparam componentStyle rectangle
+
+package "aa-contracts (no dependencies)" as contracts {
+  component "POLICY.md" as policy
+  component "schemas/v1/*.schema.json (14)" as schemas
+  component "rpc/rpc-v1.md" as rpc
+  component "openapi/control-plane-v1.yaml (13 paths)" as openapi
+  package "bindings (authored, not generated)" as bindings {
+    component "go/v1 (validators + conformance)" as gob
+    component "typescript/v1 (types, tsc --noEmit)" as tsb
+    component "python/aa_contracts (dict + TypedDict)" as pyb
+  }
+}
+
+package "tools (tooling, not a product module)" as tools {
+  component "archtest (enforces D5)" as archtest
+}
+
+package "consumers (scaffolded)" as consumers {
+  component "obsv" as obsv
+  component "memory" as memory
+  component "kernel" as kernel
+  component "sync" as sync
+  component "sifter (Python)" as sifter
+  component "forge" as forge
+  component "toolbox" as toolbox
+  component "visualizer" as visualizer
+  component "console" as console
+}
+
+schemas --> gob
+schemas --> tsb
+schemas --> pyb
+policy --> schemas
+schemas --> rpc
+rpc --> openapi
+
+gob --> consumers
+tsb --> visualizer
+tsb --> console
+pyb --> sifter
+
+archtest --> contracts : scans go list -deps
+
+note right of schemas
+  14 v1 objects delivered.
+  common, event, work-package, task-graph,
+  execution-contract, result-envelope, telemetry,
+  project-record, memory-record, issue, strategy,
+  route (request+response), tool-manifest, workflow.
+end note
+
+note bottom of pyb
+  Deviation from plan: Python binding is a
+  validated dict model with TypedDict shape hints,
+  not runtime dataclasses. Stdlib only.
+end note
+
+note bottom of archtest
+  Added beyond the ten product modules.
+  Enforces D5 in CI; contract depends on nothing;
+  kernel reaches sync/forge/sifter over RPC only.
+end note
+
+@enduml

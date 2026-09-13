@@ -1,0 +1,12 @@
+{
+  "contractVersion": "1.0",
+  "kind": "event",
+  "id": "evt_01HZZZ0001",
+  "projectId": "prj_01HAAA0001",
+  "sequence": 1,
+  "occurredAt": "2026-09-12T10:00:00Z",
+  "type": "WORK_PACKAGE_CREATED",
+  "aggregate": { "kind": "work_package", "id": "wp_01HBBB0001" },
+  "actor": { "kind": "system", "id": "kernel" },
+  "payload": { "title": "Add contract schemas" }
+}

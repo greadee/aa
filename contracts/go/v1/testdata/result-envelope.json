@@ -1,0 +1,14 @@
+{
+  "contractVersion": "1.0",
+  "kind": "result_envelope",
+  "id": "res_01HGGG0001",
+  "projectId": "prj_01HAAA0001",
+  "attemptId": "att_01HHHH0001",
+  "assignmentId": "asg_01HFFF0001",
+  "workPackageId": "wp_01HBBB0001",
+  "status": "succeeded",
+  "summary": "Added schemas and conformance tests.",
+  "artifacts": [{ "kind": "patch", "id": "art_01HIII0001", "uri": "artifact://patch/1" }],
+  "tests": [{ "name": "conformance", "outcome": "passed", "durationMs": 42 }],
+  "producedBy": { "kind": "agent", "id": "worker_01H", "trade": "backend" }
+}

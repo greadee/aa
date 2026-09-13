@@ -1,0 +1,11 @@
+{
+  "contractVersion": "1.0",
+  "kind": "task_graph",
+  "id": "gph_01HDDD0001",
+  "projectId": "prj_01HAAA0001",
+  "revision": 3,
+  "nodes": [
+    { "workPackageId": "wp_01HBBB0001", "readiness": "satisfied" },
+    { "workPackageId": "wp_01HBBB0002", "dependsOn": ["wp_01HBBB0001"], "readiness": "ready" }
+  ]
+}

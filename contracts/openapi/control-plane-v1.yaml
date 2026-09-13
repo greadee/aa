@@ -1,0 +1,389 @@
+openapi: 3.1.0
+info:
+  title: aa control plane
+  version: "1.0.0"
+  description: >
+    External, local-only HTTP/JSON control plane used by aa-console and
+    aa-visualizer. The console never calls inter-module RPC directly.
+    Contract objects referenced here are defined in ../schemas/v1/.
+servers:
+  - url: http://127.0.0.1:7100/api/v1
+    description: Local host (loopback only)
+security:
+  - bearerAuth: []
+tags:
+  - name: health
+  - name: projects
+  - name: work
+  - name: memory
+  - name: nodes
+  - name: tools
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Liveness and version information
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, version]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, degraded]
+                  version:
+                    type: string
+                  rpcVersion:
+                    type: string
+  /status:
+    get:
+      tags: [health]
+      summary: Aggregate host status
+      responses:
+        "200":
+          description: Current status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: integer
+                  activeAssignments:
+                    type: integer
+                  nodes:
+                    type: integer
+  /projects:
+    get:
+      tags: [projects]
+      summary: List projects
+      responses:
+        "200":
+          description: Projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectRecord"
+    post:
+      tags: [projects]
+      summary: Register a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectRecord"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectRecord"
+        "409":
+          description: Already registered
+  /projects/{projectId}:
+    get:
+      tags: [projects]
+      summary: Get a project
+      parameters:
+        - $ref: "#/components/parameters/projectId"
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectRecord"
+        "404":
+          description: Not found
+  /projects/{projectId}/work-packages:
+    get:
+      tags: [work]
+      summary: List work packages for a project
+      parameters:
+        - $ref: "#/components/parameters/projectId"
+      responses:
+        "200":
+          description: Work packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkPackage"
+  /projects/{projectId}/graph:
+    get:
+      tags: [work]
+      summary: Get the current dependency graph
+      parameters:
+        - $ref: "#/components/parameters/projectId"
+      responses:
+        "200":
+          description: Task graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskGraph"
+  /projects/{projectId}/events:
+    get:
+      tags: [work]
+      summary: Stream canonical events (server-sent events)
+      parameters:
+        - $ref: "#/components/parameters/projectId"
+        - name: after
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /projects/{projectId}/issues:
+    get:
+      tags: [memory]
+      summary: List issues
+      parameters:
+        - $ref: "#/components/parameters/projectId"
+      responses:
+        "200":
+          description: Issues
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Issue"
+  /projects/{projectId}/strategies:
+    get:
+      tags: [memory]
+      summary: List active strategies
+      parameters:
+        - $ref: "#/components/parameters/projectId"
+      responses:
+        "200":
+          description: Strategies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Strategy"
+  /assignments:
+    get:
+      tags: [work]
+      summary: List assignments
+      responses:
+        "200":
+          description: Assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    workPackageId:
+                      type: string
+                    state:
+                      type: string
+  /approvals/{gateId}:
+    post:
+      tags: [work]
+      summary: Resolve a human approval gate
+      parameters:
+        - name: gateId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, actor]
+              properties:
+                decision:
+                  type: string
+                  enum: [approve, reject]
+                actor:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Recorded
+        "403":
+          description: Not permitted
+  /nodes:
+    get:
+      tags: [nodes]
+      summary: List compute and sync nodes
+      responses:
+        "200":
+          description: Nodes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    authority:
+                      type: boolean
+                    state:
+                      type: string
+  /tools:
+    get:
+      tags: [tools]
+      summary: List registered tools, plugins, and MCP servers
+      responses:
+        "200":
+          description: Tools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ToolManifest"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Loopback bearer token; loopback alone is not authentication.
+  parameters:
+    projectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    ProjectRecord:
+      type: object
+      required: [contractVersion, kind, id, name, state, layoutVersion]
+      properties:
+        contractVersion:
+          type: string
+        kind:
+          const: project_record
+        id:
+          type: string
+        name:
+          type: string
+        state:
+          type: string
+        layoutVersion:
+          type: string
+    WorkPackage:
+      type: object
+      required: [contractVersion, kind, id, title, state, acceptance]
+      properties:
+        contractVersion:
+          type: string
+        kind:
+          const: work_package
+        id:
+          type: string
+        title:
+          type: string
+        state:
+          type: string
+        acceptance:
+          type: array
+          items:
+            type: string
+    TaskGraph:
+      type: object
+      required: [contractVersion, kind, id, projectId, nodes, revision]
+      properties:
+        contractVersion:
+          type: string
+        kind:
+          const: task_graph
+        id:
+          type: string
+        projectId:
+          type: string
+        revision:
+          type: integer
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              workPackageId:
+                type: string
+              readiness:
+                type: string
+    Issue:
+      type: object
+      required: [contractVersion, kind, id, title, type, status]
+      properties:
+        contractVersion:
+          type: string
+        kind:
+          const: issue
+        id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        severity:
+          type: string
+    Strategy:
+      type: object
+      required: [contractVersion, kind, id, title, lifecycle, guidance]
+      properties:
+        contractVersion:
+          type: string
+        kind:
+          const: strategy
+        id:
+          type: string
+        title:
+          type: string
+        lifecycle:
+          type: string
+        guidance:
+          type: string
+    ToolManifest:
+      type: object
+      required: [contractVersion, kind, id, name, toolKind, version, capabilities]
+      properties:
+        contractVersion:
+          type: string
+        kind:
+          const: tool_manifest
+        id:
+          type: string
+        name:
+          type: string
+        toolKind:
+          type: string
+        version:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string

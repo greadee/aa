@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/telemetry.schema.json",
+  "title": "aa-telemetry",
+  "x-contract-version": "1.0",
+  "description": "Bounded execution evidence. Operational telemetry is node-local and rebuildable; it is not canonical history.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "attemptId", "metricVersion", "outcome"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "telemetry" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "attemptId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "assignmentId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "metricVersion": { "type": "string", "maxLength": 32 },
+    "outcome": { "enum": ["succeeded", "failed", "partial", "blocked", "cancelled", "unknown"] },
+    "calls": {
+      "type": "object",
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "local": { "type": "integer", "minimum": 0 },
+        "cloud": { "type": "integer", "minimum": 0 },
+        "retries": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "tokens": {
+      "type": "object",
+      "properties": {
+        "input": { "type": "integer", "minimum": 0 },
+        "output": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "costUsd": { "type": "number", "minimum": 0 },
+    "durationMs": { "type": "integer", "minimum": 0 },
+    "resources": { "type": "object", "additionalProperties": true },
+    "versions": { "type": "object", "additionalProperties": { "type": "string", "maxLength": 128 } },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true
+}

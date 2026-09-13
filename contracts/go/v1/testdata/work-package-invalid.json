@@ -1,0 +1,8 @@
+{
+  "contractVersion": "1.0",
+  "kind": "work_package",
+  "id": "wp_invalid",
+  "title": "Missing acceptance and bad state",
+  "state": "NOT_A_STATE",
+  "acceptance": []
+}

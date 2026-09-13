@@ -1,0 +1,16 @@
+{
+  "contractVersion": "1.0",
+  "kind": "work_package",
+  "id": "wp_01HBBB0001",
+  "projectId": "prj_01HAAA0001",
+  "title": "Add contract schemas",
+  "state": "READY",
+  "trade": "backend",
+  "role": "Builder",
+  "dependencies": [],
+  "inputs": [{ "kind": "issue", "id": "iss_01HCCC0001" }],
+  "deliverables": ["schemas/v1/event.schema.json"],
+  "acceptance": ["schemas parse", "conformance passes"],
+  "budget": { "maxCalls": 5, "maxTokens": 200000 },
+  "risk": "low"
+}

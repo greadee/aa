@@ -1,0 +1,68 @@
+@startuml
+' Phase 1 — Contracts: planned infrastructure. Authored at phase start.
+' Copy to summary.uml at phase end and edit to the as-built state.
+
+title Phase 1 — Contracts (planned)
+
+skinparam componentStyle rectangle
+
+package "aa-contracts (no dependencies)" as contracts {
+  component "POLICY.md" as policy
+  component "schemas/v1/*.schema.json" as schemas
+  component "rpc/rpc-v1.md" as rpc
+  component "openapi/control-plane-v1.yaml" as openapi
+  package "bindings" as bindings {
+    component "go/v1" as gob
+    component "typescript/v1" as tsb
+    component "python/aa_contracts" as pyb
+  }
+  component "conformance suite" as conf
+}
+
+package "tools" as tools {
+  component "archtest" as archtest
+}
+
+package "consumers" as consumers {
+  component "obsv" as obsv
+  component "memory" as memory
+  component "kernel" as kernel
+  component "sync" as sync
+  component "sifter" as sifter
+  component "forge" as forge
+  component "toolbox" as toolbox
+  component "visualizer" as visualizer
+  component "console" as console
+}
+
+schemas --> gob
+schemas --> tsb
+schemas --> pyb
+schemas --> conf
+policy --> schemas
+rpc --> openapi
+
+gob --> consumers
+tsb --> visualizer
+tsb --> console
+pyb --> sifter
+
+archtest --> contracts : scans go list -deps for layering
+
+note right of schemas
+  v1 objects:
+  common envelope, event, work-package,
+  task-graph, execution-contract,
+  result-envelope, telemetry,
+  project-record, memory-record,
+  issue, strategy, route,
+  tool-manifest, workflow
+end note
+
+note bottom of archtest
+  Enforces D5: contracts depends on nothing;
+  modules import only contracts (and downward);
+  no kernel -> sync/forge/sifter imports.
+end note
+
+@enduml
