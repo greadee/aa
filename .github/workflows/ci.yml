@@ -105,6 +105,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Add contracts bindings to the path
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/contracts/python" >> "$GITHUB_ENV"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
