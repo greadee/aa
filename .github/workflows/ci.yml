@@ -95,6 +95,65 @@ jobs:
         working-directory: contracts/python
         run: python -m unittest discover -s tests -t .
 
+  sifter:
+    name: sifter (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        working-directory: sifter
+        run: python -m pip install -e ".[dev]"
+
+      - name: Format
+        working-directory: sifter
+        run: ruff format --check .
+
+      - name: Lint
+        working-directory: sifter
+        run: ruff check .
+
+      - name: Typecheck
+        working-directory: sifter
+        run: mypy
+
+      - name: Test
+        working-directory: sifter
+        run: pytest
+
+  sifter-build:
+    name: sifter (package build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build
+        working-directory: sifter
+        run: |
+          python -m pip install --quiet build
+          python -m build
+
+      - name: Clean-install smoke
+        working-directory: sifter
+        run: |
+          python -m venv .venv-smoke
+          .venv-smoke/bin/pip install --quiet dist/*.whl
+          .venv-smoke/bin/aa-sifter --help
+
   contracts-typescript:
     name: contracts (typescript)
     runs-on: ubuntu-latest
