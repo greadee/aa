@@ -1,0 +1,64 @@
+@startuml
+' Phase 3 — Kernel: as-built. Copy of plan.uml edited to what was actually built.
+
+title Phase 3 — Kernel (as built)
+
+skinparam componentStyle rectangle
+
+package "aa-kernel (imports contracts, obsv, memory, toolbox)" as kernel {
+  component "registry (roles/trades/workers)" as registry
+  component "plan (task graph + readiness)" as plan
+  component "control (assignment FSM + leases)" as control
+  component "contract (capabilities + budget)" as contract
+  component "context (pure compiler)" as context
+  component "runtime (Adapter + Fake + Disabled)" as runtime
+  component "gate (tests/human/composite)" as gate
+  component "intake (validate + dedupe)" as intake
+  component "telemetry (+ learning candidates)" as telemetry
+  component "orchestrator" as orchestrator
+  component "api (in-process, disabled by default)" as api
+}
+
+package "aa-contracts" as contracts
+package "aa-memory (Sink wiring deferred)" as memory
+package "aa-obsv (migration deferred)" as obsv
+
+contracts --> kernel
+memory ..> orchestrator : Sink (deferred)
+obsv ..> orchestrator : observation (deferred)
+
+api --> orchestrator
+orchestrator --> plan
+orchestrator --> registry
+orchestrator --> control
+orchestrator --> contract
+orchestrator --> context
+orchestrator --> runtime
+orchestrator --> intake
+orchestrator --> gate
+orchestrator --> telemetry
+
+note right of orchestrator
+  Cycle implemented:
+  ready -> select worker -> build contract
+  -> compile context -> lease -> run (adapter)
+  -> intake -> gates -> accept -> telemetry
+end note
+
+note bottom of contract
+  As built and affirmed:
+  granted = requested INTERSECT permitted.
+  deploy/merge never granted implicitly.
+end note
+
+note bottom of runtime
+  As built: scripted Fake + Disabled.
+  Deviation: no production adapter yet.
+end note
+
+note bottom of api
+  In-process only. Execution disabled by
+  default; disabled dispatch returns ErrDisabled.
+end note
+
+@enduml

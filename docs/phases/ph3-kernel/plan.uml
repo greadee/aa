@@ -1,0 +1,60 @@
+@startuml
+' Phase 3 — Kernel: planned infrastructure. Authored at phase start.
+' Copy to summary.uml at phase end and edit to the as-built state.
+
+title Phase 3 — Kernel (planned)
+
+skinparam componentStyle rectangle
+
+package "aa-kernel (depends on contracts, obsv, memory, toolbox)" as kernel {
+  component "registry (roles/trades/workers)" as registry
+  component "plan (task graph + readiness)" as plan
+  component "control (assignment FSM + leases)" as control
+  component "contract (capabilities + budget)" as contract
+  component "context (compiler)" as context
+  component "runtime (adapter + fake)" as runtime
+  component "gate (tests/human/composite)" as gate
+  component "intake (result validation)" as intake
+  component "telemetry (+ learning candidates)" as telemetry
+  component "orchestrator" as orchestrator
+  component "api (control plane)" as api
+}
+
+package "aa-contracts" as contracts
+package "aa-memory" as memory
+package "aa-obsv (deferred)" as obsv
+
+contracts --> kernel
+memory --> orchestrator
+obsv --> orchestrator
+
+api --> orchestrator
+orchestrator --> plan
+orchestrator --> registry
+orchestrator --> control
+orchestrator --> contract
+orchestrator --> context
+orchestrator --> runtime
+orchestrator --> intake
+orchestrator --> gate
+orchestrator --> telemetry
+
+note right of orchestrator
+  Cycle:
+  ready -> select worker -> build contract
+  -> compile context -> lease -> run (adapter)
+  -> intake -> gates -> accept -> telemetry
+end note
+
+note bottom of contract
+  Granted = requested INTERSECT permitted.
+  Denied capabilities are recorded.
+  Deploy/merge never granted implicitly.
+end note
+
+note bottom of api
+  Execution disabled by default.
+  No model is called in the control path.
+end note
+
+@enduml

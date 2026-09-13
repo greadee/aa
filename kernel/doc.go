@@ -1,6 +1,8 @@
-// Package kernel is aa's deterministic control plane: planning, roles,
-// orchestration, execution, gates, and job learning.
+// Package kernel is aa's deterministic control plane.
 //
-// It is scaffolded only. The implementation is migrated from existing sources
-// in ph3-kernel and ph9-joblearn. See docs/architecture/README.md.
+// It plans work, selects roles and workers, builds least-privilege execution
+// contracts, compiles bounded context, leases assignments, runs work through a
+// runtime adapter, validates results, evaluates gates, records telemetry, and
+// derives learning candidates. It never calls a model directly and never opens
+// a remote shell; execution is disabled unless explicitly enabled.
 package kernel
