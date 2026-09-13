@@ -1,0 +1,31 @@
+@startuml
+' Phase {N} summary — as-built infrastructure.
+' Copy plan.uml here at phase end and edit it to match what was actually built.
+' It must show the real system, not the aspirational one.
+
+title Phase {N} — {Name} (as built)
+
+package "aa" {
+  [contracts] as contracts
+  [obsv] as obsv
+  [kernel] as kernel
+  [memory] as memory
+  [sync] as sync
+  [sifter] as sifter
+  [forge] as forge
+  [toolbox] as toolbox
+  [visualizer] as visualizer
+  [console] as console
+}
+
+contracts --> obsv
+contracts --> memory
+contracts --> sync
+contracts --> sifter
+contracts --> forge
+contracts --> toolbox
+contracts --> kernel
+contracts --> visualizer
+contracts --> console
+
+@enduml

@@ -1,0 +1,13 @@
+go 1.26
+
+use (
+	./contracts
+	./obsv
+	./kernel
+	./memory
+	./sync
+	./forge
+	./toolbox
+	./visualizer
+	./console
+)

@@ -1,0 +1,49 @@
+# Build outputs
+/bin/
+/dist/
+/build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go
+*.test
+*.out
+vendor/
+.cache/
+
+# Node
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# SQLite / local runtime state
+*.db
+*.db-wal
+*.db-shm
+.compute_sifter/
+.aa/
+.local/
+
+# Secrets and OS artifacts
+.env
+.env.*
+Thumbs.db
+.DS_Store
+desktop.ini

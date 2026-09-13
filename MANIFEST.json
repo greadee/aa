@@ -1,0 +1,43 @@
+{
+  "name": "aa",
+  "version": "0.1.0",
+  "description": "End-to-end agentic terminal: modular, local-first work observation, planning, execution, verification, and learning across machines.",
+  "primaryBranch": "main",
+  "remote": "https://github.com/greadee/aa",
+  "primaryDirective": "AA.md",
+  "modules": [
+    "contracts",
+    "obsv",
+    "kernel",
+    "memory",
+    "sync",
+    "sifter",
+    "forge",
+    "toolbox",
+    "visualizer",
+    "console"
+  ],
+  "docs": [
+    "docs/index/README.md",
+    "docs/index/architecture.md",
+    "docs/index/phases.md",
+    "docs/index/features.md",
+    "docs/index/sprints.md",
+    "docs/architecture/README.md",
+    "docs/reference/README.md",
+    "docs/reference/terminology.md",
+    "docs/github-os/README.md",
+    "docs/github-os/phase-management.md",
+    "docs/github-os/phase-documentation.md",
+    "docs/github-os/sprint-planning.md",
+    "docs/github-os/issues-and-stories.md",
+    "docs/github-os/pull-requests.md",
+    "docs/github-os/code-review.md",
+    "docs/github-os/repository-audits.md",
+    "docs/github-os/repository-reconstruction.md",
+    "docs/github-os/adrs-and-pitfalls.md",
+    "docs/github-os/documentation-system.md",
+    "docs/github-os/git-workflow.md",
+    "docs/github-os/model-selection.md"
+  ]
+}
