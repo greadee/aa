@@ -1,0 +1,144 @@
+# Bundled advisory metadata for known local and cloud models.
+# This catalog is intentionally small and version-controlled. It is advisory,
+# never a whitelist: users may configure arbitrary provider/model pairs.
+
+[[models]]
+provider = "ollama"
+model_id = "qwen3.5:9b"
+display_name = "Qwen 3.5 9B"
+parameter_count_b = 9.0
+minimum_vram_gb = 7.0
+recommended_vram_gb = 8.5
+minimum_ram_gb = 16.0
+context_window = 131072
+capabilities = ["general", "coding", "tool_use", "structured_output", "agentic"]
+strengths = ["balanced coding", "tool use", "comfortable 10 GB fit", "responsive locally"]
+local = true
+tool_use = true
+structured_output = true
+
+[[models]]
+provider = "ollama"
+model_id = "qwen3.5:4b"
+display_name = "Qwen 3.5 4B"
+parameter_count_b = 4.0
+minimum_vram_gb = 3.5
+recommended_vram_gb = 4.5
+minimum_ram_gb = 8.0
+context_window = 131072
+capabilities = ["general", "coding", "tool_use"]
+strengths = ["fast on modest hardware", "low memory footprint"]
+local = true
+tool_use = true
+
+[[models]]
+provider = "ollama"
+model_id = "qwen2.5-coder:7b"
+display_name = "Qwen2.5 Coder 7B"
+parameter_count_b = 7.0
+minimum_vram_gb = 5.5
+recommended_vram_gb = 7.0
+minimum_ram_gb = 16.0
+context_window = 32768
+capabilities = ["coding", "general"]
+strengths = ["focused code generation", "small and fast"]
+local = true
+
+[[models]]
+provider = "ollama"
+model_id = "llama3.1:8b"
+display_name = "Llama 3.1 8B"
+parameter_count_b = 8.0
+minimum_vram_gb = 6.5
+recommended_vram_gb = 8.0
+minimum_ram_gb = 16.0
+context_window = 131072
+capabilities = ["general", "tool_use"]
+strengths = ["broad general assistant", "good tool use"]
+local = true
+tool_use = true
+
+[[models]]
+provider = "ollama"
+model_id = "mistral-nemo:12b"
+display_name = "Mistral Nemo 12B"
+parameter_count_b = 12.0
+minimum_vram_gb = 9.0
+recommended_vram_gb = 11.0
+minimum_ram_gb = 24.0
+context_window = 131072
+capabilities = ["general", "reasoning"]
+strengths = ["stronger reasoning than 8B class", "long context"]
+local = true
+
+[[models]]
+provider = "ollama"
+model_id = "qwen3.5:32b"
+display_name = "Qwen 3.5 32B"
+parameter_count_b = 32.0
+minimum_vram_gb = 20.0
+recommended_vram_gb = 24.0
+minimum_ram_gb = 32.0
+context_window = 131072
+capabilities = ["general", "coding", "reasoning", "tool_use"]
+strengths = ["high local quality", "requires a large GPU"]
+local = true
+tool_use = true
+
+[[models]]
+provider = "ollama"
+model_id = "deepseek-coder-v2:16b"
+display_name = "DeepSeek Coder V2 16B"
+parameter_count_b = 16.0
+minimum_vram_gb = 11.0
+recommended_vram_gb = 13.0
+minimum_ram_gb = 24.0
+context_window = 131072
+capabilities = ["coding", "general"]
+strengths = ["strong local coding", "needs more than 10 GB VRAM"]
+local = true
+
+[[models]]
+provider = "deepseek"
+model_id = "deepseek-chat"
+display_name = "DeepSeek Flash"
+parameter_count_b = 0.0
+context_window = 131072
+capabilities = ["general", "coding", "tool_use", "structured_output", "agentic", "long_context"]
+strengths = ["strong coding", "large context", "low cost expert tier"]
+cloud = true
+tool_use = true
+structured_output = true
+
+[models.cost]
+input_per_mtok = 0.14
+output_per_mtok = 0.28
+
+[[models]]
+provider = "deepseek"
+model_id = "deepseek-reasoner"
+display_name = "DeepSeek Reasoner"
+context_window = 131072
+capabilities = ["general", "coding", "reasoning", "structured_output", "long_context"]
+strengths = ["deep reasoning", "higher cost per token"]
+cloud = true
+structured_output = true
+
+[models.cost]
+input_per_mtok = 0.55
+output_per_mtok = 2.19
+
+[[models]]
+provider = "openai-compatible"
+model_id = "gpt-4o-mini"
+display_name = "GPT-4o mini (compatible)"
+context_window = 131072
+capabilities = ["general", "coding", "tool_use", "structured_output", "vision"]
+strengths = ["cheap general cloud model", "vision capable"]
+cloud = true
+tool_use = true
+structured_output = true
+
+[models.cost]
+input_per_mtok = 0.15
+output_per_mtok = 0.60
