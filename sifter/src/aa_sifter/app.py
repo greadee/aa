@@ -9,6 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .context.compression import estimate_tokens, fit_messages
 from .context.handoff import HandoffBuilder, SecretRedactor
 from .context.packet import EscalationPacket
 from .decisions.approval import (
@@ -26,6 +27,7 @@ from .history.sqlite import SqliteHistoryStore
 from .history.store import HistoryStore
 from .metrics.trace import Trace, configure_logging
 from .metrics.usage import UsageMetrics, UsageTracker
+from .model_defaults import DEFAULT_EXPERT_MAX_OUTPUT, DEFAULT_LOCAL_MAX_OUTPUT
 from .models.config import ModelConfig, SifterConfig
 from .models.factory import build_registry
 from .models.provider import (
@@ -196,7 +198,13 @@ class ComputeSifter:
         usage = UsageMetrics()
         tracker = UsageTracker()
         tracker.configure(local=self.local_config(), cloud=self.cloud_config())
-        budget = BudgetTracker(self.config, max_cost=max_cloud_cost, trace=trace)
+        waiver = None if max_cloud_cost is not None else self.rules.cost_waiver_threshold()
+        budget = BudgetTracker(
+            self.config, max_cost=max_cloud_cost, trace=trace, cost_waiver=waiver
+        )
+        autonomy_grant = self.rules.has_grant("cloud_auto_escalation") or self.rules.has_grant(
+            "cloud_debug_failed_tests"
+        )
         approvals: list[dict[str, Any]] = []
         approved_decisions: list[str] = []
         human_constraints: list[str] = []
@@ -304,7 +312,8 @@ class ComputeSifter:
                     budget=budget,
                     approvals=approvals,
                     allowed=cloud_permitted
-                    and (allow_cloud_analysis or not classification.is_major),
+                    and (allow_cloud_analysis or not classification.is_major or autonomy_grant),
+                    autonomy_grant=autonomy_grant,
                 )
                 status = "completed" if resolved else "failed"
 
@@ -691,6 +700,7 @@ class ComputeSifter:
         budget: BudgetTracker,
         approvals: list[dict[str, Any]],
         allowed: bool,
+        autonomy_grant: bool = False,
     ) -> tuple[str, bool]:
         architecture_like = self.escalation_policy.is_architecture_like(prompt)
         request = EscalationRequest(
@@ -705,7 +715,7 @@ class ComputeSifter:
         usage.escalations += 1
         _emit_progress("escalating", reason=request.reason, action=outcome.action.value)
 
-        if outcome.requires_human_approval:
+        if outcome.requires_human_approval and not autonomy_grant:
             trace.log("decision", "escalation implies architecture change; asking user")
             decision = await gate.require_approval(
                 ApprovalRequest(
@@ -738,6 +748,12 @@ class ComputeSifter:
                     False,
                 )
             allowed = decision.action == ApprovalAction.ALLOW_EXPERT_ANALYSIS
+        elif outcome.requires_human_approval and autonomy_grant:
+            trace.log(
+                "decision",
+                "standing rule grants autonomous cloud escalation",
+                level="warning",
+            )
         if not allowed:
             return answer + "\n\n[Local-only policy: cloud escalation not permitted.]", False
 
@@ -792,6 +808,16 @@ class ComputeSifter:
             )
         return redacted
 
+    def _fit_to_context(
+        self, messages: list[Message], model: ModelConfig, max_output: int
+    ) -> list[Message]:
+        """Bound the outbound messages to the model context window (ADR-P4-004)."""
+        limit = int(model.context_limit or 0)
+        if limit <= 0:
+            return list(messages)
+        budget = max(1_024, limit - max(0, max_output))
+        return fit_messages(list(messages), max_tokens=budget)
+
     async def _call_tier(
         self,
         tier: Tier,
@@ -808,7 +834,11 @@ class ComputeSifter:
         provider = self._provider_for(model)
         tag = "local" if tier == Tier.LOCAL else "expert"
         outbound = self._is_cloud_bound(tier, model)
-        prepared = list(messages)
+        if tier == Tier.LOCAL:
+            max_output = self.config.local_max_output_tokens or DEFAULT_LOCAL_MAX_OUTPUT
+        else:
+            max_output = self.config.expert_max_output_tokens or DEFAULT_EXPERT_MAX_OUTPUT
+        prepared = self._fit_to_context(list(messages), model, max_output)
         if outbound:
             if not self.config.cloud_allowed:
                 raise ProviderError(
@@ -816,7 +846,11 @@ class ComputeSifter:
                 )
             prepared = self._redact_cloud_messages(prepared, trace, purpose)
         if tier == Tier.EXPERT:
-            budget.check()
+            input_tokens = sum(estimate_tokens(message.content) for message in prepared)
+            budget.check(
+                estimated_tokens=input_tokens,
+                estimated_cost=model.estimate_cost(input_tokens, 0),
+            )
         if temperature is None:
             temperature = (
                 self.config.local_temperature
@@ -836,6 +870,7 @@ class ComputeSifter:
             model.name,
             prepared,
             temperature=temperature,
+            max_tokens=max_output,
             timeout=model.timeout_seconds,
         )
         usage.record_generation(result, model)

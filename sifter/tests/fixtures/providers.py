@@ -68,6 +68,7 @@ class FakeProvider:
         self.calls: list[str] = []
         self.messages: list[list[Message]] = []
         self.models: list[str] = []
+        self.max_tokens: list[int | None] = []
 
     # -- helpers -----------------------------------------------------------
     def _text(self, cloud: bool) -> str:
@@ -120,6 +121,7 @@ class FakeProvider:
         timeout: float | None = None,
     ) -> GenerationResult:
         cloud = self._record(model, messages)
+        self.max_tokens.append(max_tokens)
         if self.delay:
             await asyncio.sleep(self.delay)
         self._raise_if_failing(cloud)
@@ -136,6 +138,7 @@ class FakeProvider:
         timeout: float | None = None,
     ) -> GenerationResult:
         cloud = self._record(model, messages)
+        self.max_tokens.append(max_tokens)
         if self.delay:
             await asyncio.sleep(self.delay)
         self._raise_if_failing(cloud)

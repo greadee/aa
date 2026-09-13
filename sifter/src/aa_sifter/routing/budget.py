@@ -45,13 +45,26 @@ class BudgetTracker:
         *,
         max_cost: float | None = None,
         trace: Trace | None = None,
+        cost_waiver: float | None = None,
     ):
         self.config = config
         self.trace = trace
+        configured = config.max_cloud_cost_per_task if max_cost is None else max_cost
+        effective = configured
+        if cost_waiver is not None and cost_waiver > configured:
+            effective = cost_waiver
+            if self.trace is not None:
+                self.trace.log(
+                    "budget",
+                    "standing rule raised the cloud cost cap",
+                    configured=configured,
+                    waived_ceiling=cost_waiver,
+                )
+        self.waiver_ceiling = cost_waiver
         self.budget = Budget(
             max_calls=config.max_cloud_calls_per_task,
             max_tokens=config.max_cloud_tokens_per_task,
-            max_cost=config.max_cloud_cost_per_task if max_cost is None else max_cost,
+            max_cost=effective,
             max_parallel=config.max_parallel_cloud_calls,
         )
         self.exhausted = False
