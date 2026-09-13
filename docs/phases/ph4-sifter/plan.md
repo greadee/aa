@@ -8,7 +8,7 @@ Deliver `aa-sifter` as the single governed path to every model. Migrate the exis
 
 ## Starting State
 
-- Starting ref: `main @ ba195e1` (after phase 3 merge).
+- Starting ref: `main @ da00db0` (after phase 3 merge).
 - Available:
   - `aa-contracts` v1 schemas and Python bindings, including `route_request`/`route_response`, `execution_contract` (budget, capabilities), and `memory_record` with lifecycle (`contracts/python/aa_contracts`, `contracts/schemas/v1`).
   - RPC v1 spec naming `sifter.route`, `sifter.generate`, `sifter.health` (`contracts/rpc/rpc-v1.md`).
