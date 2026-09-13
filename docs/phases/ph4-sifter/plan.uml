@@ -1,0 +1,68 @@
+@startuml
+' Phase 4 — Sifter: planned infrastructure. Authored at phase start.
+' Copy to summary.uml at phase end and edit to the as-built state.
+
+title Phase 4 — Sifter (planned)
+
+skinparam componentStyle rectangle
+
+package "aa-sifter (Python, src/aa_sifter)" as sifter {
+  component "app (ComputeSifter orchestration)" as app
+  component "contracts (aa_contracts bridge)" as bridge
+  component "rpc (JSON-RPC 2.0 service)" as rpc
+  component "decisions (classify + approval + rules)" as decisions
+  component "routing (preflight + policy + budget)" as routing
+  component "context (handoff + redaction + sizing)" as context
+  component "models (providers + config)" as models
+  component "catalog + recommend + system" as recommend
+  component "tasks (DAG + executor)" as tasks
+  component "verification" as verify
+  component "metrics (usage + trace)" as metrics
+  component "memory (MemorySink)" as memory
+  component "history (SQLite)" as history
+  component "cli + desktop" as surfaces
+}
+
+package "aa-contracts (Python bindings)" as contracts
+
+contracts --> bridge : route / memory schemas
+
+rpc --> bridge
+rpc --> app
+app --> decisions
+app --> routing
+app --> context
+app --> models
+app --> tasks
+app --> verify
+app --> metrics
+app --> memory
+app --> history
+surfaces --> app
+recommend --> models
+
+note right of context
+  ADR-P4-003: every expert-tier
+  outbound request passes through
+  the single redaction chokepoint.
+end note
+
+note bottom of routing
+  ADR-P4-004/005: token limits and
+  budget are enforced; cost waivers
+  and standing-rule grants are wired.
+end note
+
+note bottom of rpc
+  sifter.route -> route_response
+  sifter.generate -> {text, usage}
+  sifter.health -> {available, providers[]}
+end note
+
+note bottom of memory
+  ADR-P4-008: traces emitted as
+  memory_record candidates; no
+  canonical state is written here.
+end note
+
+@enduml
