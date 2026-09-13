@@ -1,0 +1,34 @@
+@startuml
+' Phase {N} plan — planned infrastructure. Authored at phase start.
+' Keep this diagram focused on what the phase delivers. Copy to summary.uml
+' at phase end and edit it to the as-built state.
+
+title Phase {N} — {Name} (planned)
+
+' Choose the diagram types the phase needs. Examples below; delete unused.
+
+' --- Component / context ---
+package "aa" {
+  [contracts] as contracts
+  [obsv] as obsv
+  [kernel] as kernel
+  [memory] as memory
+  [sync] as sync
+  [sifter] as sifter
+  [forge] as forge
+  [toolbox] as toolbox
+  [visualizer] as visualizer
+  [console] as console
+}
+
+contracts --> obsv
+contracts --> memory
+contracts --> sync
+contracts --> sifter
+contracts --> forge
+contracts --> toolbox
+contracts --> kernel
+contracts --> visualizer
+contracts --> console
+
+@enduml

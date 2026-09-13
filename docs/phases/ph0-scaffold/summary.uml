@@ -1,0 +1,73 @@
+@startuml
+' Phase 0 — Scaffold: as-built. Mirrors plan.uml intent; no plan existed, so this is the
+' first and canonical diagram for the phase. Reflects the repository after the five
+' bootstrap commits (ff02bfe .. 20e7c3c).
+
+title Phase 0 — Scaffold (as built)
+
+skinparam componentStyle rectangle
+
+package "C:\\Users\\prool\\aa (main)" {
+
+  component "AA.md\n(primary directive)" as aa
+  component "MANIFEST.json" as manifest
+
+  package "docs/" as docs {
+    component "index/" as index
+    component "architecture/README.md" as arch
+    component "reference/terminology.md" as term
+    component "github-os/ (+ templates)" as ghos
+    component "phases/ph0-scaffold/summary.md + .uml" as ph0
+    component "features/" as features
+  }
+
+  package "Go modules (go.work)" as gowork {
+    component "contracts" as contracts
+    component "obsv" as obsv
+    component "kernel" as kernel
+    component "memory" as memory
+    component "sync" as sync
+    component "forge" as forge
+    component "toolbox" as toolbox
+    component "visualizer" as visualizer
+    component "console" as console
+  }
+
+  component "sifter (Python)" as sifter
+
+  package ".github/workflows/" as ci {
+    component "ci.yml" as cigo
+    component "docs-link-check.yml" as cidocs
+  }
+}
+
+aa --> ghos
+aa --> arch
+index --> arch
+index --> term
+index --> ghos
+index --> features
+arch --> term
+ghos --> ph0
+
+' Declared dependency direction; contracts is the only shared dependency.
+contracts <-- obsv
+contracts <-- memory
+contracts <-- sync
+contracts <-- forge
+contracts <-- toolbox
+contracts <-- kernel
+contracts <-- visualizer
+contracts <-- console
+contracts <-- sifter
+
+cigo ..> gowork : build / vet / test / gofmt
+cidocs ..> docs : link check
+
+note right of gowork
+  All nine modules scaffolded only:
+  go.mod + doc.go + README + aa-*.md.
+  No implementation until ph1+.
+end note
+
+@enduml
