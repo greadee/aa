@@ -4,6 +4,8 @@
 
 The platform separates concerns into independently versioned modules that communicate through a single, versioned contract layer. A deterministic control plane owns state and coordination; models are workers behind a router; every unit of work is observable, replayable, and attributable.
 
+> **Migration note.** This repository is a clean import of the **aa** project from an earlier repository. The `ph0`–`ph3` history was re-created during the migration as reviewed pull requests gated by CI, so commit chronology reflects the migration timeline rather than the original development dates. The architecture, code, and phase plan are unchanged. See [docs/architecture/README.md](docs/architecture/README.md).
+
 ## Modules
 
 | Module | Responsibility |

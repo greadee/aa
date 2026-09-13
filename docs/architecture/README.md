@@ -1,6 +1,8 @@
 # aa — Optimized Architecture & End-to-End Plan
 
 > This document is the canonical architecture for **aa**, the end-to-end agentic terminal. It describes the target system (visual and written), the reasoning behind every architectural decision, the tooling required, the testing strategy, and the high-level phase plan. Phase-level detail lives under [`docs/phases/`](../phases/README.md).
+>
+> **Migration note.** This repository is a clean import of the **aa** project from an earlier repository. The architecture is unchanged. The `ph0`–`ph3` commit history was re-created during the migration so that each phase lands as a reviewed pull request gated by CI; treat the history as a migration record, not the original development chronology.
 
 ## Table of contents
 
