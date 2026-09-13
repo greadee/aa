@@ -35,7 +35,9 @@ async def test_run_emits_a_memory_candidate(config):
 
 
 async def test_default_sink_is_a_noop(config):
-    sifter = ComputeSifter(config.model_copy(update={"cloud_allowed": True}))
+    sifter = ComputeSifter(
+        config.model_copy(update={"cloud_allowed": True}), provider=FakeProvider()
+    )
     assert isinstance(sifter.memory_sink, NopMemorySink)
 
     result = await sifter.run("Add logging to the parser.")
