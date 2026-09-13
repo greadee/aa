@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aa-sifter</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">aa-sifter</div>
+      <div class="topbar-meta">
+        <span id="profile-label" class="chip">Profile: -</span>
+        <span id="local-status" class="status status-unknown">Local <b>&#9679;</b></span>
+        <span id="expert-status" class="status status-unknown">Expert <b>&#9679;</b></span>
+        <button id="theme-toggle" class="ghost" title="Toggle theme">Theme</button>
+      </div>
+    </header>
+
+    <nav class="sidebar">
+      <button class="nav" data-view="task">New Task</button>
+      <button class="nav" data-view="history">History</button>
+      <button class="nav" data-view="profiles">Profiles</button>
+      <button class="nav" data-view="models">Models</button>
+      <button class="nav" data-view="system">System</button>
+      <button class="nav" data-view="doctor">Doctor</button>
+      <button class="nav" data-view="usage">Usage</button>
+      <button class="nav" data-view="settings">Settings</button>
+      <button class="nav" data-view="trace">Advanced Trace</button>
+    </nav>
+
+    <main class="content">
+      <section id="view-task" class="view">
+        <h1>What would you like aa-sifter to do?</h1>
+        <textarea id="prompt" rows="5" placeholder="Describe a task..."></textarea>
+        <div class="row">
+          <label>Execution mode
+            <select id="execution-mode">
+              <option value="adaptive">Adaptive (recommended)</option>
+              <option value="local_only">Local only</option>
+              <option value="expert_only">Expert only</option>
+            </select>
+          </label>
+          <button id="run" class="primary">Run Task</button>
+          <button id="cancel" class="ghost" disabled>Cancel Task</button>
+        </div>
+        <div id="route-indicator" class="route hidden"></div>
+        <ul id="status-list" class="status-list"></ul>
+        <div id="response" class="response hidden"></div>
+      </section>
+
+      <section id="view-history" class="view hidden">
+        <h1>Task History</h1>
+        <div id="history-list" class="cards"></div>
+      </section>
+
+      <section id="view-profiles" class="view hidden">
+        <h1>Profiles</h1>
+        <div class="row">
+          <input id="new-profile-name" placeholder="new profile name" />
+          <button id="create-profile" class="ghost">Create</button>
+        </div>
+        <div id="profile-list" class="cards"></div>
+      </section>
+
+      <section id="view-models" class="view hidden">
+        <h1>Models</h1>
+        <div class="grid2">
+          <div class="card"><h2>Local</h2><div id="local-model"></div></div>
+          <div class="card"><h2>Expert</h2><div id="expert-model"></div></div>
+        </div>
+        <h2>Set Model</h2>
+        <div class="row">
+          <select id="set-tier"><option>local</option><option>expert</option></select>
+          <input id="set-provider" placeholder="provider (ollama, deepseek, openai-compatible)" />
+          <input id="set-model" placeholder="model id" />
+          <button id="apply-model" class="ghost">Apply</button>
+        </div>
+        <div id="set-model-result"></div>
+      </section>
+
+      <section id="view-system" class="view hidden">
+        <h1>System</h1>
+        <div id="system-info"></div>
+        <button id="detect-system" class="ghost">Re-detect</button>
+      </section>
+
+      <section id="view-doctor" class="view hidden">
+        <h1>System Check</h1>
+        <div class="row">
+          <button id="run-doctor" class="primary">Run Doctor</button>
+          <label><input type="checkbox" id="doctor-live" /> allow one paid live check</label>
+        </div>
+        <div id="doctor-output"></div>
+      </section>
+
+      <section id="view-usage" class="view hidden">
+        <h1>Usage</h1>
+        <div id="usage-output"></div>
+      </section>
+
+      <section id="view-settings" class="view hidden">
+        <h1>Settings</h1>
+        <p>Active profile: <b id="settings-profile">-</b></p>
+        <label>Default execution mode:
+          <select id="default-mode">
+            <option value="adaptive">Adaptive</option>
+            <option value="local_only">Local only</option>
+            <option value="expert_only">Expert only</option>
+          </select>
+        </label>
+        <p class="muted">Application data and logs live under your aa-sifter data directory.
+          Secrets are never sent to this client.</p>
+        <div id="issues-list"></div>
+      </section>
+
+      <section id="view-trace" class="view hidden">
+        <h1>Advanced Trace</h1>
+        <pre id="trace-output" class="trace"></pre>
+      </section>
+    </main>
+  </div>
+
+  <div id="approval-overlay" class="overlay hidden">
+    <div class="modal">
+      <div id="approval-body"></div>
+    </div>
+  </div>
+
+  <script>window.__SIFTER_TOKEN__ = "__SIFTER_TOKEN__";</script>
+  <script src="/app.js"></script>
+</body>
+</html>
