@@ -1,0 +1,149 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #1c2430;
+  --muted: #667085;
+  --border: #e2e6ee;
+  --accent: #3457d5;
+  --ok: #1a9d5a;
+  --warn: #c9820a;
+  --err: #cf3b3b;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+[data-theme="dark"] {
+  --bg: #14181f;
+  --panel: #1c222c;
+  --text: #e6eaf1;
+  --muted: #93a0b4;
+  --border: #2b3444;
+  --accent: #6d8bff;
+  --ok: #35c27e;
+  --warn: #e0a838;
+  --err: #ef6b6b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  grid-template-rows: 52px 1fr;
+  grid-template-areas: "top top" "side content";
+  height: 100vh;
+}
+
+.topbar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { font-weight: 700; letter-spacing: 0.2px; }
+.topbar-meta { display: flex; align-items: center; gap: 10px; }
+.chip { color: var(--muted); font-size: 12px; }
+
+.status { font-size: 12px; color: var(--muted); }
+.status b { font-size: 10px; margin-left: 4px; }
+.status-ready { color: var(--ok); }
+.status-unavailable, .status-model_missing, .status-missing_credentials { color: var(--err); }
+.status-not_configured { color: var(--muted); }
+
+.sidebar {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+}
+
+.nav {
+  text-align: left;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.nav:hover { background: var(--bg); }
+.nav.active { background: var(--accent); color: #fff; }
+
+.content { grid-area: content; padding: 24px; overflow: auto; }
+.view h1 { font-size: 20px; margin-top: 0; }
+.view h2 { font-size: 15px; margin-bottom: 6px; }
+
+textarea, input, select {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+textarea { width: 100%; font-family: var(--mono); }
+
+.row { display: flex; gap: 10px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
+.row label { color: var(--muted); font-size: 12px; }
+
+button {
+  font: inherit;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.ghost:hover { background: var(--bg); }
+button:disabled { opacity: 0.5; cursor: default; }
+
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+
+.route, .response, .card, .status-item, .doctor-check {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+
+.response { white-space: pre-wrap; font-family: var(--mono); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cards { display: grid; gap: 10px; }
+.status-list { list-style: none; padding: 0; margin: 12px 0; }
+.status-list li { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.cards .row { margin: 6px 0; }
+
+.trace { font-family: var(--mono); font-size: 12px; white-space: pre-wrap;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.modal { background: var(--panel); border-radius: 10px; padding: 22px; max-width: 680px;
+  width: 100%; max-height: 86vh; overflow: auto; border: 1px solid var(--border); }
+.modal h2 { margin-top: 0; }
+.modal .options { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.modal .options button { text-align: left; }
+
+.check-pass { color: var(--ok); }
+.check-fail { color: var(--err); }
+.check-skip { color: var(--warn); }

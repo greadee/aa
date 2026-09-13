@@ -1,0 +1,71 @@
+@startuml
+' Phase 4 — Sifter: as-built. Copy of plan.uml edited to what was actually built.
+
+title Phase 4 — Sifter (as built)
+
+skinparam componentStyle rectangle
+
+package "aa-sifter (Python, sifter/src/aa_sifter)" as sifter {
+  component "app (ComputeSifter orchestration)" as app
+  component "contracts (aa_contracts bridge)" as bridge
+  component "rpc (JSON-RPC 2.0, in-process)" as rpc
+  component "decisions (classify + approval + rules)" as decisions
+  component "routing (preflight + policy + budget)" as routing
+  component "context (handoff + redaction + sizing)" as context
+  component "models (Ollama/OpenAI-compatible/DeepSeek)" as models
+  component "catalog + recommend + system" as recommend
+  component "tasks (DAG + executor)" as tasks
+  component "verification" as verify
+  component "metrics (usage + trace)" as metrics
+  component "memory (MemorySink, Nop default)" as memory
+  component "history (SQLite)" as history
+  component "cli + desktop (migrated)" as surfaces
+}
+
+package "aa-contracts (Python bindings)" as contracts
+
+contracts --> bridge : route / memory schemas (optional import)
+
+rpc --> bridge
+rpc --> app
+app --> decisions
+app --> routing
+app --> context
+app --> models
+app --> tasks
+app --> verify
+app --> metrics
+app --> memory
+app --> history
+surfaces --> app
+recommend --> models
+
+note right of context
+  As built (ADR-P4-003):
+  _call_tier redacts every expert-tier
+  request; generate, preflight and
+  decompose also redact. Local calls
+  are unchanged.
+end note
+
+note bottom of routing
+  As built: fit_messages bounds context,
+  max_output_tokens is forwarded, budget
+  estimates are pre-flight, and cost
+  waivers / rule grants are wired.
+end note
+
+note bottom of rpc
+  As built: sifter.route (no model),
+  sifter.generate, sifter.health, and
+  additive sifter.recommend. Transport
+  hosting deferred.
+end note
+
+note bottom of memory
+  As built: each run emits a validated
+  memory_record candidate. Nop default;
+  the aa-memory writer is deferred.
+end note
+
+@enduml
