@@ -20,7 +20,8 @@
 - Starting ref: `main @ 41de261` (after phase 4 merge and record).
 - Tracking issue: none (phase executed via the phase PR).
 - Milestone: none (matches phases 0–4 on this repository).
-- Phase PR: [#6](https://github.com/greadee/aa1/pull/6)
+- Phase PR: [#6](https://github.com/greadee/aa1/pull/6) — merged
+- Merge commit: `4f50ed2`
 - Branch: `ph5-forge` (retained after merge on `aa1`)
 
 ## Validation
