@@ -1,18 +1,24 @@
-# Phase N: Objective
+# Phase {{ .Number }}: {{ .Objective }}
 
 ## Objective
 
+{{ .Objective }}
+
 ## Scope
 
-- ...
-
+{{ range .Scope }}- {{ . }}
+{{ end }}
 ## Issues
 
-- [ ] #123
-
+{{ range .Issues }}- [ ] #{{ . }}
+{{ end }}
 ## Dependencies
 
+{{ .Dependencies }}
+
 ## Risks / Open Questions
+
+{{ .Risks }}
 
 ## Exit Criteria
 
