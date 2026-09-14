@@ -19,7 +19,8 @@
 - Starting ref: `main @ 83fe7a1` (after phase 5 merge and record).
 - Tracking issue: none (phase executed via the phase PR).
 - Milestone: none (matches phases 0–5 on this repository).
-- Phase PR: [#7](https://github.com/greadee/aa1/pull/7)
+- Phase PR: [#7](https://github.com/greadee/aa1/pull/7) — merged
+- Merge commit: `eb534d6`
 - Branch: `ph6-sync` (retained after merge on `aa1`)
 
 ## Validation
