@@ -1,0 +1,72 @@
+@startuml
+' Phase 6 — Sync: as-built. Copy of plan.uml edited to what was actually built.
+
+title Phase 6 — Sync (as built)
+
+skinparam componentStyle rectangle
+
+package "aa-sync (Go; imports contracts and its own subpackages)" as sync {
+  component "sync (types + errors + idempotency + clock)" as core
+  component "identity (Ed25519 keys + pairing + mutual auth)" as identity
+  component "transport (seam + deterministic in-memory wire)" as transport
+  component "transfer (manifest + chunks + resume + verify)" as transfer
+  component "revision (one-way diff/apply + tombstones)" as revision
+  component "queue (offline changes + reconcile)" as queue
+  component "distribute (work packages + artifacts, idempotent)" as distribute
+  component "parallel (balanced assignment, no execution)" as parallel
+  component "rpc (sync.distribute / fetchArtifact / status)" as rpc
+}
+
+package "aa-contracts (schemas + rpc-v1)" as contracts
+package "aa-kernel (hosts the adapter, later)" as kernel
+package "network / live transport (deferred)" as live
+
+contracts --> rpc
+core --> identity
+identity --> transport
+transport --> transfer
+core --> revision
+revision --> queue
+transfer --> distribute
+queue --> distribute
+distribute --> parallel
+distribute --> rpc
+parallel --> rpc
+live ..> transport : live adapter (deferred)
+kernel ..> rpc : hosts over local socket
+
+note right of identity
+  As built: deterministic key
+  generation, single-use pairing
+  tokens, and mutual challenge-
+  response. Wrong keys fail closed.
+end note
+
+note bottom of transfer
+  As built: per-chunk and whole-
+  payload SHA-256 verification; the
+  receiver offers what it holds and
+  the sender streams only the rest.
+end note
+
+note bottom of queue
+  As built: newest-per-path by
+  revision; reconciliation reports
+  send/apply/converged/conflict.
+  No wall-clock dependency.
+end note
+
+note bottom of parallel
+  As built: deduplicated, sorted
+  nodes; sorted round-robin
+  placement. No runtime or
+  execution API exists.
+end note
+
+note bottom of rpc
+  As built: sync.distribute,
+  sync.fetchArtifact, sync.status.
+  Transport hosting deferred.
+end note
+
+@enduml
