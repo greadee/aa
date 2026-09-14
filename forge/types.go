@@ -39,6 +39,7 @@ type Issue struct {
 	Number    int      `json:"number,omitempty"`
 	Title     string   `json:"title"`
 	Body      string   `json:"body,omitempty"`
+	Type      string   `json:"type,omitempty"`
 	State     string   `json:"state,omitempty"`
 	Labels    []string `json:"labels,omitempty"`
 	Milestone string   `json:"milestone,omitempty"`
