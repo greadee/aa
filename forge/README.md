@@ -4,7 +4,7 @@ Git and GitHub orchestration: projects, issues, pull requests, checkpoints, audi
 
 - **Owns:** forge abstraction (GitHub, local git, fake); repo/project creation; milestones and phase tracking; issues; branches; child and phase PRs; checkpoints; audits; releases/tags; template rendering; forge↔memory sync.
 - **Must not:** merge without a human gate or store secrets.
-- **Status:** in progress (`ph5-forge`).
+- **Status:** delivered in `ph5-forge`.
 - **Directive:** [aa-forge.md](aa-forge.md)
 - **Architecture:** [../docs/architecture/README.md](../docs/architecture/README.md)
 
