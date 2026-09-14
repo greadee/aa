@@ -60,6 +60,26 @@ func New(local aasync.NodeID, tr transport.Transport, clock aasync.Clock) *Distr
 	}
 }
 
+// Register records a work package so callers can distribute it by ID.
+func (d *Distributor) Register(wp aasync.WorkPackage) error {
+	if wp.ID == "" {
+		return fmt.Errorf("%w: work package id is required", aasync.ErrInvalid)
+	}
+	wp.Hash = aasync.Hash(wp.Payload)
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.packages[wp.ID] = wp
+	return nil
+}
+
+// Package returns a registered work package by ID.
+func (d *Distributor) Package(id string) (aasync.WorkPackage, bool) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	wp, ok := d.packages[id]
+	return wp, ok
+}
+
 // Distribute sends a work package to a remote node. It is idempotent per
 // (work package, node).
 func (d *Distributor) Distribute(ctx context.Context, wp aasync.WorkPackage, remote aasync.NodeID) (aasync.Receipt, error) {
