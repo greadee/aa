@@ -1,0 +1,52 @@
+@startuml
+' Phase 5 — Forge: as-built. Copy of plan.uml edited to what was actually built.
+
+title Phase 5 — Forge (as built)
+
+skinparam componentStyle rectangle
+
+package "aa-forge (Go; imports contracts)" as forge {
+  component "forge (types + capability interfaces + audit log)" as core
+  component "fake (deterministic, in-memory, offline)" as fake
+  component "template (renders docs/github-os/templates)" as template
+  component "memsync (forge -> contracts, Sink)" as memsync
+  component "lifecycle (phase orchestrator + human gate)" as lifecycle
+  component "rpc (createIssue/openPullRequest/checkpoint/release)" as rpc
+}
+
+package "aa-contracts" as contracts
+package "docs/github-os/templates" as templates
+package "aa-memory (Sink writer deferred)" as memory
+
+contracts --> memsync
+templates --> template
+core --> fake
+fake --> lifecycle
+template --> lifecycle
+memsync --> lifecycle
+fake --> rpc
+lifecycle --> rpc
+memory ..> memsync : Sink (deferred)
+
+note right of fake
+  As built: deterministic IDs and
+  timestamps, an ordered audit log,
+  and injectable failures for retry
+  and idempotency tests.
+end note
+
+note bottom of lifecycle
+  As built: ph{N}-{scope} enforced,
+  Draft phase PR from start, and
+  CompletePhase fails closed without
+  an approving actor.
+end note
+
+note bottom of rpc
+  As built: forge.createIssue,
+  forge.openPullRequest, forge.checkpoint,
+  forge.release. Merge is not exposed.
+  Transport hosting deferred.
+end note
+
+@enduml

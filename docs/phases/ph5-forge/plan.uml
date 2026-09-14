@@ -1,0 +1,51 @@
+@startuml
+' Phase 5 — Forge: planned infrastructure. Authored at phase start.
+' Copy to summary.uml at phase end and edit to the as-built state.
+
+title Phase 5 — Forge (planned)
+
+skinparam componentStyle rectangle
+
+package "aa-forge (Go; imports contracts, toolbox)" as forge {
+  component "forge (types + capability interfaces + audit log)" as core
+  component "fake (deterministic, in-memory, offline)" as fake
+  component "template (process templates)" as template
+  component "memsync (forge -> contracts)" as memsync
+  component "lifecycle (phase orchestrator + human gate)" as lifecycle
+  component "rpc (transport-agnostic handlers)" as rpc
+}
+
+package "aa-contracts" as contracts
+package "docs/github-os/templates" as templates
+package "aa-memory (Sink, via RPC later)" as memory
+
+contracts --> memsync
+templates --> template
+core --> fake
+fake --> lifecycle
+template --> lifecycle
+memsync --> lifecycle
+fake --> rpc
+lifecycle --> rpc
+memory ..> memsync : Sink (deferred writer)
+
+note right of fake
+  ADR-P5-007: the fake is the
+  reference implementation and
+  the e2e substrate. No network.
+end note
+
+note bottom of lifecycle
+  ADR-P5-003: merge is a distinct,
+  human-gated operation. The phase
+  branch name equals the folder name
+  and the phase PR starts Draft.
+end note
+
+note bottom of memsync
+  ADR-P5-006: deterministic mapping
+  to contracts; the forge never writes
+  canonical memory directly.
+end note
+
+@enduml

@@ -1,21 +1,33 @@
-# Audit Finding
+# {{ .Title }}
 
 ## Finding
 
+{{ .Finding }}
+
 ## Classification
 
-Bug / Technical Debt / Refactor / Security / Test / Documentation
+{{ .Classification }}
 
 ## Severity
 
-P0 / P1 / P2 / P3
+{{ .Severity }}
 
 ## Evidence
 
+{{ .Evidence }}
+
 ## Impact
+
+{{ .Impact }}
 
 ## Recommendation
 
+{{ .Recommendation }}
+
 ## Scope
 
+{{ .Scope }}
+
 ## Suggested Phase
+
+{{ .SuggestedPhase }}

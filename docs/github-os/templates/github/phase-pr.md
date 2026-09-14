@@ -1,35 +1,41 @@
 ## Phase Objective
 
+{{ .Objective }}
+
 ## Tracking
 
-Phase issue: #...
-Milestone: Phase N — Name
+Phase issue: #{{ .TrackingIssue }}
+Milestone: {{ .Milestone }}
 
 ## Progress
 
 ### Features
 
-- [ ] ...
-
+{{ range .Features }}- [ ] {{ . }}
+{{ end }}
 ### Infrastructure
 
-- [ ] ...
-
+{{ range .Infrastructure }}- [ ] {{ . }}
+{{ end }}
 ### Testing
 
-- [ ] ...
-
+{{ range .Testing }}- [ ] {{ . }}
+{{ end }}
 ### Documentation
 
-- [ ] ...
-
+{{ range .Documentation }}- [ ] {{ . }}
+{{ end }}
 ## Child Pull Requests
 
-- [ ] #...
-
+{{ range .ChildPRs }}- [ ] #{{ . }}
+{{ end }}
 ## Current Status
 
+{{ .Status }}
+
 ## Known Issues / Risks
+
+{{ .Risks }}
 
 ## Validation
 

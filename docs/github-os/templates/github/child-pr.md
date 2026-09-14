@@ -1,13 +1,15 @@
 ## Summary
 
+{{ .Summary }}
+
 ## Related Issue
 
-Closes #123
+Closes #{{ .Issue }}
 
 ## Changes
 
-- ...
-
+{{ range .Changes }}- {{ . }}
+{{ end }}
 ## Validation
 
 - [ ] unit tests
@@ -17,8 +19,10 @@ Closes #123
 
 ## Notes
 
+{{ .Notes }}
+
 ## Phase
 
-Part of #<phase-tracking-issue>
+Part of #{{ .PhaseIssue }}
 
-Milestone: Phase N — Name
+Milestone: {{ .Milestone }}
