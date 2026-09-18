@@ -32,6 +32,7 @@ type NodeKind string
 // Node kinds.
 const (
 	NodeSession     NodeKind = "session"
+	NodeProject     NodeKind = "project"
 	NodeWorkPackage NodeKind = "work_package"
 	NodeAssignment  NodeKind = "assignment"
 	NodeAttempt     NodeKind = "attempt"
