@@ -1,0 +1,104 @@
+@startuml
+' Phase 8 — Visualizer: as-built infrastructure. Copied from plan.uml and edited
+' to the finished state at phase end.
+
+title Phase 8 — Visualizer (as built)
+
+skinparam componentStyle rectangle
+
+package "aa-visualizer (Go; imports contracts + memory)" as visualizer {
+  component "visualizer (types + errors + clock)" as core
+  component "source (EventSource seam + deterministic fake)" as source
+  component "compat (observation metadata profile)" as compat
+  component "session (event fold + identity mapping)" as session
+  component "layout (pure deterministic layout + budget)" as layout
+  component "replay (frames + time-travel cursor)" as replay
+  component "bridge (live subscription -> same path)" as bridge
+  component "browse (memory session browsing)" as browse
+  component "retention (trail trimming)" as retention
+}
+
+package "aa-contracts (event taxonomy)" as contracts
+package "aa-memory (query seam; used as-is)" as memory
+package "aa-obsv (scaffolded; live transport deferred)" as obsv
+package "aa-console (control-plane API, later)" as console
+package "Wails + React/Three surface (deferred)" as ui
+
+contracts --> core
+core --> source
+core --> compat
+core --> session
+compat --> session
+core --> layout
+session --> replay
+layout --> replay
+source --> bridge
+replay --> bridge
+session --> browse
+replay --> browse
+memory --> browse
+replay --> retention
+obsv ..> source : real Replay/Subscribe (deferred)
+console ..> browse : control-plane API (later)
+ui ..> replay : renders frames (deferred)
+
+note right of source
+  ADR-P8-001/002: consumes the shared
+  contracts.Event taxonomy through a
+  seam; events fold by Sequence, never
+  the wall clock. A deterministic fake
+  stands in for the deferred transport.
+end note
+
+note bottom of compat
+  ADR-P8-004: secondary_paths and
+  access_sequence are normalized by an
+  explicit, versioned profile; unknown
+  metadata is ignored and invalid
+  supported values are rejected.
+end note
+
+note bottom of session
+  ADR-P8-003: node identity derives
+  from aggregate kind + id and is
+  re-derived after replay, never
+  persisted as truth.
+end note
+
+note bottom of layout
+  ADR-P8-005/010: layout is a pure
+  function of the graph with an
+  explicit large-graph budget
+  (250k nodes / 1M edges; 50k tested,
+  100k benchmarked).
+end note
+
+note bottom of replay
+  ADR-P8-007: one frame per event,
+  built by the shared projection and
+  layout path; the cursor snapshots,
+  steps, and seeks into a fixed list.
+end note
+
+note bottom of bridge
+  ADR-P8-006: a subscription is
+  re-derived through replay.Build, so
+  live frames equal replay frames.
+end note
+
+note bottom of browse
+  ADR-P8-008: sessions are listed and
+  loaded through the memory query seam
+  (*query.Query). No explicit session
+  id exists, so the key is payload
+  sessionId, then ProjectID, then
+  DefaultSessionID.
+end note
+
+note bottom of retention
+  ADR-P8-009: retention trims the
+  projected trail (replay frames),
+  never the canonical source.
+end note
+
+@enduml
