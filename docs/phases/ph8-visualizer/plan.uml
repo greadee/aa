@@ -1,0 +1,81 @@
+@startuml
+' Phase 8 — Visualizer: planned infrastructure. Authored at phase start.
+' Copy to summary.uml at phase end and edit to the as-built state.
+
+title Phase 8 — Visualizer (planned)
+
+skinparam componentStyle rectangle
+
+package "aa-visualizer (Go; imports contracts + memory)" as visualizer {
+  component "visualizer (types + errors + clock)" as core
+  component "source (EventSource seam + deterministic fake)" as source
+  component "compat (observation metadata profile)" as compat
+  component "session (event fold + identity mapping)" as session
+  component "layout (pure deterministic layout + budget)" as layout
+  component "replay (frames + time-travel cursor)" as replay
+  component "bridge (live subscription -> same path)" as bridge
+  component "browse (memory session browsing)" as browse
+  component "retention (trail trimming)" as retention
+}
+
+package "aa-contracts (event taxonomy)" as contracts
+package "aa-memory (query seam)" as memory
+package "aa-obsv (scaffolded; live transport deferred)" as obsv
+package "aa-console (control-plane API, later)" as console
+
+contracts --> source
+compat --> source
+core --> session
+source --> session
+session --> layout
+session --> replay
+session --> bridge
+compat --> session
+layout --> replay
+replay --> bridge
+memory --> browse
+session --> browse
+replay --> retention
+session --> retention
+obsv ..> source : real Replay/Subscribe (deferred)
+console ..> browse : control-plane API (later)
+
+note right of source
+  ADR-P8-001/002: consume the shared
+  contracts.Event taxonomy through a
+  seam; fold by Sequence, never the
+  wall clock.
+end note
+
+note bottom of compat
+  ADR-P8-004: secondary_paths and
+  access_sequence are normalized by
+  an explicit, tested profile; unknown
+  metadata is ignored.
+end note
+
+note bottom of session
+  ADR-P8-003: node identity derives
+  from aggregate kind + id and is
+  re-derived after replay, never
+  persisted as truth.
+end note
+
+note bottom of layout
+  ADR-P8-005/010: layout is a pure
+  function of the graph with an
+  explicit large-graph budget.
+end note
+
+note bottom of bridge
+  ADR-P8-006: live and replay share
+  one projection and one render path.
+end note
+
+note bottom of browse
+  ADR-P8-008/009: sessions come from
+  the memory query seam; retention
+  trims the projected trail only.
+end note
+
+@enduml
