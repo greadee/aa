@@ -1,0 +1,69 @@
+@startuml
+' Phase 7 — Toolbox: planned infrastructure. Authored at phase start.
+' Copy to summary.uml at phase end and edit to the as-built state.
+
+title Phase 7 — Toolbox (planned)
+
+skinparam componentStyle rectangle
+
+package "aa-toolbox (Go; imports contracts)" as toolbox {
+  component "toolbox (types + errors + clock + idempotency)" as core
+  component "registry (manifests + provider seam)" as registry
+  component "policy (capability intersection + audit log)" as policy
+  component "host (invocation + idempotent replay)" as host
+  component "host.fake (deterministic provider)" as fake
+  component "workflow (compiler: validate + topo plan)" as compile
+  component "workflow (runtime: resume + retries + gates)" as runtime
+  component "rpc (toolbox.invoke / compileWorkflow / registry)" as rpc
+}
+
+package "aa-contracts (tool_manifest + workflow + rpc-v1)" as contracts
+package "aa-kernel (hosts the adapter, later)" as kernel
+package "live MCP transport / OS sandbox (deferred)" as live
+
+contracts --> registry
+core --> registry
+registry --> policy
+policy --> host
+registry --> host
+fake --> host
+core --> compile
+compile --> runtime
+host --> rpc
+compile --> rpc
+runtime --> rpc
+live ..> host : mcp provider (deferred)
+live ..> policy : os sandbox enforcer (deferred)
+kernel ..> rpc : hosts over local socket
+
+note right of registry
+  ADR-P7-001/002: manifests are
+  validated at registration; kinds
+  sit behind one Provider seam so a
+  new tool/MCP needs no core change.
+end note
+
+note bottom of policy
+  ADR-P7-003/004/005: grant is the
+  intersection of declared
+  capabilities and the execution
+  contract minus denials; denials are
+  explicit and audited; sandbox and
+  network fail closed when required.
+end note
+
+note bottom of compile
+  ADR-P7-006: the compiler rejects
+  cycles, duplicates, and dangling
+  dependencies and yields a
+  deterministic topological plan.
+end note
+
+note bottom of runtime
+  ADR-P7-007/008: resume from a
+  serialized state; honor
+  fail/retry/skip/compensate with
+  bounded retries.
+end note
+
+@enduml
