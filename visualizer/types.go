@@ -10,6 +10,15 @@ import (
 // new observation protocol; it is the contracts taxonomy behind a seam.
 type Event = v1.Event
 
+type (
+	// EventType enumerates the canonical event types.
+	EventType = v1.EventType
+	// EventAggregate identifies the entity an event applies to.
+	EventAggregate = v1.EventAggregate
+	// Actor identifies who produced or performed something.
+	Actor = v1.Actor
+)
+
 // SessionID identifies an observed session: work correlated under one id.
 type SessionID string
 
