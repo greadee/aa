@@ -19,7 +19,8 @@
 - Starting ref: `main @ a934498` (after phase 6 merge and record).
 - Tracking issue: none (phase executed via the phase PR).
 - Milestone: none (matches phases 0–6 on this repository).
-- Phase PR: [#8](https://github.com/greadee/aa1/pull/8)
+- Phase PR: [#8](https://github.com/greadee/aa1/pull/8) — merged
+- Merge commit: `74f483a`
 - Branch: `ph7-toolbox` (retained after merge on `aa1`)
 
 ## Validation
