@@ -16,10 +16,12 @@ func Key(operation string, parts ...string) string {
 }
 
 // InvocationKey derives the idempotency key for invoking a tool under an
-// execution contract. An empty explicit key still yields a stable derived key.
+// execution contract. An explicit key is namespaced by tool so two tools may
+// reuse the same caller-supplied value without colliding.
 func InvocationKey(toolID ToolID, contractID, explicit string) string {
-	if explicit != "" {
-		return explicit
+	token := explicit
+	if token == "" {
+		token = contractID
 	}
-	return Key("invoke", string(toolID), contractID)
+	return Key("invoke", string(toolID), token)
 }

@@ -12,9 +12,13 @@ func TestKeyIsStableAndTrimmed(t *testing.T) {
 	}
 }
 
-func TestInvocationKeyPrefersExplicit(t *testing.T) {
-	if got := InvocationKey("tool_1", "ec_1", "explicit"); got != "explicit" {
-		t.Fatalf("explicit key = %q, want %q", got, "explicit")
+func TestInvocationKeyNamespacesExplicitByTool(t *testing.T) {
+	got := InvocationKey("tool_1", "ec_1", "explicit")
+	if got != "invoke:tool_1:explicit" {
+		t.Fatalf("explicit key = %q, want %q", got, "invoke:tool_1:explicit")
+	}
+	if other := InvocationKey("tool_2", "ec_1", "explicit"); other == got {
+		t.Fatalf("explicit keys should differ across tools: %q", other)
 	}
 }
 
