@@ -19,7 +19,8 @@
 - Starting ref: `main @ 6fd83a3` (after phase 7 merge and record).
 - Tracking issue: none (phase executed via the phase PR).
 - Milestone: none (matches phases 0–7 on this repository).
-- Phase PR: [#9](https://github.com/greadee/aa1/pull/9)
+- Phase PR: [#9](https://github.com/greadee/aa1/pull/9) — merged
+- Merge commit: `e26b9fb`
 - Branch: `ph8-visualizer` (retained after merge on `aa1`)
 
 ## Validation
