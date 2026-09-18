@@ -10,6 +10,8 @@ import (
 // Cross-module data structures live only in contracts; toolbox re-exports the
 // ones it uses so callers can stay within one package boundary.
 type (
+	// Envelope is the shared header for contract objects.
+	Envelope = v1.Envelope
 	// Manifest declares a tool, plugin, or MCP server.
 	Manifest = v1.ToolManifest
 	// SandboxSpec declares a tool's isolation requirements.
