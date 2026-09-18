@@ -87,3 +87,8 @@ func (h *Host) Audit() []policy.AuditEntry {
 	}
 	return h.policy.Audit()
 }
+
+// ListTools returns registered manifests filtered by kind (empty means all).
+func (h *Host) ListTools(kind string) []toolbox.Manifest {
+	return h.registry.List(kind)
+}
