@@ -31,6 +31,22 @@ type (
 // ToolID identifies a registered tool, plugin, or MCP server.
 type ToolID string
 
+// Capability vocabulary, mirrored from the execution-contract contract.
+const (
+	CapReadProject         = v1.CapReadProject
+	CapWriteWorkspace      = v1.CapWriteWorkspace
+	CapExecuteCommand      = v1.CapExecuteCommand
+	CapRunTests            = v1.CapRunTests
+	CapNetworkAccess       = v1.CapNetworkAccess
+	CapInstallDependencies = v1.CapInstallDependencies
+	CapCallModel           = v1.CapCallModel
+	CapReadSecrets         = v1.CapReadSecrets
+	CapCreateArtifact      = v1.CapCreateArtifact
+	CapOpenPullRequest     = v1.CapOpenPullRequest
+	CapMerge               = v1.CapMerge
+	CapDeploy              = v1.CapDeploy
+)
+
 // Tool kinds mirror the tool_manifest contract.
 const (
 	KindTool    = "tool"

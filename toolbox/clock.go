@@ -26,3 +26,9 @@ func (c *FixedClock) Now() time.Time {
 	c.calls++
 	return t
 }
+
+// SystemClock is a Clock backed by wall time in UTC.
+type SystemClock struct{}
+
+// Now implements Clock.
+func (SystemClock) Now() time.Time { return time.Now().UTC() }
