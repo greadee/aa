@@ -1,0 +1,77 @@
+@startuml
+' Phase 7 — Toolbox: as-built infrastructure. Copied from plan.uml and edited
+' to the finished state at phase end.
+
+title Phase 7 — Toolbox (as built)
+
+skinparam componentStyle rectangle
+
+package "aa-toolbox (Go; imports contracts)" as toolbox {
+  component "toolbox (types + errors + clock + idempotency)" as core
+  component "registry (validated manifests + Provider seam)" as registry
+  component "policy (capability intersection + sandbox + audit log)" as policy
+  component "host (invocation + idempotent replay)" as host
+  component "host.fake (deterministic provider)" as fake
+  component "workflow (compiler: validate + deterministic topo plan)" as compile
+  component "workflow (runtime: resume + retries + gates)" as runtime
+  component "rpc (toolbox.invoke / compileWorkflow / registry)" as rpc
+}
+
+package "aa-contracts (tool_manifest + workflow + rpc-v1)" as contracts
+package "aa-kernel (hosts the adapter, later)" as kernel
+package "live MCP transport / OS sandbox enforcer (deferred)" as live
+
+contracts --> registry
+core --> registry
+registry --> policy
+policy --> host
+registry --> host
+fake --> host
+core --> compile
+compile --> runtime
+host --> rpc
+compile --> rpc
+runtime --> rpc
+live ..> host : mcp provider (deferred)
+live ..> policy : os sandbox enforcer (deferred)
+kernel ..> rpc : hosts over local socket
+
+note right of registry
+  ADR-P7-001/002: manifests are
+  validated at registration; all
+  kinds sit behind one Provider seam,
+  so a new tool/MCP needed no core
+  change in this phase.
+end note
+
+note bottom of policy
+  ADR-P7-003/004/005: grant is the
+  declared/contract intersection
+  minus denials; every decision is
+  audited; sandbox and network fail
+  closed when required.
+end note
+
+note bottom of compile
+  ADR-P7-006: cycles, self, duplicate,
+  and dangling dependencies are
+  rejected; order is deterministic and
+  input-order independent.
+end note
+
+note bottom of runtime
+  ADR-P7-007/008: resume from a deep-
+  cloned serialized state; honor
+  fail/retry/skip/compensate with
+  bounded retries; nil gates await
+  approval rather than proceed.
+end note
+
+note bottom of host
+  ADR-P7-009: invocation is idempotent
+  by a tool-namespaced key; replay
+  returns the original result and never
+  re-runs the provider.
+end note
+
+@enduml
