@@ -208,3 +208,15 @@ func TestSummarizeAndGroupBy(t *testing.T) {
 		t.Fatalf("err = %v, want ErrInvalid", err)
 	}
 }
+
+func TestSummarizeOrderIndependent(t *testing.T) {
+	results := []Result{
+		{Attribution: joblearn.Attribution{WorkPackageID: "wp1", AttemptID: "a1", Outcome: joblearn.OutcomeSucceeded}, Score: joblearn.Score{Overall: 0.9, Cost: 0.1, Duration: 0.2}},
+		{Attribution: joblearn.Attribution{WorkPackageID: "wp2", AttemptID: "a2", Outcome: joblearn.OutcomeSucceeded}, Score: joblearn.Score{Overall: 0.3, Cost: 0.4, Duration: 0.6}},
+	}
+	forward := Summarize(results)
+	reversed := Summarize([]Result{results[1], results[0]})
+	if !reflect.DeepEqual(forward, reversed) {
+		t.Fatalf("summary depends on input order: %+v vs %+v", forward, reversed)
+	}
+}

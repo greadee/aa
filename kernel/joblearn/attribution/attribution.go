@@ -164,13 +164,15 @@ type Summary struct {
 	MeanDuration float64
 }
 
-// Summarize aggregates results deterministically.
+// Summarize aggregates results deterministically. Results are accumulated in a
+// canonical, content-derived order so floating-point sums do not depend on the
+// order results were supplied in.
 func Summarize(results []Result) Summary {
 	var s Summary
 	if len(results) == 0 {
 		return s
 	}
-	for _, r := range results {
+	for _, r := range canonical(results) {
 		s.Outcomes++
 		switch r.Attribution.Outcome {
 		case joblearn.OutcomeSucceeded:
@@ -187,6 +189,34 @@ func Summarize(results []Result) Summary {
 	s.MeanCost /= n
 	s.MeanDuration /= n
 	return s
+}
+
+// canonical returns a copy of results sorted by a total, content-derived key.
+// Two results with the same key are interchangeable, so the order is stable
+// regardless of the input order.
+func canonical(results []Result) []Result {
+	type keyed struct {
+		key string
+		r   Result
+	}
+	ordered := make([]keyed, len(results))
+	for i, r := range results {
+		ordered[i] = keyed{key: sortKey(r), r: r}
+	}
+	sort.Slice(ordered, func(i, j int) bool { return ordered[i].key < ordered[j].key })
+	out := make([]Result, len(results))
+	for i, k := range ordered {
+		out[i] = k.r
+	}
+	return out
+}
+
+func sortKey(r Result) string {
+	a := r.Attribution
+	s := r.Score
+	return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%d|%s|%s|%v|%v|%v|%v|%v|%v",
+		a.ProjectID, a.WorkPackageID, a.AttemptID, a.AssignmentID, a.Role, a.Trade, a.Worker,
+		a.Sequence, a.Outcome, s.Version, s.Success, s.Cost, s.Duration, s.Retries, s.Quality, s.Overall)
 }
 
 // Dimension is an attribution dimension to group by.
