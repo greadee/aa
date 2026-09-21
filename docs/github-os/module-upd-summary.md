@@ -34,10 +34,11 @@ No. This is a governance update on the phase 0 branch that owns the GitHub OS; i
 
 | Gate | Result | Evidence |
 |---|---|---|
-| Links | Pass | relative-link scan over 99 Markdown files resolves every target |
+| Links | Pass | relative-link scan over 100 Markdown files resolves every target |
 | Index | Pass | the new modules appear in `README.md`, `AA.md`, `documentation-system.md`, and `MANIFEST.json` |
 | JSON | Pass | `MANIFEST.json` parses |
-| CI | Pending | docs link check runs on the pull request |
+| Docs link check | Pass | `Docs Link Check` (`markdown links`) green on the pull request |
+| CI | Pass | CI jobs green on the pull request |
 
 ## Decisions affirmed
 
