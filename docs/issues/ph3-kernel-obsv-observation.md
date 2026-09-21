@@ -25,18 +25,20 @@ The umbrella `ISS-TRACE-LOOP` records that the observation → trace → learnin
 - An in-process local transport exposing `hello` / `append` / `replay` / `subscribe` with attach-or-own semantics.
 - Deterministic work reports and a Codex `exec` JSONL translator.
 - A facade: `Ensure`/`Runtime`, `Send`, `Replay`, `Subscribe`.
+- The durable allowlist includes the visualizer observation-metadata profile keys (`secondary_paths`, `access_sequence`) so `visualizer/compat` can normalize them over the transport (`ISS-OBSV-2`).
 
 ## Acceptance Criteria
 
 - [x] `obsv/protocol`, `obsv/emit`, `obsv/journal`, `obsv/transport`, `obsv/report`, and `obsv/codex` are implemented and tested.
 - [x] `obsv.Ensure` is idempotent per session; `Send`/`Replay`/`Subscribe` work end to end.
 - [x] `obsv` still imports no other aa module; the architecture boundary is unchanged.
+- [x] The visualizer profile keys `secondary_paths`/`access_sequence` survive `obsv/protocol` sanitization.
 - [x] `go build`, `go vet`, `go test`, `gofmt`, and the boundary check pass.
 
 ## Affected branches
 
-Depends on the trace contract (`ISS-TRACE-1`, `ph1-contracts`) and the trace store (`ISS-TRACE-2`, `ph2-memory`) only at the substrate level: `obsv` produces the evidence those two store. This update does not require them to be merged, because the protocol is owned by `obsv`. It unblocks live capture on the kernel host and the learning sub-issue (`ISS-LEARN-1`).
+Depends on the trace contract (`ISS-TRACE-1`, `ph1-contracts`) and the trace store (`ISS-TRACE-2`, `ph2-memory`) only at the substrate level: `obsv` produces the evidence those two store. This update does not require them to be merged, because the protocol is owned by `obsv`. It unblocks live capture on the kernel host and the learning sub-issue (`ISS-LEARN-1`), and the visualizer's transport adoption (`ISS-OBSV-2`, `ph8-visualizer`) through the allowlisted profile keys.
 
 ## Notes
 
-Kernel orchestrator wiring (an `obsv`-backed `Sink`) and the live kernel host socket remain follow-up work under `ISS-OBSV-1`; this document records the module itself.
+Kernel orchestrator wiring (an `obsv`-backed `Sink`) and the live kernel host socket remain follow-up work under `ISS-OBSV-1`; this document records the module itself. The visualizer profile keys were added to the durable allowlist after the module summary, at the request of `ISS-OBSV-2`.

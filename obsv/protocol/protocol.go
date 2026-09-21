@@ -124,30 +124,37 @@ func (e Event) Validate() error {
 
 // allowlist is the durable set of metadata keys observation may carry. Keys not
 // listed here are dropped by Sanitize.
+//
+// secondary_paths and access_sequence are the visualizer observation-metadata
+// profile keys (visualizer/compat). They are observation metadata, not content,
+// and must survive sanitization so the profile can normalize them over the
+// shared obsv transport (ISS-OBSV-2).
 var allowlist = map[string]bool{
-	"tool":       true,
-	"command":    true,
-	"operation":  true,
-	"target":     true,
-	"direction":  true,
-	"path":       true,
-	"language":   true,
-	"branch":     true,
-	"commit":     true,
-	"repo":       true,
-	"status":     true,
-	"outcome":    true,
-	"testName":   true,
-	"model":      true,
-	"provider":   true,
-	"kind":       true,
-	"count":      true,
-	"bytes":      true,
-	"line":       true,
-	"column":     true,
-	"exitCode":   true,
-	"durationMs": true,
-	"url":        true,
+	"tool":            true,
+	"command":         true,
+	"operation":       true,
+	"target":          true,
+	"direction":       true,
+	"path":            true,
+	"language":        true,
+	"branch":          true,
+	"commit":          true,
+	"repo":            true,
+	"status":          true,
+	"outcome":         true,
+	"testName":        true,
+	"model":           true,
+	"provider":        true,
+	"kind":            true,
+	"count":           true,
+	"bytes":           true,
+	"line":            true,
+	"column":          true,
+	"exitCode":        true,
+	"durationMs":      true,
+	"url":             true,
+	"secondary_paths": true,
+	"access_sequence": true,
 }
 
 // denied keys must never survive sanitization even if a caller passes them.

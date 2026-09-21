@@ -73,6 +73,36 @@ func TestSanitizeKeepsAllowlistAndDropsDenied(t *testing.T) {
 	}
 }
 
+func TestSanitizeKeepsVisualizerProfileKeys(t *testing.T) {
+	attrs := map[string]any{
+		"secondary_paths": "pkg/a.go, pkg/b.go",
+		"access_sequence": "read, edit, test",
+		"tool":            "gopls",
+	}
+	got := Sanitize(attrs)
+	want := map[string]string{
+		"secondary_paths": "pkg/a.go, pkg/b.go",
+		"access_sequence": "read, edit, test",
+		"tool":            "gopls",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Sanitize() = %#v, want %#v", got, want)
+	}
+}
+
+func TestMetadataKeysIncludeVisualizerProfileKeys(t *testing.T) {
+	keys := MetadataKeys()
+	have := map[string]bool{}
+	for _, k := range keys {
+		have[k] = true
+	}
+	for _, want := range []string{"secondary_paths", "access_sequence"} {
+		if !have[want] {
+			t.Fatalf("MetadataKeys() missing %q: %v", want, keys)
+		}
+	}
+}
+
 func TestSanitizeDropsNonScalars(t *testing.T) {
 	got := Sanitize(map[string]any{
 		"tool":    []string{"a", "b"},

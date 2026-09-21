@@ -29,6 +29,10 @@
 - `obsv/codex` — a tolerant Codex `exec` JSONL translator with deterministic sequence assignment.
 - The `obsv` facade: `Ensure`/`Runtime`, `Send`, `Replay`, `Subscribe`, `Report`, and a `Manager` that owns one journal per session.
 
+## Post-review extension — visualizer profile metadata keys
+
+After this summary was authored, `ISS-OBSV-2` (visualizer transport adoption, `ph8-visualizer`) identified that the `visualizer/compat` profile keys `secondary_paths` and `access_sequence` were not in the durable allowlist and so could not survive sanitization over the shared transport. They are observation metadata, not content, so they were added to `obsv/protocol`'s allowlist (`add obsv visualizer profile metadata keys`) so the profile can normalize them. No behavior change beyond preserving these two allowlisted keys; the deny list is unchanged.
+
 ## What this changes about the module and the app
 
 - `aa-obsv` is no longer a scaffold: it now produces the observation evidence that the trace contract and trace store consume. It remains product-neutral and imports no other aa module.
@@ -43,7 +47,7 @@ Yes. This is the observation sub-problem (`ISS-OBSV-1`) of the umbrella change `
 
 | Gate | Result | Evidence |
 |---|---|---|
-| Go build / vet / test | Pass | 7 packages, 46 test functions under `obsv/` |
+| Go build / vet / test | Pass | 7 packages, 48 test functions under `obsv/` |
 | Formatting | Pass | `gofmt -l obsv` clean |
 | Durability | Pass | `TestFileJournalSurvivesReopen`, `TestDurableJournalSurvivesReopen` |
 | Determinism | Pass | report input-order independence; translator repeat-stability |
@@ -74,5 +78,5 @@ Yes. This is the observation sub-problem (`ISS-OBSV-1`) of the umbrella change `
 ## Follow-Up
 
 - Kernel host wiring: an `obsv`-backed `orchestrator.Sink` so the control plane records live observation (under `ISS-OBSV-1`).
-- A wire transport (local socket) and the visualizer's adoption with the AAV compatibility profile.
+- A wire transport (local socket) for the kernel host; the visualizer's adoption and the AAV protocol de-duplication are tracked by `ISS-OBSV-2` (`ph8-visualizer`).
 - Trace capture that promotes observation into the `contracts` `trace` object for the `ph2-memory` store.
