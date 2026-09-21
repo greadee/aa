@@ -23,6 +23,7 @@ Recommended:
 docs/
 ├── index/
 ├── phases/
+├── issues/
 ├── features/
 ├── architecture/
 └── reference/
@@ -52,6 +53,11 @@ docs/
 │       └── issues/
 │           ├── issue-123-name.md
 │           └── ...
+│
+├── issues/
+│   ├── README.md
+│   ├── <problem-slug>.md          umbrella problem document
+│   └── <branch>-<slug>.md         sub-problem document
 │
 ├── features/
 │   └── feature-name/
@@ -259,6 +265,21 @@ PRs:
 GitHub tracks execution state.
 
 The issue Markdown file preserves durable technical knowledge.
+
+## Umbrella And Sub-problem Documents
+
+A problem that spans more than one module, phase, or branch is recorded as an **umbrella document** under `docs/issues/` and decomposed into sub-problems. Each sub-problem has its own document under `docs/issues/`, authored on the branch that owns it, and links that branch's module update plan and summary. See [issues-and-subproblems.md](issues-and-subproblems.md).
+
+## Module Update Documentation
+
+Work that belongs to a module whose phase already merged is delivered as a module update on the retained phase branch, with the plan and summary beside the module:
+
+```text
+<module>/module-upd-plan.md
+<module>/module-upd-summary.md
+```
+
+For a documentation-only update, the plan and summary sit with the documentation they change. Together they are the durable record of the update, exactly as `plan.md` and `summary.md` are for a phase. See [module-updates.md](module-updates.md).
 
 ## Feature Folders
 

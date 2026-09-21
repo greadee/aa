@@ -12,6 +12,8 @@ Read only the module required for the current task. The task router lives in [..
 | [phase-documentation.md](phase-documentation.md) | Creating phase plans, UML, summaries; branch/folder naming |
 | [sprint-planning.md](sprint-planning.md) | Breaking a phase into slices and commits |
 | [issues-and-stories.md](issues-and-stories.md) | Creating or updating issues, stories, and bugs |
+| [issues-and-subproblems.md](issues-and-subproblems.md) | Decomposing a cross-branch problem into sub-problems and owning branches |
+| [module-updates.md](module-updates.md) | Reopening an owning branch to deliver a sub-problem after its phase merged |
 | [pull-requests.md](pull-requests.md) | Opening or updating PRs, including the Draft phase PR |
 | [code-review.md](code-review.md) | Reviewing code and producing findings |
 | [repository-audits.md](repository-audits.md) | Auditing the repository or a phase end |
@@ -26,6 +28,8 @@ Read only the module required for the current task. The task router lives in [..
 - `templates/phase/` — phase `plan.md`, `plan.uml`, `summary.md`, `summary.uml`, `adr.md`, and issue docs
 - `templates/github/` — tracking issue, PRs, issues, audit findings, progress updates
 - `templates/feature/` — feature README, implementation, testing, and pitfalls
+- `templates/issues/` — umbrella problem and sub-problem documents
+- `templates/module/` — module update `plan` and `summary`
 
 ## Core rules
 
@@ -41,3 +45,5 @@ Read only the module required for the current task. The task router lives in [..
 10. Use the least expensive model class that can reliably complete each slice.
 11. Findings that must survive the session become issues.
 12. GitHub should make project state understandable without private agent context.
+13. A problem that spans branches is decomposed into sub-problems, each owned by exactly one branch.
+14. Work that belongs to a merged phase is delivered as a module update on its retained branch, never as a new phase.

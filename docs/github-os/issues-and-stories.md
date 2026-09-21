@@ -178,3 +178,7 @@ If implementation reveals a useful new feature that is not in scope:
 - explain why it matters;
 - note dependencies;
 - suggest a future phase.
+
+## Decomposition
+
+A problem too large for one branch, or spanning several modules, is recorded as an umbrella and decomposed into sub-problems, each owned by exactly one branch. See [issues-and-subproblems.md](issues-and-subproblems.md) and [module-updates.md](module-updates.md).
