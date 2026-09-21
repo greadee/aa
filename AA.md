@@ -23,6 +23,12 @@ Read the phase plan and issue docs, the relevant ADR, [docs/github-os/git-workfl
 ### If you are creating or updating GitHub issues
 Read [docs/github-os/issues-and-stories.md](docs/github-os/issues-and-stories.md).
 
+### If you are decomposing a problem into sub-problems
+Read [docs/github-os/issues-and-subproblems.md](docs/github-os/issues-and-subproblems.md) and [docs/github-os/module-updates.md](docs/github-os/module-updates.md).
+
+### If you are delivering a module update on an existing phase branch
+Read [docs/github-os/module-updates.md](docs/github-os/module-updates.md), [docs/github-os/git-workflow.md](docs/github-os/git-workflow.md), and [docs/github-os/pull-requests.md](docs/github-os/pull-requests.md).
+
 ### If you are opening or updating pull requests
 Read [docs/github-os/pull-requests.md](docs/github-os/pull-requests.md).
 

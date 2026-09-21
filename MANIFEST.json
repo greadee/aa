@@ -31,6 +31,8 @@
     "docs/github-os/phase-documentation.md",
     "docs/github-os/sprint-planning.md",
     "docs/github-os/issues-and-stories.md",
+    "docs/github-os/issues-and-subproblems.md",
+    "docs/github-os/module-updates.md",
     "docs/github-os/pull-requests.md",
     "docs/github-os/code-review.md",
     "docs/github-os/repository-audits.md",
@@ -38,6 +40,8 @@
     "docs/github-os/adrs-and-pitfalls.md",
     "docs/github-os/documentation-system.md",
     "docs/github-os/git-workflow.md",
-    "docs/github-os/model-selection.md"
+    "docs/github-os/model-selection.md",
+    "docs/github-os/module-upd-plan.md",
+    "docs/github-os/module-upd-summary.md"
   ]
 }
