@@ -14,6 +14,7 @@ The deterministic control plane: planning, roles, orchestration, execution, gate
 - **intake** — validation and idempotent deduplication of untrusted results.
 - **telemetry** — bounded execution evidence and deterministic learning candidates.
 - **orchestrator** — the supervised cycle: ready → select → contract → context → lease → run → intake → gates → accept → telemetry, recorded through a `Sink`.
+- **joblearn** — deterministic job learning: attribution and versioned scoring, candidate generation with provenance, feature-based similarity and conflict, evidence-gated capabilities, baseline backtests, non-authoritative routing hints with a fallback, and candidate persistence as `CANDIDATE` memory records through a `Sink`.
 - **api** — an in-process control-plane service (disabled by default).
 
 ## Boundaries
@@ -22,7 +23,7 @@ The kernel imports only `contracts`, `obsv`, `memory`, and `toolbox`. It reaches
 
 ## Status
 
-Phase 3 (`ph3-kernel`). Execution is disabled by default. Real runtime adapters, the `obsv` observation service, and a memory-backed `Sink` are deferred; see `docs/phases/ph3-kernel/summary.md`.
+Phase 9 (`ph9-joblearn`) adds deterministic job learning whose candidates persist as `CANDIDATE` memory records through a memory-backed promotion `Sink`. Execution is disabled by default; real runtime adapters, the `obsv` observation service, and the orchestrator's memory-backed `Sink` remain deferred. See `docs/phases/ph9-joblearn/summary.md` and `docs/phases/ph3-kernel/summary.md`.
 
 ## Directive
 
