@@ -48,6 +48,9 @@ func decodeByKind(t *testing.T, data []byte) validatable {
 	case "telemetry":
 		x := &Telemetry{}
 		v = must(x, json.Unmarshal(data, x))
+	case "trace":
+		x := &Trace{}
+		v = must(x, json.Unmarshal(data, x))
 	case "project_record":
 		x := &ProjectRecord{}
 		v = must(x, json.Unmarshal(data, x))

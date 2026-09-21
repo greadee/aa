@@ -1,0 +1,12 @@
+{
+  "contractVersion": "1.1",
+  "kind": "trace",
+  "id": "trc_invalid_missing_attempt",
+  "steps": [
+    {
+      "sequence": 0,
+      "phase": "tool",
+      "outcome": "succeeded"
+    }
+  ]
+}
