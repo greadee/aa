@@ -1,124 +1,89 @@
 @startuml
-' Phase 10 — Console: planned infrastructure. Authored at phase start.
+' Phase 10 — Interface: planned infrastructure. Authored at phase start.
 ' Copy to summary.uml at phase end and edit to the as-built state.
 
-title Phase 10 — Console (planned)
+title Phase 10 — Interface (planned; split into parts)
 
 skinparam componentStyle rectangle
 
-package "aa-console (Go; imports contracts only)" as console {
-  component "console (types + errors + clock + Surface)" as core
-  component "client (control-plane HTTP/JSON + deterministic fake)" as client
-  component "command (typed commands + idempotency + audit)" as command
-  component "view (read models / browsing)" as view
-  component "approval (explicit gate decisions)" as approval
-  component "config (workflow + tool/plugin management)" as config
-  component "tui (deterministic text surface)" as tui
-  component "web (local stdlib HTTP surface)" as web
-  component "app (surface wiring + entry point)" as app
+package "Phase 10 core — control-plane server + host composition" as P10 {
+  component "aa host daemon (composition root + lifecycle)" as host
+  component "control-plane HTTP/JSON server (loopback, bearer, SSE)" as server
+  component "host RPC clients (sync / forge / sifter)" as clients
 }
 
-package "aa-contracts (v1 schemas + openapi control plane + rpc spec)" as contracts
-component "control-plane server (loopback HTTP/JSON; composition, deferred)" as server
-package "aa-kernel (orchestrator, learning reports)" as kernel
-package "aa-memory (issues, strategies, records)" as memory
-package "aa-visualizer (sessions, replay)" as visualizer
-package "aa-sync (compute/sync nodes)" as sync
-package "aa-toolbox (tools, workflows)" as toolbox
-component "desktop surface (Wails; deferred)" as desktop
+package "Phase 10a — terminal" as A {
+  component "control-plane client (typed on contracts + deterministic fake)" as cc
+  component "view models / commands / approvals / config" as models
+  component "text (TUI) surface" as tui
+  component "app + entry point" as app
+}
 
-contracts --> core
-core --> client
-core --> view
-client --> command
-core --> command
-command --> approval
-client --> approval
-core --> config
-command --> config
-core --> tui
-view --> tui
-command --> tui
-core --> web
-view --> web
-command --> web
+package "Phase 10b — surface" as B {
+  component "Surface interface" as surface
+  component "shared view-model layer" as vm
+  component "surface extension contract" as ext
+}
+
+package "future UI / TUI / GUI (PR #17 placeholder)" as D {
+  component "local web surface" as web
+  component "desktop (Wails/React/Three) surface" as desktop
+}
+
+package "aa-kernel (authority: orchestrator, api, obsv host)" as kernel
+package "aa-memory" as memory
+package "aa-obsv" as obsv
+package "aa-toolbox" as toolbox
+package "aa-sync (RPC)" as sync
+package "aa-forge (RPC)" as forge
+package "aa-sifter (RPC sidecar)" as sifter
+package "aa-contracts (schemas + openapi control plane + rpc spec)" as contracts
+
+host --> server
+host --> clients
+host --> kernel
+host --> memory
+host --> obsv
+host --> toolbox
+clients ..> sync : RPC (v1)
+clients ..> forge : RPC (v1)
+clients ..> sifter : RPC (v1)
+
+server --> cc : HTTP/JSON (loopback, bearer)
+cc --> models
+models --> tui
 tui --> app
-web --> app
-client --> app
-client ..> server : HTTP/JSON (loopback, bearer)
-kernel --> server
-memory --> server
-visualizer --> server
-sync --> server
-toolbox --> server
-desktop ..> core : implements Surface (deferred)
+models --> vm
+vm --> surface
+surface --> ext
+ext ..> web : future surface (PR #17)
+ext ..> desktop : future surface (PR #17)
 
-note right of core
-  ADR-P10-001: the console depends
+contracts --> cc
+contracts --> server
+
+note right of host
+  ADR-P10-004/007: the real control-plane
+  server is in scope and the host is built
+  from the kernel module, reaching sync,
+  forge, and sifter over RPC; no new
+  broad-import module and no boundary
+  exception.
+end note
+
+note bottom of cc
+  ADR-P10-001/003: the console depends
   only on contracts and the external
-  control-plane HTTP API. It imports
-  no module internals and calls no
-  inter-module RPC. D5/D22.
+  control-plane HTTP API; it imports no
+  module internals and calls no RPC.
 end note
 
-note bottom of client
-  ADR-P10-003: the control-plane
-  client is a seam; a deterministic
-  fake stands in for tests and offline
-  use, and an httptest server exercises
-  the OpenAPI paths. The real server
-  is a composition concern (deferred).
-end note
-
-note bottom of command
-  ADR-P10-005: every write carries an
-  idempotency key derived from the
-  command contract id and is audited.
-  Approved commands are replayed
-  safely.
-end note
-
-note bottom of view
-  ADR-P10-004: views are pure,
-  deterministic projections of client
-  responses, ordered by id/sequence,
-  never the wall clock, so renders are
-  golden-testable.
-end note
-
-note bottom of approval
-  ADR-P10-006: approvals and gates
-  state their consequences and require
-  an explicit decision; nothing is
-  auto-resolved (D18).
-end note
-
-note bottom of config
-  ADR-P10-008: workflows and tool
-  manifests are data edited through the
-  control plane, validated before write;
-  no console code changes (D16/D17).
-end note
-
-note bottom of tui
-  ADR-P10-007/009: the text surface
-  renders the shared view layer with
-  stable, golden-tested output.
-end note
-
-note bottom of web
-  ADR-P10-007/009: the local web
-  surface serves the same view models
-  as semantic HTML with a plain-text
-  alternative; accessibility first.
-end note
-
-note bottom of desktop
-  ADR-P10-002/010: surfaces are
-  pluggable behind one Surface
-  interface; the Wails desktop surface
-  is deferred and must be addable
-  without changing other modules.
+note bottom of surface
+  ADR-P10-002/005: parts 10a and 10b share
+  one branch and one phase PR; a part is
+  complete on its own exit criteria.
+  Surfaces are pluggable and offline-
+  testable behind one interface.
 end note
 
 @enduml

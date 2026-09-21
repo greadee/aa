@@ -15,6 +15,8 @@ Every phase creates a folder under `docs/phases/` named `ph{N}-{scope}` (for exa
 
 The plan is authored at the **start** of the phase. The summary is authored at the **end**, by copying and editing the plan diagrams to the finished state, affirming decisions that were correct, and recording any deviation with its reason.
 
+A large phase may be split into **parts** (a., b., c., …) under `parts/`, each with its own `plan.md`/`plan.uml` and `summary.md`/`summary.uml`; the phase `plan.md` remains the overview and part index. See [../phases/README.md](../phases/README.md#phase-parts).
+
 ## Phase roadmap
 
 | Phase | Folder | Scope |
@@ -29,7 +31,7 @@ The plan is authored at the **start** of the phase. The summary is authored at t
 | 7 | `ph7-toolbox` | `aa-toolbox` plugins/MCP and configurable workflows |
 | 8 | `ph8-visualizer` | `aa-visualizer` completion |
 | 9 | `ph9-joblearn` | Job learning and optimization loop |
-| 10 | `ph10-console` | `aa-console` unified interface |
+| 10 | `ph10-console` | `aa-console` unified interface — parts: 10a terminal, 10b surface |
 | 11 | `ph11-release` | Hardening, security, release, docs, audits |
 
 The full phase plan with goals, deliverables, exit criteria, and testing is in the [architecture document](../architecture/README.md#11-end-to-end-phase-plan).

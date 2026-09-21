@@ -28,6 +28,33 @@ Authored at the **end** of the phase. Records: delivered slices and commits, the
 
 The `plan.uml` copied and edited so it reflects the finished system. Together, `summary.md` + `summary.uml` are the phase summary of record.
 
+## Phase parts
+
+A large phase may be split into **parts** (a., b., c., …) when it spans genuinely different workstreams with different dependencies or review needs. A split phase keeps its single `plan.md` (the overview and part index) and adds one plan per part:
+
+```
+docs/phases/ph{N}-{scope}/
+├── plan.md
+├── plan.uml
+├── summary.md
+├── summary.uml
+└── parts/
+    ├── a-{part-scope}/
+    │   ├── plan.md
+    │   ├── plan.uml
+    │   ├── summary.md
+    │   └── summary.uml
+    └── b-{part-scope}/
+        └── ...
+```
+
+Rules:
+
+- A part never creates a phase or renames the branch; all parts share the phase branch and the phase PR.
+- Each part authors its own `plan.md` and `plan.uml` at its start, and its own `summary.md` and `summary.uml` at its end, to the same standard as a phase.
+- Part slices map to commits on the phase branch (or on a child branch merged into it). A part is complete when its own required end state and exit criteria pass.
+- The phase is complete when its planned parts are complete and the phase PR merges to `main`.
+
 ## Index
 
 Tracked in [../index/phases.md](../index/phases.md).
