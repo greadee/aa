@@ -4,9 +4,10 @@ Time-travel work history, debugging, and 3D graph visualization.
 
 - **Owns:** 3D graph, replay, session trails, live bridge, and memory session browsing.
 - **Must not:** own the observation protocol or canonical history.
-- **Status:** delivered in `ph8-visualizer` (deterministic projection, layout, replay, and browsing; the Wails/Three surface and the live `obsv` transport are follow-ups).
+- **Status:** delivered in `ph8-visualizer` (deterministic projection, layout, replay, and browsing; the Wails/Three surface is a follow-up). The live `obsv` transport and the AAV protocol de-duplication are in progress in the [module update](module-upd-plan.md) (`ISS-OBSV-2`).
 - **Directive:** [aa-visualizer.md](aa-visualizer.md)
 - **Architecture:** [../docs/architecture/README.md](../docs/architecture/README.md)
+- **Module update:** [module-upd-plan.md](module-upd-plan.md)
 
 ## Packages
 
