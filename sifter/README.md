@@ -4,6 +4,7 @@ Decode a prompt and route it to the appropriate local or cloud model under budge
 
 - **Owns:** classification, human approval gate, preflight, policy routing, budgets, escalation, provider abstraction (Ollama/OpenAI-compatible), verification, context compression/handoff, compute orchestration across local/cloud.
 - **Must not:** hold project state or perform orchestration.
-- **Status:** scaffolded. Implementation migrates from the existing `compute-sifter` Python source in `ph4-sifter`.
+- **Status:** implemented (phase 4). Production RPC wiring is planned, not yet implemented.
 - **Directive:** [aa-sifter.md](aa-sifter.md)
 - **Architecture:** [../docs/architecture/README.md](../docs/architecture/README.md)
+- **Module update (planned):** [module-upd-plan.md](module-upd-plan.md)
