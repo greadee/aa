@@ -1,0 +1,65 @@
+@startuml
+' Phase 10b — Surface: planned infrastructure.
+' Copy to summary.uml at part end and edit to the as-built state.
+
+title Phase 10b — Surface (planned)
+
+skinparam componentStyle rectangle
+
+package "aa-console (Go; imports contracts only)" as console {
+  component "client + commands + approvals + config (from 10a)" as core
+  component "shared view-model layer (surface-agnostic)" as vm
+  component "Surface interface" as surface
+  component "surface registry + selection" as registry
+  component "surface conformance test-kit" as kit
+  component "tui (terminal implements Surface; from 10a)" as tui
+}
+
+package "future UI / TUI / GUI (PR #17 placeholder)" as future {
+  component "web surface (implements Surface)" as web
+  component "desktop surface (Wails; implements Surface)" as desktop
+}
+
+package "aa-contracts (v1 schemas + openapi control plane)" as contracts
+component "control plane (phase 10 core: loopback HTTP/JSON, bearer)" as server
+
+contracts --> core
+core --> vm
+vm --> surface
+surface --> registry
+surface --> tui
+tui --> core : intents / decisions
+kit ..> surface : validates any surface
+surface ..> web : future implementation (PR #17)
+surface ..> desktop : future implementation (PR #17)
+core ..> server : HTTP/JSON (loopback, bearer)
+
+note right of vm
+  ADR-P10B-002: one shared view-model
+  layer renders to every surface;
+  surfaces are views, not logic.
+end note
+
+note bottom of surface
+  ADR-P10B-001/003: surfaces are
+  pluggable behind one Surface
+  interface and a conformance
+  contract, so a new surface is
+  correct by construction. No surface
+  may reach the control plane directly.
+end note
+
+note bottom of registry
+  ADR-P10B-004: surface selection is
+  explicit and deterministic; the
+  chosen surface is configuration,
+  reproducible in tests.
+end note
+
+note bottom of tui
+  ADR-P10B-005: the terminal from part
+  10a is refactored onto the shared
+  layer with no behavior change.
+end note
+
+@enduml
