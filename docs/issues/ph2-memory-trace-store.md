@@ -3,7 +3,7 @@
 **Type:** feature
 **Status:** complete (phase 2 module update)
 **Branch:** `ph2-memory`
-**Phase PR:** (opened with this change)
+**Phase PR:** [#13](https://github.com/greadee/aa/pull/13)
 **Parent:** [ISS-TRACE-LOOP](trace-learning-substrate.md)
 **Module plan:** [../../memory/module-upd-plan.md](../../memory/module-upd-plan.md)
 **Module summary:** [../../memory/module-upd-summary.md](../../memory/module-upd-summary.md)

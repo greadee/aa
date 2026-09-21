@@ -1,7 +1,7 @@
 # memory — Module Update Summary: trace store
 
 > Authored at the **end** of the module update, on branch `ph2-memory`. Derived from [module-upd-plan.md](module-upd-plan.md).
-> Issue: [ISS-TRACE-2](../docs/issues/ph2-memory-trace-store.md) · Parent umbrella: [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md) · Phase PR: (opened with this change)
+> Issue: [ISS-TRACE-2](../docs/issues/ph2-memory-trace-store.md) · Parent umbrella: [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md) · Phase PR: [#13](https://github.com/greadee/aa/pull/13)
 
 ## Delivered
 
@@ -13,7 +13,7 @@
 | Projected-view retention | Complete | `add memory trace retention` | `memory/retention/` + tests |
 | Facade wiring | Complete | `wire memory trace store` | `Memory.Traces()`, README, integration test |
 | Module update summary | Complete | `add ph2 memory module update summary` | this file |
-| Phase PR link | Complete | `link phase 2 module update pull request` | tracking PR |
+| Phase PR link | Complete | `link phase 2 module update pull request` | [#13](https://github.com/greadee/aa/pull/13) |
 
 ## What was added
 
