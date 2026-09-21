@@ -1,7 +1,7 @@
 # contracts — Module Update Summary: trace contract
 
 > Authored at the **end** of the module update, on branch `ph1-contracts`. Derived from [module-upd-plan.md](module-upd-plan.md).
-> Issue: [ISS-TRACE-1](../docs/issues/ph1-contracts-trace-contract.md) · Parent umbrella: [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md)
+> Issue: [ISS-TRACE-1](../docs/issues/ph1-contracts-trace-contract.md) · Parent umbrella: [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md) · Phase PR: [#12](https://github.com/greadee/aa/pull/12)
 
 ## Delivered
 
@@ -13,7 +13,7 @@
 | TypeScript binding | Complete | `add trace typescript binding` | `TraceStep`, `Trace`, union member |
 | Python binding | Complete | `add trace python binding` | validator, TypedDicts, exports |
 | Module update summary | Complete | `add ph1 contracts module update summary` | this file |
-| Phase PR link | Complete | `link phase 1 module update pull request` | tracking PR |
+| Phase PR link | Complete | `link phase 1 module update pull request` | [#12](https://github.com/greadee/aa/pull/12) |
 
 ## What was added
 

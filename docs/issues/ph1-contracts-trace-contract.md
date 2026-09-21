@@ -3,6 +3,7 @@
 **Type:** feature
 **Status:** complete (phase 1 module update)
 **Branch:** `ph1-contracts`
+**Phase PR:** [#12](https://github.com/greadee/aa/pull/12)
 **Parent:** [ISS-TRACE-LOOP](trace-learning-substrate.md)
 **Module plan:** [../../contracts/module-upd-plan.md](../../contracts/module-upd-plan.md)
 **Module summary:** [../../contracts/module-upd-summary.md](../../contracts/module-upd-summary.md)
