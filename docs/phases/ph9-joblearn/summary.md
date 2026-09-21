@@ -21,7 +21,8 @@
 - Starting ref: `main @ f9063fd` (after phase 8 merge and record).
 - Tracking issue: none (phase executed via the phase PR).
 - Milestone: none (matches phases 0–8 on this repository).
-- Phase PR: [#10](https://github.com/greadee/aa/pull/10) — draft
+- Phase PR: [#10](https://github.com/greadee/aa/pull/10) — merged
+- Merge commit: `8be33f4`
 - Branch: `ph9-joblearn` (retained after merge on `aa`)
 
 ## Validation
