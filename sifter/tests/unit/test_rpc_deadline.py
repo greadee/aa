@@ -156,7 +156,7 @@ async def test_timed_out_generate_leaves_no_idempotent_state(config) -> None:
     response = await dispatch_with_deadline(service, message)
 
     assert response["error"]["code"] == UNAVAILABLE
-    assert service._idempotent == {}
+    assert service.idempotency.size == 0
 
     provider.delay = 0.0
     retry = await dispatch_with_deadline(service, message)

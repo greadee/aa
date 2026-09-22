@@ -22,6 +22,11 @@ from .framing import (
     decode_frame,
     encode_frame,
 )
+from .idempotency import (
+    DEFAULT_WINDOW_SECONDS,
+    IdempotencyStore,
+    request_fingerprint,
+)
 from .identity import (
     STORE_ID_FIELD,
     IdentityError,
@@ -37,6 +42,7 @@ from .service import SifterService
 __all__ = [
     "DEFAULT_MAX_FRAME_BYTES",
     "DEFAULT_TIMEOUT_MS",
+    "DEFAULT_WINDOW_SECONDS",
     "SERVICE_NAME",
     "STORE_ID_FIELD",
     "TIMEOUT_FIELD",
@@ -45,6 +51,7 @@ __all__ = [
     "FrameReader",
     "FramingError",
     "IdentityError",
+    "IdempotencyStore",
     "LocalListener",
     "Ownership",
     "PeerIdentity",
@@ -61,6 +68,7 @@ __all__ = [
     "is_endpoint_live",
     "map_exception",
     "peer_credentials",
+    "request_fingerprint",
     "requested_store_id",
     "resolve_timeout_ms",
     "runtime_directory",

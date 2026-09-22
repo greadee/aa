@@ -27,6 +27,7 @@ from .envelope import (
     success,
 )
 from .errors import map_exception
+from .idempotency import IdempotencyStore, request_fingerprint
 from .identity import IdentityError, StoreBinding, requested_store_id
 
 _ROUTE_METHOD = "sifter.route"
@@ -42,10 +43,16 @@ def _tier_name(tier: Tier | None) -> str:
 class SifterService:
     """Transport-agnostic JSON-RPC service over an in-process ``ComputeSifter``."""
 
-    def __init__(self, sifter: Any, *, store_id: str | None = None):
+    def __init__(
+        self,
+        sifter: Any,
+        *,
+        store_id: str | None = None,
+        idempotency: IdempotencyStore | None = None,
+    ):
         self.sifter = sifter
         self._store = StoreBinding(store_id)
-        self._idempotent: dict[str, dict[str, Any]] = {}
+        self.idempotency = idempotency or IdempotencyStore()
 
     # -- dispatch ----------------------------------------------------------
     async def handle(self, message: dict[str, Any]) -> dict[str, Any]:
@@ -114,8 +121,11 @@ class SifterService:
 
     async def generate(self, params: dict[str, Any]) -> dict[str, Any]:
         key = params.get("idempotencyKey")
-        if key is not None and key in self._idempotent:
-            return self._idempotent[key]
+        fingerprint = request_fingerprint(params) if key is not None else ""
+        if key is not None:
+            cached = self.idempotency.resolve(str(key), fingerprint)
+            if cached is not None:
+                return cached
         raw_messages = params.get("messages")
         if not isinstance(raw_messages, list) or not raw_messages:
             raise ContractError("messages: at least one message is required")
@@ -132,7 +142,7 @@ class SifterService:
             },
         }
         if key is not None:
-            self._idempotent[key] = payload
+            self.idempotency.remember(str(key), fingerprint, payload)
         return payload
 
     def health(self) -> dict[str, Any]:
