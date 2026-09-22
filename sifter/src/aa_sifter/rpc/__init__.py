@@ -1,5 +1,6 @@
 """aa-sifter RPC service (inter-module JSON-RPC v1)."""
 
+from .client import RpcClientError, RuntimeGateway, SifterClient
 from .deadline import (
     DEFAULT_TIMEOUT_MS,
     TIMEOUT_FIELD,
@@ -57,8 +58,11 @@ __all__ = [
     "Ownership",
     "PeerIdentity",
     "RPC_VERSION",
+    "RpcClientError",
     "RpcError",
     "RpcServer",
+    "RuntimeGateway",
+    "SifterClient",
     "SifterService",
     "SocketEndpoint",
     "StoreBinding",
