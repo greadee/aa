@@ -9,7 +9,7 @@ from pathlib import Path
 from ..app import ComputeSifter, SifterResult
 from ..config import default_config_path, load_runtime_config
 from ..models.config import SifterConfig
-from . import config_commands, desktop_commands
+from . import config_commands, desktop_commands, serve_commands
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "query",
         nargs="*",
-        help="task prompt or a subcommand (setup|recommend|system|profile|model|doctor|chat|rules|stats|config)",
+        help="task prompt or a subcommand (setup|recommend|system|profile|model|doctor|chat|rules|stats|config|serve)",
     )
     parser.add_argument("--profile", default=None, help="activate a named profile for this run")
     parser.add_argument("--policy", default=None, help="routing policy override for this task")
@@ -94,6 +94,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--headless", action="store_true", help="start without opening a UI")
     parser.add_argument("--no-browser", action="store_true", help="do not open a browser")
     parser.add_argument("--stop", action="store_true", help="stop a running desktop backend")
+
+    # serve (host the inter-module RPC service)
+    parser.add_argument("--socket", default=None, help="serve: socket path override")
+    parser.add_argument("--store-id", default=None, help="serve: store identity to bind")
+    parser.add_argument(
+        "--idempotency-file", default=None, help="serve: durable idempotency log path"
+    )
+    parser.add_argument(
+        "--idempotency-window",
+        type=float,
+        default=None,
+        help="serve: idempotency retention window in seconds",
+    )
+    parser.add_argument(
+        "--timeout-ms", type=int, default=None, help="serve: default request deadline in ms"
+    )
+    parser.add_argument(
+        "--grace-seconds", type=float, default=None, help="serve: shutdown grace period"
+    )
     return parser
 
 
@@ -211,6 +230,21 @@ def _show_config(config: SifterConfig) -> int:
     return 0
 
 
+def _serve_options(args: argparse.Namespace) -> serve_commands.ServeOptions:
+    return serve_commands.ServeOptions(
+        socket=args.socket,
+        store_id=args.store_id,
+        idempotency_file=args.idempotency_file,
+        idempotency_window=args.idempotency_window,
+        timeout_ms=args.timeout_ms or serve_commands.DEFAULT_TIMEOUT_MS,
+        grace_seconds=(
+            args.grace_seconds
+            if args.grace_seconds is not None
+            else serve_commands.DEFAULT_GRACE_SECONDS
+        ),
+    )
+
+
 def _runtime_overrides(args: argparse.Namespace) -> dict[str, object]:
     overrides: dict[str, object] = {}
     if args.max_cloud_cost is not None:
@@ -260,6 +294,8 @@ async def _main_async(args: argparse.Namespace) -> int:
 
     aa_sifter = ComputeSifter(config)
     try:
+        if command == "serve":
+            return await serve_commands.serve(aa_sifter, _serve_options(args))
         if command == "rules":
             return _handle_rules(aa_sifter, query)
         if command == "stats":
