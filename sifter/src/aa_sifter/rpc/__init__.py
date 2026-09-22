@@ -1,5 +1,12 @@
 """aa-sifter RPC service (inter-module JSON-RPC v1)."""
 
+from .deadline import (
+    DEFAULT_TIMEOUT_MS,
+    TIMEOUT_FIELD,
+    DeadlineError,
+    dispatch_with_deadline,
+    resolve_timeout_ms,
+)
 from .endpoint import (
     SERVICE_NAME,
     SocketEndpoint,
@@ -28,8 +35,11 @@ from .service import SifterService
 
 __all__ = [
     "DEFAULT_MAX_FRAME_BYTES",
+    "DEFAULT_TIMEOUT_MS",
     "SERVICE_NAME",
     "STORE_ID_FIELD",
+    "TIMEOUT_FIELD",
+    "DeadlineError",
     "FrameReader",
     "FramingError",
     "IdentityError",
@@ -42,10 +52,12 @@ __all__ = [
     "StoreBinding",
     "decode_frame",
     "default_endpoint",
+    "dispatch_with_deadline",
     "encode_frame",
     "is_endpoint_live",
     "peer_credentials",
     "requested_store_id",
+    "resolve_timeout_ms",
     "runtime_directory",
     "verify_peer",
 ]
