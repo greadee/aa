@@ -37,6 +37,7 @@ from .identity import (
     verify_peer,
 )
 from .listener import LocalListener, Ownership, is_endpoint_live
+from .server import RpcServer
 from .service import SifterService
 
 __all__ = [
@@ -57,6 +58,7 @@ __all__ = [
     "PeerIdentity",
     "RPC_VERSION",
     "RpcError",
+    "RpcServer",
     "SifterService",
     "SocketEndpoint",
     "StoreBinding",

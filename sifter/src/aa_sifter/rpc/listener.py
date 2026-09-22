@@ -107,14 +107,30 @@ class LocalListener:
 
     async def stop(self) -> None:
         """Close an owned server and remove the socket file it created."""
-        server, self._server = self._server, None
-        if server is not None:
-            server.close()
-            with contextlib.suppress(OSError):
-                await server.wait_closed()
+        self.close()
+        await self.wait_closed()
+
+    def close(self) -> None:
+        """Stop accepting immediately; :meth:`wait_closed` drains handlers.
+
+        Kept separate because ``asyncio.Server.wait_closed`` waits for active
+        connection handlers, so a graceful shutdown must cancel them in between.
+        """
+        if self._server is None:
+            self._ownership = None
+            return
+        self._server.close()
         if self._ownership is Ownership.OWNED and self.endpoint.kind == "unix":
             _remove_socket_file(self.endpoint.address)
         self._ownership = None
+
+    async def wait_closed(self) -> None:
+        """Wait for the closed server and its handlers to finish."""
+        server, self._server = self._server, None
+        if server is None:
+            return
+        with contextlib.suppress(OSError):
+            await server.wait_closed()
 
     # -- transports --------------------------------------------------------
     async def _start_unix(self, handler: ConnectionHandler) -> Ownership:
