@@ -43,6 +43,8 @@ CAPABILITIES = {
 }
 ROUTING_POLICIES = {"local_only", "cloud_only", "local_first", "expert_first", "adaptive", "budget_constrained"}
 ACTOR_KINDS = {"human", "agent", "system", "service"}
+TRACE_PHASES = {"observe", "plan", "model", "tool", "edit", "test", "gate", "verify", "integrate"}
+TRACE_STEP_OUTCOMES = {"succeeded", "failed", "skipped", "blocked"}
 
 
 def _identifier(field: str, value: Any) -> None:
@@ -146,6 +148,20 @@ def _validate_tool_manifest(data: Dict[str, Any]) -> None:
         raise ValueError("capabilities: at least one is required")
 
 
+def _validate_trace(data: Dict[str, Any]) -> None:
+    steps = data.get("steps") or []
+    if not steps:
+        raise ValueError("steps: at least one step is required")
+    for i, step in enumerate(steps):
+        seq = step.get("sequence")
+        if not isinstance(seq, int) or isinstance(seq, bool) or seq < 0:
+            raise ValueError(f"steps[{i}].sequence: is required and must be >= 0")
+        _enum(f"steps[{i}].phase", step.get("phase"), TRACE_PHASES)
+        _enum(f"steps[{i}].outcome", step.get("outcome"), TRACE_STEP_OUTCOMES)
+        _optional_hash(f"steps[{i}].inputHash", step.get("inputHash"))
+        _optional_hash(f"steps[{i}].outputHash", step.get("outputHash"))
+
+
 def _validate_workflow(data: Dict[str, Any]) -> None:
     _required("version", data.get("version"))
     steps = data.get("steps") or []
@@ -169,6 +185,7 @@ _REQUIRED: Dict[str, List[str]] = {
     "execution_contract": ["workPackageId", "assignmentId", "capabilities", "budget"],
     "result_envelope": ["attemptId", "assignmentId", "workPackageId", "status"],
     "telemetry": ["attemptId", "metricVersion", "outcome"],
+    "trace": ["attemptId", "steps"],
     "project_record": ["name", "state", "layoutVersion"],
     "memory_record": ["level", "lifecycle", "content"],
     "issue": ["title", "type", "status"],
@@ -185,6 +202,7 @@ _ENUMS: Dict[str, Dict[str, set]] = {
     "execution_contract": {},
     "result_envelope": {"status": {"succeeded", "failed", "partial", "blocked", "cancelled"}},
     "telemetry": {"outcome": {"succeeded", "failed", "partial", "blocked", "cancelled", "unknown"}},
+    "trace": {},
     "project_record": {"state": PROJECT_STATES},
     "memory_record": {"lifecycle": MEMORY_LIFECYCLES},
     "issue": {"status": ISSUE_STATES, "severity": {"P0", "P1", "P2", "P3", "none"}},
@@ -205,6 +223,7 @@ _EXTRA: Dict[str, Callable[[Dict[str, Any]], None]] = {
     "route_response": _validate_route_response,
     "tool_manifest": _validate_tool_manifest,
     "workflow": _validate_workflow,
+    "trace": _validate_trace,
 }
 
 
@@ -367,6 +386,33 @@ class Telemetry(Envelope, total=False):
     durationMs: int
     resources: Dict[str, Any]
     versions: Dict[str, str]
+
+
+class TraceStep(TypedDict, total=False):
+    sequence: int
+    at: str
+    phase: str
+    actor: Actor
+    operation: str
+    target: Reference
+    inputHash: str
+    outputHash: str
+    outcome: str
+    errorClass: str
+    durationMs: int
+    tokens: Dict[str, int]
+    costUsd: float
+    redacted: bool
+    evidence: List[Reference]
+
+
+class Trace(Envelope, total=False):
+    attemptId: str
+    assignmentId: str
+    workPackageId: str
+    redactionVersion: str
+    truncated: bool
+    steps: List[TraceStep]
 
 
 class ProjectRecord(Envelope, total=False):

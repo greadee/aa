@@ -23,7 +23,9 @@ The single source of truth for every cross-module object and wire protocol.
 
 ## Status
 
-Phase 1. Schemas and specs exist. Bindings and the conformance suite are delivered by the remaining phase 1 slices.
+Phase 1 complete and merged: 15 schemas under `schemas/v1`, RPC and control-plane specs, Go/TypeScript/Python bindings, and the conformance suite.
+
+Module update (trace contract): `trace.schema.json` (document contract 1.1) adds bounded, redacted per-step learning evidence. See [module-upd-plan.md](module-upd-plan.md) and [module-upd-summary.md](module-upd-summary.md).
 
 ## Directive
 
