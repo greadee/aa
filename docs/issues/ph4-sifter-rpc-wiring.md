@@ -1,12 +1,12 @@
 # ISS-SIFTER-1 — sifter: production RPC wiring
 
 **Type:** feature / technical debt
-**Status:** in progress (sifter module update — planning)
+**Status:** complete (sifter module update)
 **Branch:** `ph4-sifter`
 **Phase PR:** (linked from the module summary when opened)
 **Parent umbrella:** `ISS-TRACE-LOOP` — the observation → trace → learning substrate is under-delivered (`docs/issues/trace-learning-substrate.md`)
 **Module plan:** [../../sifter/module-upd-plan.md](../../sifter/module-upd-plan.md)
-**Module summary:** `sifter/module-upd-summary.md` (authored at the end of the implementation update)
+**Module summary:** [../../sifter/module-upd-summary.md](../../sifter/module-upd-summary.md)
 
 ## Goal
 
@@ -29,13 +29,13 @@ Phase 4 delivered the sifter as a transport-agnostic JSON-RPC service with one r
 
 ## Acceptance Criteria
 
-- [ ] `aa-sifter serve` binds the v1 socket and serves `sifter.route`, `sifter.generate`, `sifter.health`, and `sifter.recommend`.
-- [ ] The socket is owner-only; a peer or store mismatch is rejected.
-- [ ] Timeouts fail closed with no partial state.
-- [ ] Boundary objects validate against the `aa_contracts` JSON Schema.
-- [ ] Idempotent repeats return the original result for the retention window.
-- [ ] A spy provider sees no secret over the transport.
-- [ ] The default test suite makes no network calls; the Go checks stay green.
+- [x] `aa-sifter serve` binds the v1 socket and serves `sifter.route`, `sifter.generate`, `sifter.health`, and `sifter.recommend`.
+- [x] The socket is owner-only; a peer or store mismatch is rejected.
+- [x] Timeouts fail closed with no partial state.
+- [x] Boundary objects validate against the `aa_contracts` JSON Schema.
+- [x] Idempotent repeats return the original result for the retention window.
+- [x] A spy provider sees no secret over the transport.
+- [x] The default test suite makes no network calls; the Go checks stay green.
 
 ## Affected branches
 
@@ -43,4 +43,4 @@ The sifter server and client land on `ph4-sifter`. The kernel-side production ru
 
 ## Notes
 
-This document and the module plan are planning artifacts. Implementation slices are listed in `sifter/module-upd-plan.md` and proceed only after the plan is reviewed.
+The implementation slices are listed in `sifter/module-upd-plan.md` and delivered on this branch; the module summary records what shipped, the decisions affirmed, and the deviations.

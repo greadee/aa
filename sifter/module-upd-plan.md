@@ -92,23 +92,23 @@ Each slice maps to exactly one commit and is authored after this plan is reviewe
 
 ## Required End State
 
-- [ ] `aa-sifter serve` binds the v1 local socket and serves `sifter.route`, `sifter.generate`, `sifter.health`, and `sifter.recommend` over NDJSON.
-- [ ] The socket is owner-only; peer identity and store identity are verified; a mismatch returns `aa.store_mismatch`.
-- [ ] Requests honour `aa.timeoutMs`; expired requests fail closed with `aa.unavailable` and no partial state.
-- [ ] Errors use the full v1 code set; retryable errors set `data.retryable: true`.
-- [ ] Idempotent repeats of a mutating call return the original result for the retention window.
-- [ ] Boundary inputs and outputs validate against the `aa_contracts` JSON Schema.
-- [ ] A spy provider proves no secret crosses the transport on any expert-tier call.
-- [ ] A typed client call is exercised by a socket integration test; the default suite makes no network calls.
-- [ ] `ruff format --check`, `ruff check`, `mypy`, `pytest`, and the Go checks remain green.
+- [x] `aa-sifter serve` binds the v1 local socket and serves `sifter.route`, `sifter.generate`, `sifter.health`, and `sifter.recommend` over NDJSON.
+- [x] The socket is owner-only; peer identity and store identity are verified; a mismatch returns `aa.store_mismatch`.
+- [x] Requests honour `aa.timeoutMs`; expired requests fail closed with `aa.unavailable` and no partial state.
+- [x] Errors use the full v1 code set; retryable errors set `data.retryable: true`.
+- [x] Idempotent repeats of a mutating call return the original result for the retention window.
+- [x] Boundary inputs and outputs validate against the `aa_contracts` JSON Schema.
+- [x] A spy provider proves no secret crosses the transport on any expert-tier call.
+- [x] A typed client call is exercised by a socket integration test; the default suite makes no network calls.
+- [x] `ruff format --check`, `ruff check`, `mypy`, `pytest`, and the Go checks remain green.
 
 ## Exit Criteria
 
-- [ ] The hosted service answers the v1 method set over the local socket with verified identity and enforced deadlines.
-- [ ] The kernel can reach the service through the typed client behind the runtime adapter seam.
-- [ ] Redaction and capability behavior are proven over the transport.
-- [ ] `sifter` still imports no aa module except `aa_contracts`; boundary check passes.
-- [ ] A module update PR is opened on `ph4-sifter` into `main`.
+- [x] The hosted service answers the v1 method set over the local socket with verified identity and enforced deadlines.
+- [x] The kernel can reach the service through the typed client behind the runtime adapter seam.
+- [x] Redaction and capability behavior are proven over the transport.
+- [x] `sifter` still imports no aa module except `aa_contracts`; boundary check passes.
+- [x] A module update PR is opened on `ph4-sifter` into `main`.
 
 ## Test Plan
 
