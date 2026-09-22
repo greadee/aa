@@ -3,7 +3,7 @@
 **Type:** feature / technical debt
 **Status:** complete (sifter module update)
 **Branch:** `ph4-sifter`
-**Phase PR:** (linked from the module summary when opened)
+**Phase PR:** [#16](https://github.com/greadee/aa/pull/16)
 **Parent umbrella:** `ISS-TRACE-LOOP` — the observation → trace → learning substrate is under-delivered (`docs/issues/trace-learning-substrate.md`)
 **Module plan:** [../../sifter/module-upd-plan.md](../../sifter/module-upd-plan.md)
 **Module summary:** [../../sifter/module-upd-summary.md](../../sifter/module-upd-summary.md)
