@@ -1,12 +1,12 @@
 # ISS-LEARN-1 — joblearn: trace distillation and evaluation
 
 **Type:** feature / technical debt
-**Status:** in progress (joblearn module update — planning)
+**Status:** complete (joblearn module update)
 **Branch:** `ph9-joblearn`
 **Phase PR:** (linked from the module summary when opened)
 **Parent umbrella:** `ISS-TRACE-LOOP` — the observation → trace → learning substrate is under-delivered (`docs/issues/trace-learning-substrate.md`)
 **Module plan:** [../../kernel/joblearn/module-upd-plan.md](../../kernel/joblearn/module-upd-plan.md)
-**Module summary:** `kernel/joblearn/module-upd-summary.md` (authored at the end of the implementation update)
+**Module summary:** [../../kernel/joblearn/module-upd-summary.md](../../kernel/joblearn/module-upd-summary.md)
 
 ## Goal
 
@@ -29,16 +29,16 @@ Phase 9 delivered a deterministic learning engine, but it consumes per-attempt `
 
 ## Acceptance Criteria
 
-- [ ] A trace fixture flows through the source seam to deterministic attributed scores.
-- [ ] Step-level features are derived without content and honour `redacted`/`truncated`.
-- [ ] At least one distilled artifact candidate is produced per role/trade scope with trace provenance.
-- [ ] A trace-derived backtest runs within budget and is order-independent.
-- [ ] The production baseline is reached through the `sifter` RPC seam; fakes remain test-only.
-- [ ] Capabilities stay disabled without evidence; no gate or execution contract is bypassed; a fallback remains.
-- [ ] Distilled candidates persist as `CANDIDATE` through the existing promotion `Sink`.
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, and the boundary check pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] A trace fixture flows through the source seam to deterministic attributed scores.
+- [x] Step-level features are derived without content and honour `redacted`/`truncated`.
+- [x] At least one distilled artifact candidate is produced per role/trade scope with trace provenance.
+- [x] A trace-derived backtest runs within budget and is order-independent.
+- [x] The production baseline is reached through the `sifter` RPC seam; fakes remain test-only.
+- [x] Capabilities stay disabled without evidence; no gate or execution contract is bypassed; a fallback remains.
+- [x] Distilled candidates persist as `CANDIDATE` through the existing promotion `Sink`.
+- [x] `go build`, `go vet`, `go test`, `gofmt`, and the boundary check pass.
+- [x] tests added or updated
+- [x] documentation updated where required
 
 ## Affected branches
 
@@ -46,4 +46,4 @@ Depends on the trace contract (`ISS-TRACE-1`, `ph1-contracts`), the canonical tr
 
 ## Notes
 
-This document and `kernel/joblearn/module-upd-plan.md` are planning artifacts. Implementation slices are listed in the module plan and proceed only after the plan is reviewed. Reference counterparts: `contracts/module-upd-plan.md` (`ISS-TRACE-1`, PR #12), `memory/module-upd-plan.md` (`ISS-TRACE-2`, PR #13), `obsv/module-upd-plan.md` (`ISS-OBSV-1`, PR #15), and `sifter/module-upd-plan.md` (`ISS-SIFTER-1`, PR #16).
+The implementation slices are listed in `kernel/joblearn/module-upd-plan.md` and delivered on this branch; the module summary records what shipped, the decisions affirmed, and the deviations. This branch is stacked on the `ISS-TRACE-1` and `ISS-TRACE-2` substrate (`ph1-contracts`, `ph2-memory`) and is merge-ordered after them. Reference counterparts: `contracts/module-upd-plan.md` (`ISS-TRACE-1`, PR #12), `memory/module-upd-plan.md` (`ISS-TRACE-2`, PR #13), `obsv/module-upd-plan.md` (`ISS-OBSV-1`, PR #15), and `sifter/module-upd-plan.md` (`ISS-SIFTER-1`, PR #16).

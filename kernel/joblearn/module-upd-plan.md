@@ -85,23 +85,23 @@ Each slice maps to exactly one commit and is authored after this plan is reviewe
 
 ## Required End State
 
-- [ ] `joblearn` consumes `v1.Trace` through a pure source seam; a trace fixture yields deterministic attributed scores.
-- [ ] Step-level features are content-free and honour `redacted`/`truncated`.
-- [ ] Distillation yields role/trade-scoped artifact candidates carrying trace provenance.
-- [ ] A trace-derived backtest runs within budget, is order-independent, and compares against a deterministic baseline.
-- [ ] The production baseline is reached through the `sifter` RPC seam; fakes remain test-only.
-- [ ] Gates consume trace evidence; capabilities stay disabled without it; no gate or contract is bypassed; a fallback remains.
-- [ ] Distilled candidates persist as `CANDIDATE` through the existing promotion `Sink`.
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, and the boundary check remain green.
+- [x] `joblearn` consumes `v1.Trace` through a pure source seam; a trace fixture yields deterministic attributed scores.
+- [x] Step-level features are content-free and honour `redacted`/`truncated`.
+- [x] Distillation yields role/trade-scoped artifact candidates carrying trace provenance.
+- [x] A trace-derived backtest runs within budget, is order-independent, and compares against a deterministic baseline.
+- [x] The production baseline is reached through the `sifter` RPC seam; fakes remain test-only.
+- [x] Gates consume trace evidence; capabilities stay disabled without it; no gate or contract is bypassed; a fallback remains.
+- [x] Distilled candidates persist as `CANDIDATE` through the existing promotion `Sink`.
+- [x] `go build`, `go vet`, `go test`, `gofmt`, and the boundary check remain green.
 
 ## Exit Criteria
 
-- [ ] Traces are the learning input; telemetry remains supported.
-- [ ] A trace fixture produces deterministic scores and at least one distilled artifact candidate.
-- [ ] A trace-derived backtest shows improvement over the deterministic baseline and is deterministic.
-- [ ] Capabilities remain disabled without evidence; fallback and no-bypass checks are asserted.
-- [ ] `kernel` still imports only `contracts`, `obsv`, `memory`, and `toolbox`; `sifter` is reached over RPC.
-- [ ] A module update PR is opened on `ph9-joblearn` into `main`.
+- [x] Traces are the learning input; telemetry remains supported.
+- [x] A trace fixture produces deterministic scores and at least one distilled artifact candidate.
+- [x] A trace-derived backtest shows improvement over the deterministic baseline and is deterministic.
+- [x] Capabilities remain disabled without evidence; fallback and no-bypass checks are asserted.
+- [x] `kernel` still imports only `contracts`, `obsv`, `memory`, and `toolbox`; `sifter` is reached over RPC.
+- [x] A module update PR is opened on `ph9-joblearn` into `main`.
 
 ## Test Plan
 
