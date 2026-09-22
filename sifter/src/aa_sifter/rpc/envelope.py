@@ -18,6 +18,7 @@ INVALID_PARAMS = -32602
 INTERNAL_ERROR = -32603
 
 INCOMPATIBLE = "aa.incompatible"
+STORE_MISMATCH = "aa.store_mismatch"
 UNAUTHORIZED = "aa.unauthorized"
 BUDGET_EXCEEDED = "aa.budget_exceeded"
 APPROVAL_REQUIRED = "aa.approval_required"

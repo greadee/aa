@@ -18,10 +18,14 @@ import contextlib
 import os
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
+from functools import partial
+from typing import Any
 
 from .endpoint import SocketEndpoint
+from .identity import IdentityError, PeerIdentity, verify_peer
 
 ConnectionHandler = Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
+PeerVerifier = Callable[[Any], PeerIdentity]
 
 
 class Ownership(StrEnum):
@@ -53,6 +57,12 @@ def _remove_socket_file(path: str) -> None:
         os.unlink(path)
 
 
+async def _close_writer(writer: asyncio.StreamWriter) -> None:
+    writer.close()
+    with contextlib.suppress(OSError):
+        await writer.wait_closed()
+
+
 class LocalListener:
     """Bind (or attach to) one per-user Unix domain socket endpoint."""
 
@@ -63,11 +73,15 @@ class LocalListener:
         directory_mode: int = 0o700,
         socket_mode: int = 0o600,
         backlog: int = 16,
+        expected_uid: int | None = None,
+        verifier: PeerVerifier | None = None,
     ) -> None:
         self.endpoint = endpoint
         self.directory_mode = directory_mode
         self.socket_mode = socket_mode
         self.backlog = backlog
+        self.expected_uid = expected_uid
+        self._verifier = verifier
         self._server: asyncio.AbstractServer | None = None
         self._ownership: Ownership | None = None
 
@@ -112,7 +126,9 @@ class LocalListener:
         self._ensure_directory(path)
         _remove_socket_file(path)
         try:
-            self._server = await asyncio.start_unix_server(handler, path=path, backlog=self.backlog)
+            self._server = await asyncio.start_unix_server(
+                partial(self._guarded, handler), path=path, backlog=self.backlog
+            )
         except OSError:
             # Another owner won the race between the probe and the bind.
             if await is_endpoint_live(self.endpoint):
@@ -122,6 +138,27 @@ class LocalListener:
         os.chmod(path, self.socket_mode)
         self._ownership = Ownership.OWNED
         return self._ownership
+
+    async def _guarded(
+        self,
+        handler: ConnectionHandler,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
+    ) -> None:
+        """Verify the peer before handing the connection to ``handler``."""
+        connection = writer.get_extra_info("socket")
+        if connection is not None:
+            try:
+                self._verify(connection)
+            except IdentityError:
+                await _close_writer(writer)
+                return
+        await handler(reader, writer)
+
+    def _verify(self, connection: Any) -> PeerIdentity:
+        if self._verifier is not None:
+            return self._verifier(connection)
+        return verify_peer(connection, expected_uid=self.expected_uid)
 
     async def _start_pipe(self, handler: ConnectionHandler) -> Ownership:
         raise NotImplementedError(

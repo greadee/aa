@@ -29,6 +29,7 @@ from .envelope import (
     is_compatible,
     success,
 )
+from .identity import IdentityError, StoreBinding, requested_store_id
 
 _ROUTE_METHOD = "sifter.route"
 _GENERATE_METHOD = "sifter.generate"
@@ -43,8 +44,9 @@ def _tier_name(tier: Tier | None) -> str:
 class SifterService:
     """Transport-agnostic JSON-RPC service over an in-process ``ComputeSifter``."""
 
-    def __init__(self, sifter: Any):
+    def __init__(self, sifter: Any, *, store_id: str | None = None):
         self.sifter = sifter
+        self._store = StoreBinding(store_id)
         self._idempotent: dict[str, dict[str, Any]] = {}
 
     # -- dispatch ----------------------------------------------------------
@@ -61,6 +63,10 @@ class SifterService:
                 "unsupported RPC major",
                 data={"rpcVersion": aa.get("rpcVersion")},
             )
+        try:
+            self._store.check(requested_store_id(message))
+        except IdentityError as exc:
+            return exc.as_error(request_id)
         try:
             if method == _ROUTE_METHOD:
                 return success(request_id, self.route(params))
