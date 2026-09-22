@@ -17,18 +17,16 @@ from ..contracts import (
     route_request_kwargs,
 )
 from ..model_defaults import DEFAULT_EXPERT_MAX_OUTPUT
-from ..models.provider import Message, ProviderError, Role, Tier
+from ..models.provider import Message, Role, Tier
 from .envelope import (
     INCOMPATIBLE,
-    INTERNAL_ERROR,
-    INVALID_PARAMS,
     METHOD_NOT_FOUND,
     RPC_VERSION,
-    UNAVAILABLE,
     failure,
     is_compatible,
     success,
 )
+from .errors import map_exception
 from .identity import IdentityError, StoreBinding, requested_store_id
 
 _ROUTE_METHOD = "sifter.route"
@@ -76,17 +74,8 @@ class SifterService:
                 return success(request_id, self.health())
             if method == _RECOMMEND_METHOD:
                 return success(request_id, self.recommend(params))
-        except ContractError as exc:
-            return failure(request_id, INVALID_PARAMS, str(exc))
-        except ProviderError as exc:
-            return failure(
-                request_id,
-                UNAVAILABLE,
-                str(exc),
-                data={"retryable": getattr(exc, "retryable", False)},
-            )
-        except Exception as exc:  # noqa: BLE001 - surfaced as JSON-RPC internal error
-            return failure(request_id, INTERNAL_ERROR, str(exc))
+        except Exception as exc:  # noqa: BLE001 - mapped to the governed v1 error set
+            return map_exception(exc, request_id)
         return failure(request_id, METHOD_NOT_FOUND, f"unknown method {method!r}")
 
     # -- methods -----------------------------------------------------------

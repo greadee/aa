@@ -13,7 +13,8 @@ from .endpoint import (
     default_endpoint,
     runtime_directory,
 )
-from .envelope import RPC_VERSION
+from .envelope import RPC_VERSION, RpcError
+from .errors import ConflictError, UnavailableError, map_exception
 from .framing import (
     DEFAULT_MAX_FRAME_BYTES,
     FrameReader,
@@ -39,6 +40,7 @@ __all__ = [
     "SERVICE_NAME",
     "STORE_ID_FIELD",
     "TIMEOUT_FIELD",
+    "ConflictError",
     "DeadlineError",
     "FrameReader",
     "FramingError",
@@ -47,14 +49,17 @@ __all__ = [
     "Ownership",
     "PeerIdentity",
     "RPC_VERSION",
+    "RpcError",
     "SifterService",
     "SocketEndpoint",
     "StoreBinding",
+    "UnavailableError",
     "decode_frame",
     "default_endpoint",
     "dispatch_with_deadline",
     "encode_frame",
     "is_endpoint_live",
+    "map_exception",
     "peer_credentials",
     "requested_store_id",
     "resolve_timeout_ms",

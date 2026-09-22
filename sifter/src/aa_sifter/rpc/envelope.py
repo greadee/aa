@@ -43,6 +43,26 @@ def failure(
     return {"jsonrpc": "2.0", "id": request_id, "error": error}
 
 
+class RpcError(Exception):
+    """A failure that already carries an aa RPC v1 error code and data."""
+
+    def __init__(
+        self,
+        code: int | str,
+        message: str,
+        *,
+        data: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.data = data
+
+    def as_error(self, request_id: Any = None) -> dict[str, Any]:
+        """Render this failure as a JSON-RPC error envelope."""
+        return failure(request_id, self.code, self.message, data=self.data)
+
+
 def is_compatible(aa: dict[str, Any] | None) -> bool:
     """A callee rejects an unsupported RPC major with ``aa.incompatible``."""
     if not aa:

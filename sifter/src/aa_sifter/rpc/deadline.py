@@ -13,27 +13,15 @@ import asyncio
 from collections.abc import Mapping
 from typing import Any, Protocol
 
-from .envelope import INVALID_PARAMS, UNAVAILABLE, failure
+from .envelope import INVALID_PARAMS, UNAVAILABLE, RpcError, failure
 
 DEFAULT_TIMEOUT_MS = 30_000
 TIMEOUT_FIELD = "timeoutMs"
 _TIMEOUT_ALIASES = ("timeoutMs", "timeout_ms")
 
 
-class DeadlineError(Exception):
+class DeadlineError(RpcError):
     """The request stated a deadline that cannot be honoured."""
-
-    def __init__(
-        self, code: int | str, message: str, *, data: dict[str, Any] | None = None
-    ) -> None:
-        super().__init__(message)
-        self.code = code
-        self.message = message
-        self.data = data
-
-    def as_error(self, request_id: Any = None) -> dict[str, Any]:
-        """Render this failure as a JSON-RPC error envelope."""
-        return failure(request_id, self.code, self.message, data=self.data)
 
 
 class RpcHandler(Protocol):

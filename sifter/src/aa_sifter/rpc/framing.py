@@ -18,23 +18,14 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from .envelope import INVALID_REQUEST, PARSE_ERROR, failure
+from .envelope import INVALID_REQUEST, PARSE_ERROR, RpcError
 
 # Largest single frame body accepted, excluding its terminator.
 DEFAULT_MAX_FRAME_BYTES = 1024 * 1024
 
 
-class FramingError(Exception):
+class FramingError(RpcError):
     """A frame could not be parsed or was not a JSON-RPC request object."""
-
-    def __init__(self, code: int, message: str) -> None:
-        super().__init__(message)
-        self.code = code
-        self.message = message
-
-    def as_error(self, request_id: Any = None) -> dict[str, Any]:
-        """Render this failure as a JSON-RPC error envelope."""
-        return failure(request_id, self.code, self.message)
 
 
 def encode_frame(message: Mapping[str, Any]) -> bytes:

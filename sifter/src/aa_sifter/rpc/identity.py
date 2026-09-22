@@ -17,24 +17,14 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from .envelope import STORE_MISMATCH, UNAUTHORIZED, failure
+from .envelope import STORE_MISMATCH, UNAUTHORIZED, RpcError
 
 #: Field the additive v1 minor carries the caller's store identity in.
 STORE_ID_FIELD = "storeId"
 
 
-class IdentityError(Exception):
+class IdentityError(RpcError):
     """A transport or store identity check failed."""
-
-    def __init__(self, code: str, message: str, *, data: dict[str, Any] | None = None) -> None:
-        super().__init__(message)
-        self.code = code
-        self.message = message
-        self.data = data
-
-    def as_error(self, request_id: Any = None) -> dict[str, Any]:
-        """Render this failure as a JSON-RPC error envelope."""
-        return failure(request_id, self.code, self.message, data=self.data)
 
 
 @dataclass(frozen=True, slots=True)
