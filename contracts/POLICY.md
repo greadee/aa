@@ -64,4 +64,10 @@ Additive, backward-compatible changes bump `MINOR`. Breaking changes require a n
 
 ## Migration notes
 
-_None yet. Breaking changes are recorded here with the major version that introduced them._
+_No breaking changes. Breaking changes are recorded here with the major version that introduced them._
+
+### Additive change log
+
+| Version | Change | Migration |
+|---|---|---|
+| 1.1 | Added the `trace` object (`schemas/v1/trace.schema.json`) for bounded, redacted per-step learning evidence | None. Additive; consumers that do not recognize `kind: "trace"` ignore it. |
