@@ -3,14 +3,17 @@
 This is the only module that knows the cross-module contract shapes. It never
 holds project state: it validates incoming contract objects, converts a route
 request into ``run`` inputs, and builds contract-shaped responses and memory
-candidates. Validation is delegated to the generated ``aa_contracts`` bindings
-when they are importable (they are on the path in CI and in the monorepo).
+candidates. Validation is applied against the bundled JSON Schema at the
+boundary and against the generated ``aa_contracts`` bindings when they are
+importable (they are on the path in CI and in the monorepo).
 """
 
 from __future__ import annotations
 
 from typing import Any
 from uuid import uuid4
+
+from .contract_schema import SchemaError, validate_contract
 
 try:  # pragma: no cover - availability depends on deployment path
     import aa_contracts as _aa_contracts
@@ -42,7 +45,16 @@ def new_id(prefix: str) -> str:
 
 
 def validate(data: dict[str, Any]) -> dict[str, Any]:
-    """Validate a contract object, raising :class:`ContractError` on failure."""
+    """Validate a contract object against the JSON Schema and the binding.
+
+    The bundled JSON Schema is authoritative and always applied at the boundary;
+    the generated ``aa_contracts`` binding, when importable, is an additional
+    check. Raises :class:`ContractError` on failure.
+    """
+    try:
+        validate_contract(data)
+    except SchemaError as exc:
+        raise ContractError(str(exc)) from exc
     if _aa_contracts is None:
         return data
     try:

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/memory-record.schema.json",
+  "title": "aa-memory-record",
+  "x-contract-version": "1.0",
+  "description": "A knowledge record in the memory hierarchy. Promotion is deterministic and evidence-based.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "level", "lifecycle", "content"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "memory_record" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "level": { "enum": ["session", "task", "project", "role", "workforce"] },
+    "lifecycle": { "$ref": "common.schema.json#/$defs/memoryLifecycle" },
+    "title": { "type": "string", "maxLength": 512 },
+    "content": {
+      "type": "object",
+      "required": ["summary"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1, "maxLength": 16384 },
+        "details": { "type": "string", "maxLength": 262144 },
+        "tags": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "maxItems": 256 }
+      },
+      "additionalProperties": true
+    },
+    "applicability": {
+      "type": "object",
+      "properties": {
+        "roles": { "type": "array", "items": { "type": "string" }, "maxItems": 64 },
+        "trades": { "type": "array", "items": { "type": "string" }, "maxItems": 64 },
+        "languages": { "type": "array", "items": { "type": "string" }, "maxItems": 64 }
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/reference" },
+      "maxItems": 1024
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "supersedes": { "$ref": "common.schema.json#/$defs/identifier" },
+    "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+  },
+  "additionalProperties": true
+}

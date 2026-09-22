@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/route.schema.json",
+  "title": "aa-route",
+  "x-contract-version": "1.0",
+  "description": "Model/compute routing request and response exchanged between aa-kernel and aa-sifter.",
+  "$defs": {
+    "request": {
+      "type": "object",
+      "required": ["contractVersion", "kind", "id", "prompt"],
+      "properties": {
+        "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+        "kind": { "const": "route_request" },
+        "id": { "$ref": "common.schema.json#/$defs/identifier" },
+        "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+        "attemptId": { "$ref": "common.schema.json#/$defs/identifier" },
+        "prompt": { "type": "string", "minLength": 1, "maxLength": 262144 },
+        "context": { "type": "string", "maxLength": 262144 },
+        "policy": { "enum": ["local_only", "cloud_only", "local_first", "expert_first", "adaptive", "budget_constrained"] },
+        "budget": { "$ref": "common.schema.json#/$defs/budget" },
+        "metadata": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": true
+    },
+    "response": {
+      "type": "object",
+      "required": ["contractVersion", "kind", "id", "requestId", "route", "decisionLevel", "requiresHumanApproval"],
+      "properties": {
+        "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+        "kind": { "const": "route_response" },
+        "id": { "$ref": "common.schema.json#/$defs/identifier" },
+        "requestId": { "$ref": "common.schema.json#/$defs/identifier" },
+        "route": { "enum": ["local", "hybrid", "cloud", "blocked"] },
+        "decisionLevel": { "enum": ["routine", "significant", "major", "critical"] },
+        "plannerTier": { "enum": ["local", "expert", "none"] },
+        "executorTier": { "enum": ["local", "expert", "none"] },
+        "reviewTier": { "enum": ["local", "expert", "none"] },
+        "requiresHumanApproval": { "type": "boolean" },
+        "blockedReason": { "type": "string", "maxLength": 4096 },
+        "estimatedCostUsd": { "type": "number", "minimum": 0 },
+        "reasons": { "type": "array", "items": { "type": "string", "maxLength": 1024 }, "maxItems": 64 },
+        "provenance": { "$ref": "common.schema.json#/$defs/provenance" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -17,18 +17,18 @@ from ..contracts import (
     route_request_kwargs,
 )
 from ..model_defaults import DEFAULT_EXPERT_MAX_OUTPUT
-from ..models.provider import Message, ProviderError, Role, Tier
+from ..models.provider import Message, Role, Tier
 from .envelope import (
     INCOMPATIBLE,
-    INTERNAL_ERROR,
-    INVALID_PARAMS,
     METHOD_NOT_FOUND,
     RPC_VERSION,
-    UNAVAILABLE,
     failure,
     is_compatible,
     success,
 )
+from .errors import map_exception
+from .idempotency import IdempotencyStore, request_fingerprint
+from .identity import IdentityError, StoreBinding, requested_store_id
 
 _ROUTE_METHOD = "sifter.route"
 _GENERATE_METHOD = "sifter.generate"
@@ -43,9 +43,16 @@ def _tier_name(tier: Tier | None) -> str:
 class SifterService:
     """Transport-agnostic JSON-RPC service over an in-process ``ComputeSifter``."""
 
-    def __init__(self, sifter: Any):
+    def __init__(
+        self,
+        sifter: Any,
+        *,
+        store_id: str | None = None,
+        idempotency: IdempotencyStore | None = None,
+    ):
         self.sifter = sifter
-        self._idempotent: dict[str, dict[str, Any]] = {}
+        self._store = StoreBinding(store_id)
+        self.idempotency = idempotency or IdempotencyStore()
 
     # -- dispatch ----------------------------------------------------------
     async def handle(self, message: dict[str, Any]) -> dict[str, Any]:
@@ -62,6 +69,10 @@ class SifterService:
                 data={"rpcVersion": aa.get("rpcVersion")},
             )
         try:
+            self._store.check(requested_store_id(message))
+        except IdentityError as exc:
+            return exc.as_error(request_id)
+        try:
             if method == _ROUTE_METHOD:
                 return success(request_id, self.route(params))
             if method == _GENERATE_METHOD:
@@ -70,17 +81,8 @@ class SifterService:
                 return success(request_id, self.health())
             if method == _RECOMMEND_METHOD:
                 return success(request_id, self.recommend(params))
-        except ContractError as exc:
-            return failure(request_id, INVALID_PARAMS, str(exc))
-        except ProviderError as exc:
-            return failure(
-                request_id,
-                UNAVAILABLE,
-                str(exc),
-                data={"retryable": getattr(exc, "retryable", False)},
-            )
-        except Exception as exc:  # noqa: BLE001 - surfaced as JSON-RPC internal error
-            return failure(request_id, INTERNAL_ERROR, str(exc))
+        except Exception as exc:  # noqa: BLE001 - mapped to the governed v1 error set
+            return map_exception(exc, request_id)
         return failure(request_id, METHOD_NOT_FOUND, f"unknown method {method!r}")
 
     # -- methods -----------------------------------------------------------
@@ -119,8 +121,11 @@ class SifterService:
 
     async def generate(self, params: dict[str, Any]) -> dict[str, Any]:
         key = params.get("idempotencyKey")
-        if key is not None and key in self._idempotent:
-            return self._idempotent[key]
+        fingerprint = request_fingerprint(params) if key is not None else ""
+        if key is not None:
+            cached = self.idempotency.resolve(str(key), fingerprint)
+            if cached is not None:
+                return cached
         raw_messages = params.get("messages")
         if not isinstance(raw_messages, list) or not raw_messages:
             raise ContractError("messages: at least one message is required")
@@ -137,7 +142,7 @@ class SifterService:
             },
         }
         if key is not None:
-            self._idempotent[key] = payload
+            self.idempotency.remember(str(key), fingerprint, payload)
         return payload
 
     def health(self) -> dict[str, Any]:

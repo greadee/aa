@@ -8,6 +8,7 @@ step owned by ``aa-memory`` (ADR-P4-008).
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
 
 
@@ -52,5 +53,9 @@ def task_candidate(
             "cloudCostUsd": round(cloud_cost, 6),
         },
     )
-    record["provenance"] = {"source": "aa-sifter", "traceId": trace_id}
+    record["provenance"] = {
+        "source": "aa-sifter",
+        "producedAt": datetime.now(UTC).isoformat(),
+        "traceId": trace_id,
+    }
     return record
