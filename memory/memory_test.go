@@ -69,3 +69,41 @@ func TestReopenPersistsRecords(t *testing.T) {
 		t.Fatalf("expected persisted issue: %v", err)
 	}
 }
+
+func TestTraceStoreRebuildEquivalence(t *testing.T) {
+	dir := t.TempDir()
+	m, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seq0, seq1 := 0, 1
+	_, changed, err := m.Traces().Ingest(v1.Trace{
+		Envelope:  v1.Envelope{ContractVersion: "1.1", ID: "trc_1", ProjectID: "prj_1"},
+		AttemptID: "att_1",
+		Steps: []v1.TraceStep{
+			{Sequence: &seq0, Phase: v1.TraceObserve, Outcome: v1.TraceSucceeded},
+			{Sequence: &seq1, Phase: v1.TraceTest, Outcome: v1.TraceFailed},
+		},
+	})
+	if err != nil || !changed {
+		t.Fatalf("ingest changed=%v err=%v", changed, err)
+	}
+	summaries, err := m.Query().TraceSummaries()
+	if err != nil || len(summaries) != 1 || summaries[0].Outcome != "failed" {
+		t.Fatalf("summaries=%+v err=%v", summaries, err)
+	}
+	before := m.Projection().Digest()
+	if err := m.Rebuild(); err != nil {
+		t.Fatal(err)
+	}
+	if after := m.Projection().Digest(); after != before {
+		t.Fatalf("digest changed across rebuild: %s vs %s", before, after)
+	}
+	m2, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m2.Traces().Get("trc_1"); err != nil {
+		t.Fatalf("expected persisted trace: %v", err)
+	}
+}

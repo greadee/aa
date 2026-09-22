@@ -15,3 +15,4 @@ Durable issue documentation. GitHub issues are the execution record; these docum
 |---|---|---|---|
 | [trace-learning-substrate.md](trace-learning-substrate.md) | ISS-TRACE-LOOP | Umbrella: the observation → trace → learning substrate is under-delivered | `ph1-contracts`, `ph2-memory`, `ph3-kernel`, `ph4-sifter`, `ph9-joblearn` |
 | [ph1-contracts-trace-contract.md](ph1-contracts-trace-contract.md) | ISS-TRACE-1 | `contracts`: bounded per-step trace object | `ph1-contracts` |
+| [ph2-memory-trace-store.md](ph2-memory-trace-store.md) | ISS-TRACE-2 | `memory`: canonical trace store, summaries, retention | `ph2-memory` |
