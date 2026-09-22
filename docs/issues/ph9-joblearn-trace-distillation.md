@@ -3,7 +3,7 @@
 **Type:** feature / technical debt
 **Status:** complete (joblearn module update)
 **Branch:** `ph9-joblearn`
-**Phase PR:** (linked from the module summary when opened)
+**Phase PR:** [#18](https://github.com/greadee/aa/pull/18)
 **Parent umbrella:** `ISS-TRACE-LOOP` — the observation → trace → learning substrate is under-delivered (`docs/issues/trace-learning-substrate.md`)
 **Module plan:** [../../kernel/joblearn/module-upd-plan.md](../../kernel/joblearn/module-upd-plan.md)
 **Module summary:** [../../kernel/joblearn/module-upd-summary.md](../../kernel/joblearn/module-upd-summary.md)
