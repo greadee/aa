@@ -5,6 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/greadee/aa/obsv/protocol"
 	"github.com/greadee/aa/obsv/transport"
@@ -50,7 +51,7 @@ func scenario() []protocol.Event {
 	}
 }
 
-func newSource(t *testing.T) (*source.OBsv, transport.Server) {
+func newSource(t *testing.T) (*source.OBsv, *transport.Local) {
 	t.Helper()
 	server := transport.NewLocal("test", nil)
 	t.Cleanup(func() { _ = server.Close() })
@@ -116,6 +117,69 @@ func TestConsumeLiveEqualsReplay(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("live frames differ from replay:\n%+v\n%+v", got, want)
 	}
+}
+
+func TestFollowLiveEqualsReplay(t *testing.T) {
+	src, server := newSource(t)
+	b, err := New("s1")
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- b.Follow(context.Background(), src) }()
+
+	events := scenario()
+	appendTo(t, server, "s1", events...)
+	waitFor(t, func() bool { return len(b.Events()) == len(events) })
+
+	replayed, err := src.Replay(context.Background(), "s1")
+	if err != nil {
+		t.Fatalf("Replay: %v", err)
+	}
+	want, err := replay.Build("s1", replayed)
+	if err != nil {
+		t.Fatalf("replay.Build: %v", err)
+	}
+
+	// Closing the transport closes the session journal and its live
+	// subscription, ending Follow cleanly.
+	if err := server.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	if err := <-done; err != nil {
+		t.Fatalf("Follow err = %v, want nil", err)
+	}
+
+	got, err := b.FrameList()
+	if err != nil {
+		t.Fatalf("FrameList: %v", err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("followed frames differ from replay:\n%+v\n%+v", got, want)
+	}
+}
+
+func TestFollowRejectsNilSource(t *testing.T) {
+	b, err := New("s1")
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if err := b.Follow(context.Background(), nil); !errors.Is(err, visualizer.ErrInvalid) {
+		t.Fatalf("err = %v, want ErrInvalid", err)
+	}
+}
+
+func waitFor(t *testing.T, ok func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if ok() {
+			return
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatal("timed out waiting for condition")
 }
 
 func TestConsumeAccumulatesEveryEvent(t *testing.T) {

@@ -4,7 +4,8 @@
 // The bridge accumulates events from a source.Subscription and re-derives its
 // frame list with replay.Build, so a live session and its replay are always the
 // same frames. It does not own the observation transport: the subscription is
-// supplied by the caller, and the real aa-obsv transport remains a follow-up.
+// supplied by the caller through the obsv-backed source seam, so a live session
+// and its replay read the same events over the same transport.
 package bridge
 
 import (
@@ -83,6 +84,23 @@ func (b *Bridge) Cursor() (*replay.Cursor, error) {
 		return nil, err
 	}
 	return list.Cursor()
+}
+
+// Follow subscribes to the bridge's session through the source and consumes the
+// live subscription into the bridge. It returns when the subscription closes or
+// ctx is done, and it owns the subscription it opened. Because the accumulated
+// events go through the same replay path, following a session and replaying it
+// yield the same frames.
+func (b *Bridge) Follow(ctx context.Context, src source.EventSource) error {
+	if src == nil {
+		return fmt.Errorf("%w: source is required", visualizer.ErrInvalid)
+	}
+	sub, err := src.Subscribe(ctx, b.sessionID)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = sub.Close() }()
+	return b.Consume(ctx, sub)
 }
 
 // Consume reads a subscription to completion, applying every event. It returns
