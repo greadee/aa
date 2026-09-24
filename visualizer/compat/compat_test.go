@@ -40,6 +40,48 @@ func TestNormalizeCamelCaseAliases(t *testing.T) {
 	}
 }
 
+// TestNormalizeDelimitedRealObservationMetadata mirrors the scalar form the
+// obsv durable allowlist preserves over the shared transport.
+func TestNormalizeDelimitedRealObservationMetadata(t *testing.T) {
+	m, err := NormalizePayload(map[string]any{
+		"secondary_paths": "pkg/a.go, pkg/b.go",
+		"access_sequence": "read, edit, test",
+		"tool":            "gopls",
+		"unknown":         "ignored",
+	})
+	if err != nil {
+		t.Fatalf("NormalizePayload: %v", err)
+	}
+	if !reflect.DeepEqual(m.SecondaryPaths, []string{"pkg/a.go", "pkg/b.go"}) {
+		t.Fatalf("secondary paths = %v", m.SecondaryPaths)
+	}
+	if !reflect.DeepEqual(m.AccessSequence, []string{"read", "edit", "test"}) {
+		t.Fatalf("access sequence = %v", m.AccessSequence)
+	}
+}
+
+func TestNormalizeDelimitedTrimsAndDedups(t *testing.T) {
+	m, err := NormalizePayload(map[string]any{
+		"secondary_paths": " a.go ,, b.go , a.go ",
+	})
+	if err != nil {
+		t.Fatalf("NormalizePayload: %v", err)
+	}
+	if !reflect.DeepEqual(m.SecondaryPaths, []string{"a.go", "b.go"}) {
+		t.Fatalf("secondary paths = %v", m.SecondaryPaths)
+	}
+}
+
+func TestNormalizeDelimitedSingleValue(t *testing.T) {
+	m, err := NormalizePayload(map[string]any{"access_sequence": "read"})
+	if err != nil {
+		t.Fatalf("NormalizePayload: %v", err)
+	}
+	if !reflect.DeepEqual(m.AccessSequence, []string{"read"}) {
+		t.Fatalf("access sequence = %v", m.AccessSequence)
+	}
+}
+
 func TestNormalizeIgnoresUnknownMetadata(t *testing.T) {
 	m, err := NormalizePayload(map[string]any{"secret": "raw prompt", "lines": 42})
 	if err != nil {

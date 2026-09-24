@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/greadee/aa/obsv/protocol"
 	"github.com/greadee/aa/obsv/transport"
 	visualizer "github.com/greadee/aa/visualizer"
+	"github.com/greadee/aa/visualizer/compat"
 )
 
 func obsEvent(sourceType protocol.SourceType, workPackageID string) protocol.Event {
@@ -79,6 +81,36 @@ func TestReplayReadsOBsvAndMaps(t *testing.T) {
 	}
 	if got[0].Payload["sessionId"] != "s1" || got[0].Payload["workPackageId"] != "wp1" {
 		t.Fatalf("payload = %#v", got[0].Payload)
+	}
+}
+
+func TestReplayMetadataFeedsCompatibilityProfile(t *testing.T) {
+	src, server := newLocal(t)
+	ev := obsEvent(protocol.SourceFile, "wp1")
+	// Sanitize is the obsv durable allowlist: the profile keys survive, the
+	// content-bearing key is dropped, and the allowlisted-but-unknown key stays
+	// for compat to ignore.
+	ev.Metadata = protocol.Sanitize(map[string]any{
+		"secondary_paths": "pkg/a.go, pkg/b.go",
+		"access_sequence": "read, edit, test",
+		"tool":            "gopls",
+		"prompt":          "secret",
+	})
+	appendTo(t, server, "s1", ev)
+
+	events, err := src.Replay(context.Background(), "s1")
+	if err != nil {
+		t.Fatalf("Replay: %v", err)
+	}
+	m, err := compat.Normalize(events[0])
+	if err != nil {
+		t.Fatalf("compat.Normalize: %v", err)
+	}
+	if !reflect.DeepEqual(m.SecondaryPaths, []string{"pkg/a.go", "pkg/b.go"}) {
+		t.Fatalf("secondary paths = %v", m.SecondaryPaths)
+	}
+	if !reflect.DeepEqual(m.AccessSequence, []string{"read", "edit", "test"}) {
+		t.Fatalf("access sequence = %v", m.AccessSequence)
 	}
 }
 
