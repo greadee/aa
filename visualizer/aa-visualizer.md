@@ -16,7 +16,7 @@ Make work tangible: render the current session live and any past session as a re
 
 ## Must Not
 
-- Define its own observation protocol (use `obsv`).
+- Define its own observation protocol, transport, or event-store (all three are `obsv`'s).
 - Store canonical history (use `memory`).
 - Import `kernel`.
 - Persist file contents or raw prompts.
@@ -33,6 +33,17 @@ Make work tangible: render the current session live and any past session as a re
 2. The compatibility profile for metadata (secondary paths, access sequence) is explicit and tested.
 3. Node identity is re-derived after replay, not persisted as truth.
 4. Rendering has a large-graph performance budget.
+5. The visualizer defines no observation protocol, transport, or event-store: the single `visualizer/adapter` mapping is the only observation vocabulary, enforced by a boundary guard.
+
+## AAV convergence
+
+The shared `obsv` protocol and the `compat` profile replace the duplicated
+protocol, IPC, and event-store carried from `agent-action-visualizer` (AAV).
+`obsv` is now the only observation vocabulary: `visualizer/source` reads
+`obsv` `Replay` and follows `obsv` `Subscribe`, and `visualizer/adapter` is the
+one mapping into the `contracts` taxonomy. A boundary check
+(`tools/archtest`) fails if a second observation protocol, transport, or
+event-store appears under `visualizer/`.
 
 ## Canonical references
 
