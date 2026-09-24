@@ -1,0 +1,191 @@
+"""Local socket listener with owner-only creation and attach-or-own semantics.
+
+The v1 transport gives every per-user service exactly one owner. A process that
+wants to serve first checks whether a live owner already listens on the
+endpoint: if so it *attaches* (the caller decides whether to become a client or
+refuse to start) instead of binding a second socket. Otherwise it takes
+ownership, recovering a stale socket file left by a crashed owner, creates the
+socket owner-only, and removes it again on shutdown.
+
+Only the owner ever unlinks the socket; an attached process never touches a file
+it does not own.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import contextlib
+import os
+from collections.abc import Awaitable, Callable
+from enum import StrEnum
+from functools import partial
+from typing import Any
+
+from .endpoint import SocketEndpoint
+from .identity import IdentityError, PeerIdentity, verify_peer
+
+ConnectionHandler = Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
+PeerVerifier = Callable[[Any], PeerIdentity]
+
+
+class Ownership(StrEnum):
+    """Whether a listener took the endpoint or found a live owner already."""
+
+    OWNED = "owned"
+    ATTACHED = "attached"
+
+
+async def is_endpoint_live(endpoint: SocketEndpoint) -> bool:
+    """Probe an endpoint for a live owner without consuming a real request."""
+    if endpoint.kind != "unix":
+        return False
+    path = endpoint.address
+    if not os.path.exists(path):
+        return False
+    try:
+        _, writer = await asyncio.open_unix_connection(path)
+    except OSError:
+        return False
+    writer.close()
+    with contextlib.suppress(OSError):
+        await writer.wait_closed()
+    return True
+
+
+def _remove_socket_file(path: str) -> None:
+    with contextlib.suppress(FileNotFoundError):
+        os.unlink(path)
+
+
+async def _close_writer(writer: asyncio.StreamWriter) -> None:
+    writer.close()
+    with contextlib.suppress(OSError):
+        await writer.wait_closed()
+
+
+class LocalListener:
+    """Bind (or attach to) one per-user Unix domain socket endpoint."""
+
+    def __init__(
+        self,
+        endpoint: SocketEndpoint,
+        *,
+        directory_mode: int = 0o700,
+        socket_mode: int = 0o600,
+        backlog: int = 16,
+        expected_uid: int | None = None,
+        verifier: PeerVerifier | None = None,
+    ) -> None:
+        self.endpoint = endpoint
+        self.directory_mode = directory_mode
+        self.socket_mode = socket_mode
+        self.backlog = backlog
+        self.expected_uid = expected_uid
+        self._verifier = verifier
+        self._server: asyncio.AbstractServer | None = None
+        self._ownership: Ownership | None = None
+
+    @property
+    def ownership(self) -> Ownership | None:
+        """``None`` before :meth:`start`, then the outcome of the last start."""
+        return self._ownership
+
+    @property
+    def owned(self) -> bool:
+        return self._ownership is Ownership.OWNED
+
+    @property
+    def serving(self) -> bool:
+        """Whether this process actually bound the endpoint."""
+        return self._server is not None
+
+    async def start(self, handler: ConnectionHandler) -> Ownership:
+        """Take the endpoint, or report that a live owner already holds it."""
+        if self.endpoint.kind == "unix":
+            return await self._start_unix(handler)
+        return await self._start_pipe(handler)
+
+    async def stop(self) -> None:
+        """Close an owned server and remove the socket file it created."""
+        self.close()
+        await self.wait_closed()
+
+    def close(self) -> None:
+        """Stop accepting immediately; :meth:`wait_closed` drains handlers.
+
+        Kept separate because ``asyncio.Server.wait_closed`` waits for active
+        connection handlers, so a graceful shutdown must cancel them in between.
+        """
+        if self._server is None:
+            self._ownership = None
+            return
+        self._server.close()
+        if self._ownership is Ownership.OWNED and self.endpoint.kind == "unix":
+            _remove_socket_file(self.endpoint.address)
+        self._ownership = None
+
+    async def wait_closed(self) -> None:
+        """Wait for the closed server and its handlers to finish."""
+        server, self._server = self._server, None
+        if server is None:
+            return
+        with contextlib.suppress(OSError):
+            await server.wait_closed()
+
+    # -- transports --------------------------------------------------------
+    async def _start_unix(self, handler: ConnectionHandler) -> Ownership:
+        path = self.endpoint.address
+        if await is_endpoint_live(self.endpoint):
+            self._ownership = Ownership.ATTACHED
+            return self._ownership
+
+        self._ensure_directory(path)
+        _remove_socket_file(path)
+        try:
+            self._server = await asyncio.start_unix_server(
+                partial(self._guarded, handler), path=path, backlog=self.backlog
+            )
+        except OSError:
+            # Another owner won the race between the probe and the bind.
+            if await is_endpoint_live(self.endpoint):
+                self._ownership = Ownership.ATTACHED
+                return self._ownership
+            raise
+        os.chmod(path, self.socket_mode)
+        self._ownership = Ownership.OWNED
+        return self._ownership
+
+    async def _guarded(
+        self,
+        handler: ConnectionHandler,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
+    ) -> None:
+        """Verify the peer before handing the connection to ``handler``."""
+        connection = writer.get_extra_info("socket")
+        if connection is not None:
+            try:
+                self._verify(connection)
+            except IdentityError:
+                await _close_writer(writer)
+                return
+        await handler(reader, writer)
+
+    def _verify(self, connection: Any) -> PeerIdentity:
+        if self._verifier is not None:
+            return self._verifier(connection)
+        return verify_peer(connection, expected_uid=self.expected_uid)
+
+    async def _start_pipe(self, handler: ConnectionHandler) -> Ownership:
+        raise NotImplementedError(
+            "Windows named-pipe hosting is specified by aa RPC v1 but needs a "
+            "platform backend; use a Unix domain socket endpoint on this platform"
+        )
+
+    def _ensure_directory(self, path: str) -> None:
+        directory = os.path.dirname(path)
+        if not directory or os.path.isdir(directory):
+            return
+        os.makedirs(directory, mode=self.directory_mode, exist_ok=True)
+        with contextlib.suppress(OSError):
+            os.chmod(directory, self.directory_mode)

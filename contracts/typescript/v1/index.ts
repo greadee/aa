@@ -232,6 +232,40 @@ export interface Telemetry extends Envelope {
   versions?: Record<string, string>;
 }
 
+export type TracePhase =
+  | "observe" | "plan" | "model" | "tool" | "edit"
+  | "test" | "gate" | "verify" | "integrate";
+
+export type TraceOutcome = "succeeded" | "failed" | "skipped" | "blocked";
+
+export interface TraceStep {
+  sequence: number;
+  at?: Timestamp;
+  phase: TracePhase;
+  actor?: Actor;
+  operation?: string;
+  target?: Reference;
+  inputHash?: string;
+  outputHash?: string;
+  outcome: TraceOutcome;
+  errorClass?: string;
+  durationMs?: number;
+  tokens?: TokenCounts;
+  costUsd?: number;
+  redacted?: boolean;
+  evidence?: Reference[];
+}
+
+export interface Trace extends Envelope {
+  kind: "trace";
+  attemptId: Identifier;
+  assignmentId?: Identifier;
+  workPackageId?: Identifier;
+  redactionVersion?: string;
+  truncated?: boolean;
+  steps: TraceStep[];
+}
+
 export interface ProjectRecord extends Envelope {
   kind: "project_record";
   name: string;
@@ -372,7 +406,7 @@ export interface Workflow extends Envelope {
 
 export type ContractObject =
   | Event | WorkPackage | TaskGraph | ExecutionContract | ResultEnvelope
-  | Telemetry | ProjectRecord | MemoryRecord | Issue | Strategy
+  | Telemetry | Trace | ProjectRecord | MemoryRecord | Issue | Strategy
   | RouteRequest | RouteResponse | ToolManifest | Workflow;
 
 export function isContractObject(value: unknown): value is ContractObject {

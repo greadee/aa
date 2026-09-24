@@ -1,0 +1,51 @@
+{
+  "contractVersion": "1.1",
+  "kind": "trace",
+  "id": "trc_01HJJJ0001",
+  "projectId": "prj_01HAAA0001",
+  "attemptId": "att_01HHHH0001",
+  "assignmentId": "asg_01HFFF0001",
+  "workPackageId": "wp_01HBBB0001",
+  "redactionVersion": "1.0",
+  "truncated": false,
+  "steps": [
+    {
+      "sequence": 0,
+      "at": "2026-09-21T00:00:00Z",
+      "phase": "observe",
+      "actor": { "kind": "system", "id": "sys_obsv" },
+      "operation": "read_project",
+      "outcome": "succeeded",
+      "durationMs": 12,
+      "redacted": true
+    },
+    {
+      "sequence": 1,
+      "at": "2026-09-21T00:00:01Z",
+      "phase": "model",
+      "actor": { "kind": "agent", "id": "agt_planner", "role": "planner", "model": "local/qwen" },
+      "operation": "plan_work",
+      "outcome": "succeeded",
+      "durationMs": 640,
+      "tokens": { "input": 900, "output": 300 },
+      "costUsd": 0.004,
+      "redacted": true
+    },
+    {
+      "sequence": 2,
+      "at": "2026-09-21T00:00:02Z",
+      "phase": "tool",
+      "actor": { "kind": "agent", "id": "agt_builder", "role": "builder", "model": "local/qwen" },
+      "operation": "run_tests",
+      "target": { "kind": "work_package", "id": "wp_01HBBB0001" },
+      "inputHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "outputHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "outcome": "failed",
+      "errorClass": "test_failure",
+      "durationMs": 840,
+      "costUsd": 0.012,
+      "redacted": true,
+      "evidence": [{ "kind": "test", "id": "test_01HKKK0001" }]
+    }
+  ]
+}

@@ -12,6 +12,7 @@ GitHub is the durable **execution** record. This `docs/` tree is the durable **k
 | [phases.md](phases.md) | Phase roadmap and phase documentation |
 | [features.md](features.md) | Cross-cutting and per-module feature documentation |
 | [sprints.md](sprints.md) | Sprint and slice conventions |
+| [../issues/README.md](../issues/README.md) | Durable issue documents and umbrella changes |
 
 ## Canonical documents
 
@@ -28,6 +29,7 @@ docs/
 ├── architecture/   system architecture and decisions
 ├── github-os/      process, planning, review, audit, and GitHub workflow
 ├── phases/         per-phase plans, diagrams, and summaries (phN-scope/)
+├── issues/         durable issue documents and umbrella changes
 ├── features/       feature-level documentation
 └── reference/      terminology, schemas, CLI, APIs, configuration
 ```

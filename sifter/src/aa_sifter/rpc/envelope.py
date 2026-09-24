@@ -18,6 +18,7 @@ INVALID_PARAMS = -32602
 INTERNAL_ERROR = -32603
 
 INCOMPATIBLE = "aa.incompatible"
+STORE_MISMATCH = "aa.store_mismatch"
 UNAUTHORIZED = "aa.unauthorized"
 BUDGET_EXCEEDED = "aa.budget_exceeded"
 APPROVAL_REQUIRED = "aa.approval_required"
@@ -40,6 +41,26 @@ def failure(
     if data is not None:
         error["data"] = data
     return {"jsonrpc": "2.0", "id": request_id, "error": error}
+
+
+class RpcError(Exception):
+    """A failure that already carries an aa RPC v1 error code and data."""
+
+    def __init__(
+        self,
+        code: int | str,
+        message: str,
+        *,
+        data: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.data = data
+
+    def as_error(self, request_id: Any = None) -> dict[str, Any]:
+        """Render this failure as a JSON-RPC error envelope."""
+        return failure(request_id, self.code, self.message, data=self.data)
 
 
 def is_compatible(aa: dict[str, Any] | None) -> bool:

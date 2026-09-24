@@ -16,6 +16,7 @@ type Memory struct {
 	issues     *repo.IssueRepository
 	strategies *repo.StrategyRepository
 	records    *repo.MemoryRecordRepository
+	traces     *repo.TraceRepository
 }
 
 // Open prepares a memory rooted at root and rebuilds the projection.
@@ -33,6 +34,7 @@ func Open(root string) (*Memory, error) {
 	m.issues = repo.NewIssueRepository(s, p)
 	m.strategies = repo.NewStrategyRepository(s, p)
 	m.records = repo.NewMemoryRecordRepository(s, p)
+	m.traces = repo.NewTraceRepository(s, p)
 	return m, nil
 }
 
@@ -53,6 +55,9 @@ func (m *Memory) Strategies() *repo.StrategyRepository { return m.strategies }
 
 // Records returns the memory-record repository.
 func (m *Memory) Records() *repo.MemoryRecordRepository { return m.records }
+
+// Traces returns the canonical trace repository.
+func (m *Memory) Traces() *repo.TraceRepository { return m.traces }
 
 // Rebuild discards and reconstructs the projection from canonical records.
 func (m *Memory) Rebuild() error {
