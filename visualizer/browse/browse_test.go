@@ -38,8 +38,7 @@ func fixture() []visualizer.Event {
 }
 
 // newBrowser appends events to a real on-disk memory store and returns a
-// browser over the memory query seam. Tests exercise the real seam rather than
-// a fake event source.
+// browser over the real memory query seam.
 func newBrowser(t *testing.T, events ...visualizer.Event) *Browser {
 	t.Helper()
 	b, _ := newBrowserWithStore(t, events)

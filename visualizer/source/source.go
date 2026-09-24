@@ -1,18 +1,21 @@
 // Package source is the visualizer's event seam.
 //
-// Live and replay both consume events through EventSource. The real aa-obsv
-// Replay/Subscribe transport is a follow-up; until then a deterministic
-// in-memory Fake stands in. The seam reuses the shared contracts.Event
-// taxonomy and does not define a new observation protocol.
+// Live and replay both consume events through EventSource. The seam is backed
+// by the shared aa-obsv transport: Replay reads a session's journal and
+// Subscribe follows it, and one adapter maps obsv observations into the shared
+// contracts event taxonomy. The visualizer defines no observation protocol or
+// transport of its own; the transport may be the in-process one or a kernel
+// host socket that implements the same surface.
 package source
 
 import (
 	"context"
 	"fmt"
-	"sort"
-	"sync"
 
+	"github.com/greadee/aa/obsv/journal"
+	"github.com/greadee/aa/obsv/transport"
 	visualizer "github.com/greadee/aa/visualizer"
+	"github.com/greadee/aa/visualizer/adapter"
 )
 
 // EventSource yields a session's events for replay and for a live subscription.
@@ -29,107 +32,119 @@ type Subscription interface {
 	Close() error
 }
 
-// Fake is a deterministic in-memory EventSource for tests.
-type Fake struct {
-	mu       sync.Mutex
-	sessions map[visualizer.SessionID][]visualizer.Event
-	subs     map[visualizer.SessionID][]*subscriber
-	nextID   int
+// OBsv is the EventSource backed by the shared aa-obsv transport.
+type OBsv struct {
+	server transport.Server
 }
 
-// NewFake returns an empty fake source.
-func NewFake() *Fake {
-	return &Fake{
-		sessions: map[visualizer.SessionID][]visualizer.Event{},
-		subs:     map[visualizer.SessionID][]*subscriber{},
+// New returns an OBsv source over an obsv transport. The transport is the
+// shared aa-obsv surface, so the in-process transport works now and a
+// kernel-host socket client can take its place without changing callers.
+func New(server transport.Server) (*OBsv, error) {
+	if server == nil {
+		return nil, fmt.Errorf("%w: obsv transport is required", visualizer.ErrInvalid)
 	}
+	return &OBsv{server: server}, nil
 }
 
-// Append validates and stores events for a session. Events may be appended out
-// of sequence order; Replay and the projection order them by Sequence.
-func (f *Fake) Append(sessionID visualizer.SessionID, events ...visualizer.Event) error {
-	if sessionID == "" {
-		return fmt.Errorf("%w: sessionId is required", visualizer.ErrInvalid)
-	}
-	for i, e := range events {
-		if err := e.Validate(); err != nil {
-			return fmt.Errorf("%w: events[%d]: %s", visualizer.ErrInvalid, i, err)
-		}
-	}
-	f.mu.Lock()
-	f.sessions[sessionID] = append(f.sessions[sessionID], events...)
-	subs := append([]*subscriber(nil), f.subs[sessionID]...)
-	f.mu.Unlock()
-
-	// Deliver after releasing the lock so a consumer can call back safely.
-	for _, s := range subs {
-		for _, e := range events {
-			s.deliver(e)
-		}
-	}
-	return nil
+// NewLocal returns an OBsv source over an in-process obsv transport owned by
+// owner. A nil newJournal uses an in-memory journal per session.
+func NewLocal(owner string, newJournal transport.NewJournal) *OBsv {
+	return &OBsv{server: transport.NewLocal(owner, newJournal)}
 }
 
-// Replay implements EventSource, returning a sequence-ordered copy.
-func (f *Fake) Replay(_ context.Context, sessionID visualizer.SessionID) ([]visualizer.Event, error) {
-	f.mu.Lock()
-	stored, ok := f.sessions[sessionID]
-	f.mu.Unlock()
-	if !ok {
-		return nil, fmt.Errorf("%w: session %q", visualizer.ErrNotFound, sessionID)
+// Replay reads a session through obsv Replay and maps the observations to the
+// shared taxonomy in Sequence order.
+func (s *OBsv) Replay(ctx context.Context, sessionID visualizer.SessionID) ([]visualizer.Event, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
-	if len(stored) == 0 {
-		return nil, fmt.Errorf("%w: session %q", visualizer.ErrEmpty, sessionID)
-	}
-	out := append([]visualizer.Event(nil), stored...)
-	sort.SliceStable(out, func(i, j int) bool { return out[i].Sequence < out[j].Sequence })
-	return out, nil
-}
-
-// Subscribe implements EventSource, delivering events appended after the call.
-func (f *Fake) Subscribe(_ context.Context, sessionID visualizer.SessionID) (Subscription, error) {
 	if sessionID == "" {
 		return nil, fmt.Errorf("%w: sessionId is required", visualizer.ErrInvalid)
 	}
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	s := &subscriber{ch: make(chan visualizer.Event, 256), parent: f, session: sessionID, id: f.nextID}
-	f.nextID++
-	f.subs[sessionID] = append(f.subs[sessionID], s)
-	return s, nil
-}
-
-func (f *Fake) remove(s *subscriber) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	list := f.subs[s.session]
-	for i, candidate := range list {
-		if candidate == s {
-			f.subs[s.session] = append(list[:i], list[i+1:]...)
-			break
-		}
+	client, err := transport.Dial(s.server, string(sessionID))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", visualizer.ErrUnavailable, err)
 	}
+	raw, err := client.Replay(0)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", visualizer.ErrUnavailable, err)
+	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("%w: session %q", visualizer.ErrEmpty, sessionID)
+	}
+	out := make([]visualizer.Event, 0, len(raw))
+	for i, ev := range raw {
+		mapped, err := adapter.ToContract(ev)
+		if err != nil {
+			return nil, fmt.Errorf("%w: event %d: %s", visualizer.ErrInvalid, i, err)
+		}
+		out = append(out, mapped)
+	}
+	return out, nil
 }
 
-type subscriber struct {
-	ch      chan visualizer.Event
-	parent  *Fake
-	session visualizer.SessionID
-	id      int
-	once    sync.Once
+// Subscribe follows a session through obsv Subscribe, mapping each observation
+// to the shared taxonomy as it arrives.
+func (s *OBsv) Subscribe(ctx context.Context, sessionID visualizer.SessionID) (Subscription, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if sessionID == "" {
+		return nil, fmt.Errorf("%w: sessionId is required", visualizer.ErrInvalid)
+	}
+	client, err := transport.Dial(s.server, string(sessionID))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", visualizer.ErrUnavailable, err)
+	}
+	sub, err := client.Subscribe(0)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", visualizer.ErrUnavailable, err)
+	}
+	return newSubscription(ctx, sub), nil
 }
 
-func (s *subscriber) Events() <-chan visualizer.Event { return s.ch }
+// subscription adapts an obsv journal subscription to the visualizer seam.
+type subscription struct {
+	sub *journal.Subscription
+	ch  chan visualizer.Event
+}
 
-func (s *subscriber) Close() error {
-	s.once.Do(func() {
-		s.parent.remove(s)
-		close(s.ch)
-	})
+func newSubscription(ctx context.Context, sub *journal.Subscription) *subscription {
+	s := &subscription{sub: sub, ch: make(chan visualizer.Event, 256)}
+	go s.pump(ctx)
+	return s
+}
+
+func (s *subscription) Events() <-chan visualizer.Event { return s.ch }
+
+func (s *subscription) Close() error {
+	s.sub.Close()
 	return nil
 }
 
-func (s *subscriber) deliver(e visualizer.Event) {
-	defer func() { _ = recover() }() // a closed subscriber must not panic the source
-	s.ch <- e
+// pump maps observations until the obsv subscription or the context closes.
+// Delivery stays failure-open like obsv: an observation that cannot be mapped
+// is dropped rather than stalling the stream.
+func (s *subscription) pump(ctx context.Context) {
+	defer close(s.ch)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case ev, ok := <-s.sub.Events():
+			if !ok {
+				return
+			}
+			mapped, err := adapter.ToContract(ev)
+			if err != nil {
+				continue
+			}
+			select {
+			case s.ch <- mapped:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }

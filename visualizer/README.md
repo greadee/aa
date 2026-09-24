@@ -14,7 +14,7 @@ Time-travel work history, debugging, and 3D graph visualization.
 | Package | Responsibility |
 |---|---|
 | `visualizer` | Re-exported `contracts.Event`, domain types (session, node, edge, graph), sentinel errors, and a deterministic clock |
-| `source` | The `EventSource` seam (`Replay`/`Subscribe`) over the shared taxonomy, plus a deterministic in-memory fake |
+| `source` | The `EventSource` seam (`Replay`/`Subscribe`) backed by the shared `obsv` transport and the single `obsv`-to-`contracts` adapter |
 | `compat` | The explicit, versioned observation-metadata profile (`secondary_paths`, `access_sequence`); unknown metadata is ignored |
 | `session` | The deterministic event fold into a graph and the derived node identity |
 | `layout` | A pure, order-independent 3D layout with a large-graph budget and benchmark |
@@ -31,7 +31,7 @@ go build ./... && go vet ./... && go test ./...
 ```
 
 The default suites are offline and deterministic: they use the in-memory
-`source.Fake`, a fixed clock, and a temporary memory store. No test makes a
+`obsv` transport, a fixed clock, and a temporary memory store. No test makes a
 network call, and `visualizer` never imports `kernel`. See
 [docs/phases/ph8-visualizer](../docs/phases/ph8-visualizer/plan.md) for the phase
 plan and test plan.

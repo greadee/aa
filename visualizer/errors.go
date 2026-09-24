@@ -13,6 +13,8 @@ var (
 	ErrNotFound = errors.New("visualizer: not found")
 	// ErrEmpty means an event stream contained no events.
 	ErrEmpty = errors.New("visualizer: empty event stream")
+	// ErrUnavailable means the shared observation transport could not be reached.
+	ErrUnavailable = errors.New("visualizer: observation transport unavailable")
 	// ErrBudget means a layout or render exceeded its performance budget.
 	ErrBudget = errors.New("visualizer: performance budget exceeded")
 )

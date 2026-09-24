@@ -3,10 +3,11 @@ package bridge
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/greadee/aa/obsv/protocol"
+	"github.com/greadee/aa/obsv/transport"
 	visualizer "github.com/greadee/aa/visualizer"
 	"github.com/greadee/aa/visualizer/replay"
 	"github.com/greadee/aa/visualizer/source"
@@ -19,31 +20,66 @@ func ev(id string, seq int, typ visualizer.EventType, aggKind, aggID string) vis
 	e.ID = id
 	e.ProjectID = "p1"
 	e.Sequence = seq
-	e.OccurredAt = fmt.Sprintf("2026-01-01T00:00:%02dZ", seq)
+	e.OccurredAt = "2026-01-01T00:00:00Z"
 	e.Type = typ
 	e.Aggregate = visualizer.EventAggregate{Kind: aggKind, ID: aggID}
 	e.Actor = visualizer.Actor{Kind: "agent", ID: "worker_1"}
 	return e
 }
 
-func scenario() []visualizer.Event {
-	e1 := ev("e1", 1, "WORK_PACKAGE_CREATED", "work_package", "wp1")
-	e2 := ev("e2", 2, "EXECUTION_STARTED", "assignment", "as1")
-	e2.CausationID = "e1"
-	e2.Payload = map[string]any{"workPackageId": "wp1"}
-	e3 := ev("e3", 3, "ARTIFACT_RECORDED", "artifact", "ar1")
-	e3.CausationID = "e1"
-	e4 := ev("e4", 4, "EXECUTION_COMPLETED", "assignment", "as1")
-	e4.CausationID = "e2"
-	e4.CorrelationID = "c1"
-	e4.Payload = map[string]any{"workPackageId": "wp1", "artifactId": "ar1"}
-	return []visualizer.Event{e1, e2, e3, e4}
+func proto(sourceType protocol.SourceType, source, action, workPackageID string) protocol.Event {
+	return protocol.Event{
+		Version:       protocol.Version,
+		SessionID:     "s1",
+		OccurredAt:    "2026-01-01T00:00:00Z",
+		SourceType:    sourceType,
+		Source:        source,
+		Action:        action,
+		Confidence:    protocol.ConfidenceObserved,
+		Actor:         "worker_1",
+		WorkPackageID: workPackageID,
+	}
 }
 
-func consume(t *testing.T, events ...visualizer.Event) *Bridge {
+func scenario() []protocol.Event {
+	return []protocol.Event{
+		proto(protocol.SourceTool, "bash", "run", "wp1"),
+		proto(protocol.SourceWorkDelta, "edit", "write", "wp1"),
+		proto(protocol.SourceFile, "a.go", "read", ""),
+		proto(protocol.SourceWorkDelta, "test", "complete", "wp1"),
+	}
+}
+
+func newSource(t *testing.T) (*source.OBsv, transport.Server) {
 	t.Helper()
-	f := source.NewFake()
-	sub, err := f.Subscribe(context.Background(), "s1")
+	server := transport.NewLocal("test", nil)
+	t.Cleanup(func() { _ = server.Close() })
+	src, err := source.New(server)
+	if err != nil {
+		t.Fatalf("source.New: %v", err)
+	}
+	return src, server
+}
+
+func appendTo(t *testing.T, server transport.Server, sessionID string, events ...protocol.Event) {
+	t.Helper()
+	client, err := transport.Dial(server, sessionID)
+	if err != nil {
+		t.Fatalf("Dial: %v", err)
+	}
+	for i, e := range events {
+		if _, err := client.Append(e); err != nil {
+			t.Fatalf("Append[%d]: %v", i, err)
+		}
+	}
+}
+
+// consume follows a live obsv session through the bridge and returns the bridge
+// plus the events an equivalent replay would project.
+func consume(t *testing.T, events ...protocol.Event) (*Bridge, []visualizer.Event) {
+	t.Helper()
+	src, server := newSource(t)
+	sub, err := src.Subscribe(context.Background(), "s1")
 	if err != nil {
 		t.Fatalf("Subscribe: %v", err)
 	}
@@ -51,25 +87,29 @@ func consume(t *testing.T, events ...visualizer.Event) *Bridge {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	if err := f.Append("s1", events...); err != nil {
-		t.Fatalf("Append: %v", err)
-	}
+	appendTo(t, server, "s1", events...)
 	if err := sub.Close(); err != nil {
 		t.Fatalf("Close: %v", err)
 	}
 	if err := b.Consume(context.Background(), sub); err != nil {
 		t.Fatalf("Consume: %v", err)
 	}
-	return b
+	// The replay side reads the same session back through the same obsv
+	// transport, so live and replay share one source and one mapping.
+	replayed, err := src.Replay(context.Background(), "s1")
+	if err != nil {
+		t.Fatalf("Replay: %v", err)
+	}
+	return b, replayed
 }
 
 func TestConsumeLiveEqualsReplay(t *testing.T) {
-	b := consume(t, scenario()...)
+	b, adapted := consume(t, scenario()...)
 	got, err := b.FrameList()
 	if err != nil {
 		t.Fatalf("FrameList: %v", err)
 	}
-	want, err := replay.Build("s1", scenario())
+	want, err := replay.Build("s1", adapted)
 	if err != nil {
 		t.Fatalf("replay.Build: %v", err)
 	}
@@ -78,27 +118,16 @@ func TestConsumeLiveEqualsReplay(t *testing.T) {
 	}
 }
 
-func TestConsumeLiveEqualsReplayOutOfOrder(t *testing.T) {
+func TestConsumeAccumulatesEveryEvent(t *testing.T) {
 	events := scenario()
-	b := consume(t, events[3], events[1], events[0], events[2])
-	got, err := b.FrameList()
-	if err != nil {
-		t.Fatalf("FrameList: %v", err)
-	}
-	want, err := replay.Build("s1", events)
-	if err != nil {
-		t.Fatalf("replay.Build: %v", err)
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("live frames differ from replay:\n%+v\n%+v", got, want)
-	}
+	b, _ := consume(t, events...)
 	if len(b.Events()) != len(events) {
 		t.Fatalf("accumulated %d events, want %d", len(b.Events()), len(events))
 	}
 }
 
 func TestCursorOverLiveFrames(t *testing.T) {
-	b := consume(t, scenario()...)
+	b, _ := consume(t, scenario()...)
 	c, err := b.Cursor()
 	if err != nil {
 		t.Fatalf("Cursor: %v", err)
@@ -107,17 +136,14 @@ func TestCursorOverLiveFrames(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SeekSequence: %v", err)
 	}
-	if f.Sequence != 3 || c.Index() != 2 {
+	if f.Sequence != 3 || c.Index() != 3 {
 		t.Fatalf("seek = seq %d index %d", f.Sequence, c.Index())
 	}
 	if !c.AtEnd() {
-		f, err = c.Step(1)
-		if err != nil {
-			t.Fatalf("Step: %v", err)
-		}
-		if f.Sequence != 4 {
-			t.Fatalf("step = seq %d, want 4", f.Sequence)
-		}
+		t.Fatal("cursor should be at end after seeking the last frame")
+	}
+	if f, err := c.Step(-1); err != nil || f.Sequence != 2 {
+		t.Fatalf("step = %+v, %v", f, err)
 	}
 }
 
@@ -143,8 +169,8 @@ func TestNewRejectsEmptySession(t *testing.T) {
 }
 
 func TestConsumeEmptySubscription(t *testing.T) {
-	f := source.NewFake()
-	sub, err := f.Subscribe(context.Background(), "s1")
+	src, _ := newSource(t)
+	sub, err := src.Subscribe(context.Background(), "s1")
 	if err != nil {
 		t.Fatalf("Subscribe: %v", err)
 	}
@@ -164,8 +190,8 @@ func TestConsumeEmptySubscription(t *testing.T) {
 }
 
 func TestConsumeRespectsContext(t *testing.T) {
-	f := source.NewFake()
-	sub, err := f.Subscribe(context.Background(), "s1")
+	src, _ := newSource(t)
+	sub, err := src.Subscribe(context.Background(), "s1")
 	if err != nil {
 		t.Fatalf("Subscribe: %v", err)
 	}
