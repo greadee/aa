@@ -1,13 +1,13 @@
 # ISS-OBSV-2 — visualizer: adopt obsv transport and retire the AAV duplicate protocol
 
 **Type:** feature / technical debt
-**Status:** in progress (visualizer module update — planning)
+**Status:** complete (visualizer module update — delivered)
 **Branch:** `ph8-visualizer`
-**Phase PR:** (linked from the module summary when opened)
+**Phase PR:** [#19](https://github.com/greadee/aa/pull/19) — open
 **Parent umbrella:** none (standalone issue); dependency `ISS-OBSV-1` (`ph3-kernel`)
 **Related:** [architecture](../../docs/architecture/README.md) §3.1, §5.2, §5.9, §14; decision D10
 **Module plan:** [../../visualizer/module-upd-plan.md](../../visualizer/module-upd-plan.md)
-**Module summary:** `visualizer/module-upd-summary.md` (authored at the end of the implementation update)
+**Module summary:** [../../visualizer/module-upd-summary.md](../../visualizer/module-upd-summary.md)
 
 ## Goal
 
@@ -25,8 +25,8 @@ These are deliberately separate problems and are not one issue.
 
 | Id | Problem | Module / branch | Why it matters | Status |
 |---|---|---|---|---|
-| ISS-OBSV-2a | Visualizer transport adoption: real `obsv` `Replay`/`Subscribe` behind the existing `source.EventSource` seam, an explicit `obsv/protocol.Event` → `contracts.Event` adapter, the compatibility profile over real observation metadata, and live-equals-replay preserved | `visualizer` / `ph8-visualizer` | The visualizer must show the same events `obsv` produces, not a synthetic fake | planned |
-| ISS-OBSV-2b | Protocol/IPC/event-store de-duplication: AAV converges on the single `obsv` protocol plus the `compat` profile; the visualizer defines no observation protocol, transport, or event-store; enforced by a boundary test | `visualizer` / `ph8-visualizer` | A second vocabulary re-opens the concern §3.1 resolved; one owner per protocol | planned |
+| ISS-OBSV-2a | Visualizer transport adoption: real `obsv` `Replay`/`Subscribe` behind the existing `source.EventSource` seam, an explicit `obsv/protocol.Event` → `contracts.Event` adapter, the compatibility profile over real observation metadata, and live-equals-replay preserved | `visualizer` / `ph8-visualizer` | The visualizer must show the same events `obsv` produces, not a synthetic fake | complete |
+| ISS-OBSV-2b | Protocol/IPC/event-store de-duplication: AAV converges on the single `obsv` protocol plus the `compat` profile; the visualizer defines no observation protocol, transport, or event-store; enforced by a boundary test | `visualizer` / `ph8-visualizer` | A second vocabulary re-opens the concern §3.1 resolved; one owner per protocol | complete |
 
 Both sub-problems are owned by the same branch, `ph8-visualizer`, and are delivered by one module update; their slices are listed separately in the module plan.
 
@@ -48,16 +48,16 @@ Both sub-problems are owned by the same branch, `ph8-visualizer`, and are delive
 
 ## Acceptance Criteria
 
-- [ ] `visualizer/source` reads a session through `obsv` `Replay` and follows it through `obsv` `Subscribe`; the fake is used only by tests.
-- [ ] `obsv/protocol.Event` maps to the visualizer event type through one adapter; no second protocol type exists in `visualizer`.
-- [ ] `secondary_paths` and `access_sequence` are normalized by `visualizer/compat` from real observation metadata; unknown metadata is ignored.
-- [ ] Live output equals replay output over the real transport.
-- [ ] Default `visualizer` tests make no network call and never import `kernel`.
-- [ ] A boundary test enforces the single observation protocol/transport/event-store.
-- [ ] `visualizer/aa-visualizer.md`, `visualizer/README.md`, and architecture §3.1/§5.2/§5.9/§14 reflect the adopted state.
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, and `tools/archtest` pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] `visualizer/source` reads a session through `obsv` `Replay` and follows it through `obsv` `Subscribe`; no fake provider remains (the fake was deleted, not just made test-only).
+- [x] `obsv/protocol.Event` maps to the visualizer event type through one adapter; no second protocol type exists in `visualizer`.
+- [x] `secondary_paths` and `access_sequence` are normalized by `visualizer/compat` from real observation metadata; unknown metadata is ignored.
+- [x] Live output equals replay output over the real transport.
+- [x] Default `visualizer` tests make no network call and never import `kernel`.
+- [x] A boundary test enforces the single observation protocol/transport/event-store.
+- [x] `visualizer/aa-visualizer.md`, `visualizer/README.md`, and architecture §3.1/§5.2/§5.9/§14 reflect the adopted state.
+- [x] `go build`, `go vet`, `go test`, `gofmt`, and `tools/archtest` pass.
+- [x] tests added or updated
+- [x] documentation updated where required
 
 ## Affected branches
 
@@ -74,3 +74,5 @@ Both sub-problems are owned by the same branch, `ph8-visualizer`, and are delive
 ## Notes
 
 This document and the module plan are planning artifacts. Implementation slices are listed in `visualizer/module-upd-plan.md` and proceed only after the plan is reviewed.
+
+**Outcome.** All implementation slices are complete on `ph8-visualizer`; the as-built record is [../../visualizer/module-upd-summary.md](../../visualizer/module-upd-summary.md) and the module update PR is [#19](https://github.com/greadee/aa/pull/19).
