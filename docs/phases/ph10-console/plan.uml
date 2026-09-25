@@ -1,0 +1,89 @@
+@startuml
+' Phase 10 — Interface: planned infrastructure. Authored at phase start.
+' Copy to summary.uml at phase end and edit to the as-built state.
+
+title Phase 10 — Interface (planned; split into parts)
+
+skinparam componentStyle rectangle
+
+package "Phase 10 core — control-plane server + host composition" as P10 {
+  component "aa host daemon (composition root + lifecycle)" as host
+  component "control-plane HTTP/JSON server (loopback, bearer, SSE)" as server
+  component "host RPC clients (sync / forge / sifter)" as clients
+}
+
+package "Phase 10a — terminal" as A {
+  component "control-plane client (typed on contracts + deterministic fake)" as cc
+  component "view models / commands / approvals / config" as models
+  component "text (TUI) surface" as tui
+  component "app + entry point" as app
+}
+
+package "Phase 10b — surface" as B {
+  component "Surface interface" as surface
+  component "shared view-model layer" as vm
+  component "surface extension contract" as ext
+}
+
+package "future UI / TUI / GUI (PR #17 placeholder)" as D {
+  component "local web surface" as web
+  component "desktop (Wails/React/Three) surface" as desktop
+}
+
+package "aa-kernel (authority: orchestrator, api, obsv host)" as kernel
+package "aa-memory" as memory
+package "aa-obsv" as obsv
+package "aa-toolbox" as toolbox
+package "aa-sync (RPC)" as sync
+package "aa-forge (RPC)" as forge
+package "aa-sifter (RPC sidecar)" as sifter
+package "aa-contracts (schemas + openapi control plane + rpc spec)" as contracts
+
+host --> server
+host --> clients
+host --> kernel
+host --> memory
+host --> obsv
+host --> toolbox
+clients ..> sync : RPC (v1)
+clients ..> forge : RPC (v1)
+clients ..> sifter : RPC (v1)
+
+server --> cc : HTTP/JSON (loopback, bearer)
+cc --> models
+models --> tui
+tui --> app
+models --> vm
+vm --> surface
+surface --> ext
+ext ..> web : future surface (PR #17)
+ext ..> desktop : future surface (PR #17)
+
+contracts --> cc
+contracts --> server
+
+note right of host
+  ADR-P10-004/007: the real control-plane
+  server is in scope and the host is built
+  from the kernel module, reaching sync,
+  forge, and sifter over RPC; no new
+  broad-import module and no boundary
+  exception.
+end note
+
+note bottom of cc
+  ADR-P10-001/003: the console depends
+  only on contracts and the external
+  control-plane HTTP API; it imports no
+  module internals and calls no RPC.
+end note
+
+note bottom of surface
+  ADR-P10-002/005: parts 10a and 10b share
+  one branch and one phase PR; a part is
+  complete on its own exit criteria.
+  Surfaces are pluggable and offline-
+  testable behind one interface.
+end note
+
+@enduml

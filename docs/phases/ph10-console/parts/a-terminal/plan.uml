@@ -1,0 +1,79 @@
+@startuml
+' Phase 10a — Terminal: planned infrastructure.
+' Copy to summary.uml at part end and edit to the as-built state.
+
+title Phase 10a — Terminal (planned)
+
+skinparam componentStyle rectangle
+
+package "aa-console (Go; imports contracts only)" as console {
+  component "client (control-plane HTTP/JSON + deterministic fake)" as client
+  component "command (typed commands + idempotency + audit)" as command
+  component "view (read models / browsing)" as view
+  component "approval (explicit gate decisions)" as approval
+  component "config (workflow + tool/plugin management)" as config
+  component "tui (deterministic text surface)" as tui
+  component "app (surface wiring + entry point)" as app
+}
+
+package "part 10b — surface (extension point)" as surfacepkg {
+  component "Surface interface + shared view-model layer" as surface
+}
+
+package "aa-contracts (v1 schemas + openapi control plane)" as contracts
+component "control plane (phase 10 core: loopback HTTP/JSON, bearer)" as server
+
+contracts --> view
+client --> view
+client --> command
+client --> approval
+client --> config
+client --> tui
+view --> tui
+command --> tui
+tui --> app
+client --> app
+app --> surface : generalizes in 10b
+client ..> server : HTTP/JSON (loopback, bearer)
+
+note right of client
+  ADR-P10A-002: the control-plane
+  client is a seam; a deterministic
+  fake stands in for tests and offline
+  use, and an httptest server exercises
+  the OpenAPI paths against phase 10.
+end note
+
+note bottom of command
+  ADR-P10A-004: every write carries an
+  idempotency key derived from the
+  command contract id and is audited.
+  Repeated commands are replayed safely.
+end note
+
+note bottom of view
+  ADR-P10A-003: views are pure,
+  deterministic projections of client
+  responses, ordered by id/sequence,
+  never the wall clock, so renders are
+  golden-testable.
+end note
+
+note bottom of approval
+  ADR-P10A-005: approvals and gates
+  state their consequences and require
+  an explicit decision; nothing is
+  auto-resolved (D18).
+end note
+
+note bottom of tui
+  ADR-P10A-001/007: the console depends
+  only on contracts and the control
+  plane; the text surface renders with
+  stable, golden-tested output. The
+  surface abstraction is generalized in
+  part 10b, and future surfaces
+  (PR #17) implement it.
+end note
+
+@enduml
