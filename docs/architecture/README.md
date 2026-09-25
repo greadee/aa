@@ -340,7 +340,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.3 aa-kernel (control plane)
 
 - **Purpose:** deterministic coordination of all work.
-- **Owns:** obsv host; planning (task aggregate, DAG, readiness); role/trade/worker registry and role selection; scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
+- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; role/model/compute allocation); role/trade/worker registry and role selection; scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
 - **Must not:** own transfer, own canonical history, call models directly, own execution mechanics (use `aa-runtime`), or expose a remote shell.
 - **Interfaces:** control-plane API; the `aa-runtime` worker adapter; RPC to `sifter`/`sync`/`forge`; `obsv` host; memory query.
 - **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there.

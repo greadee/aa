@@ -5,17 +5,17 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/greadee/aa/kernel/allocator/planner"
 	"github.com/greadee/aa/kernel/gate"
 	"github.com/greadee/aa/kernel/orchestrator"
-	"github.com/greadee/aa/kernel/plan"
 	"github.com/greadee/aa/kernel/registry"
 	"github.com/greadee/aa/runtime/worker"
 )
 
 func testOrchestrator(t *testing.T) *orchestrator.Orchestrator {
 	t.Helper()
-	graph := plan.NewGraph("prj_1", "gph_1")
-	_ = graph.Add(plan.WorkPackage{ID: "wp_a", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}})
+	graph := planner.NewGraph("prj_1", "gph_1")
+	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}})
 	reg := registry.New()
 	_ = reg.Add(registry.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}, Available: true})
 	fake := worker.NewFake()
@@ -68,7 +68,7 @@ func TestEnabledServiceRuns(t *testing.T) {
 		t.Fatalf("resolved = %+v err=%v", resolved, err)
 	}
 	status := svc.Status()
-	if len(status.WorkPackages) != 1 || status.WorkPackages[0].State != plan.StateCompleted {
+	if len(status.WorkPackages) != 1 || status.WorkPackages[0].State != planner.StateCompleted {
 		t.Fatalf("status = %+v", status)
 	}
 }

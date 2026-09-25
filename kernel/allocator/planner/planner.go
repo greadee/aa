@@ -1,6 +1,6 @@
 // Package plan models work packages and their dependency graph and computes
 // deterministic dispatch readiness. It never calls a model.
-package plan
+package planner
 
 import (
 	"errors"

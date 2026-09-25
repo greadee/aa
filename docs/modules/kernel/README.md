@@ -63,7 +63,7 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 | [`joblearn/similarity`](./joblearn-similarity.md) | Package similarity clusters attributed outcomes deterministically and detects conflicting learning candidates. |
 | [`joblearn/tracesource`](./joblearn-tracesource.md) | Package tracesource is the pure seam through which joblearn consumes bounded per-step traces. |
 | [`orchestrator`](./orchestrator.md) | Package orchestrator runs aa-kernel's deterministic supervised control cycle: ready -> select worker -> build contract -> compile context -> lease -> run -> intake -> gates -> accept -> telemetry. |
-| [`plan`](./plan.md) | Package plan models work packages and their dependency graph and computes deterministic dispatch readiness. |
+| [`allocator/planner`](./allocator-planner.md) | The allocator's planning stage: work packages, dependency graph, and deterministic dispatch readiness. |
 | [`registry`](./registry.md) | Package registry holds durable roles and trades and the worker instances that can perform work, and selects workers deterministically. |
 | [`telemetry`](./telemetry.md) | Package telemetry records bounded execution evidence and derives deterministic learning candidates. |
 
