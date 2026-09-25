@@ -94,6 +94,16 @@ Authored after the phase is implemented and verified. Contains:
 
 The `plan.uml` **copied and edited** to reflect the system as actually built. It must show the as-built infrastructure, not the aspirational one. Together with `summary.md`, it is the phase's record of truth.
 
+## Numbered Phases vs Update Phases
+
+- **Numbered phases** (`ph{N}-{scope}`) are reserved for **major additions**.
+- **Update phases** (unnumbered, `docs/updates/<slug>/`) cover refactors, edits,
+  corrections, and module updates. They carry the same plan/summary discipline with
+  lightweight, change-scoped diagrams, and link the module updates they contain
+  (`docs/modules/<module>/updates/<slug>/`).
+- Architecture decisions live in the global [ADR store](../adr/README.md), not in a
+  per-phase `adr.md`.
+
 ## Relationship To Other Modules
 
 - Branch and commit conventions: [git-workflow.md](git-workflow.md)
