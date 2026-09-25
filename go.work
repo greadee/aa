@@ -3,6 +3,7 @@ go 1.26
 use (
 	./contracts
 	./registry
+	./runtime
 	./obsv
 	./kernel
 	./memory

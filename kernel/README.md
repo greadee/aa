@@ -9,7 +9,6 @@ The deterministic control plane: planning, roles, orchestration, execution, gate
 - **control** — the assignment state machine and expiring leases.
 - **contract** — least-privilege execution contracts: the intersection of requested and permitted capabilities, with denials recorded.
 - **context** — a pure, bounded, digest-stable context compiler.
-- **runtime** — a provider-neutral adapter interface with a scripted deterministic fake and a disabled adapter.
 - **gate** — tests, human, and composite gates.
 - **intake** — validation and idempotent deduplication of untrusted results.
 - **telemetry** — bounded execution evidence and deterministic learning candidates.
@@ -19,7 +18,7 @@ The deterministic control plane: planning, roles, orchestration, execution, gate
 
 ## Boundaries
 
-The kernel imports only `contracts`, `obsv`, `memory`, and `toolbox`. It reaches `sync`, `forge`, and `sifter` over RPC. No model is called in the control path.
+The kernel imports `contracts`, `registry`, `runtime`, `obsv`, `memory`, and `toolbox`. Execution mechanics live in `aa-runtime`; the worker adapter it uses is `runtime/worker`. It reaches `sync`, `forge`, and `sifter` over RPC. No model is called in the control path.
 
 ## Status
 

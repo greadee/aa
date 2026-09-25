@@ -139,6 +139,7 @@ flowchart TB
     end
     subgraph Control["Control plane"]
         kernel["aa-kernel"]
+        runtime["aa-runtime"]
         toolbox["aa-toolbox"]
     end
     subgraph World["External interactions"]
@@ -159,6 +160,7 @@ flowchart TB
     console --> forge
     console --> sync
     kernel --> registry
+    kernel --> runtime
     kernel --> toolbox
     kernel --> obsv
     kernel --> memory
@@ -193,11 +195,14 @@ flowchart TD
     sync["aa-sync"]
     toolbox["aa-toolbox"]
     forge["aa-forge"]
+    runtime["aa-runtime"]
     kernel["aa-kernel"]
     visualizer["aa-visualizer"]
     console["aa-console"]
 
     contracts --> registry
+    contracts --> runtime
+    runtime --> kernel
     contracts --> obsv
     contracts --> memory
     contracts --> sifter
@@ -225,6 +230,7 @@ Rules (enforced by architecture tests in each module):
 5. `console` imports `contracts` only and talks to modules through the control-plane API.
 6. Cross-module data structures exist only in `contracts`.
 7. `registry` holds durable definitions only (no runtime instances) and depends on `contracts`; `kernel` consumes it.
+8. `runtime` owns execution mechanics and depends on `contracts`; `kernel` dispatches work to it. Runtime mechanics are never imported by `memory`, `sync`, `forge`, or `toolbox`.
 
 ### 4.3 Runtime and deployment view
 
@@ -334,9 +340,10 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.3 aa-kernel (control plane)
 
 - **Purpose:** deterministic coordination of all work.
-- **Owns:** obsv host; planning (task aggregate, DAG, readiness); role/trade/worker registry and role selection; scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; runtime contracts and adapters; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
-- **Must not:** own transfer, own canonical history, call models directly, or expose a remote shell.
-- **Interfaces:** control-plane API, RPC to `sifter`/`sync`/`forge`, `obsv` host, memory query.
+- **Owns:** obsv host; planning (task aggregate, DAG, readiness); role/trade/worker registry and role selection; scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
+- **Must not:** own transfer, own canonical history, call models directly, own execution mechanics (use `aa-runtime`), or expose a remote shell.
+- **Interfaces:** control-plane API; the `aa-runtime` worker adapter; RPC to `sifter`/`sync`/`forge`; `obsv` host; memory query.
+- **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there.
 - **Language:** Go.
 - **Reused assets:** `orchestration`, `scheduler`, `taskspec`, `registry`, `contextcompiler`, `executioncontract`, `resultintake`, `integrationgate`, `workspace`, `runtimecontract`, `codexruntime`, `computenode`, `dispatchbinding`, orchestration halves of `desktop`/`api`.
 - **Remaining work:** role selection, job-learning engine, de-blur taskspec/orchestration, extract from syncgate, enforce boundaries.
@@ -418,6 +425,15 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Interfaces:** definition lookups consumed by `kernel` (allocation) and `contracts` (specification schemas, contracts v2).
 - **Language:** Go.
 - **Status:** introduced by the architecture refactor (`roles`, `capabilities` carry existing vocabularies; `models`, `teams`, `routines`, `policies` are reserved boundaries).
+
+### 5.12 aa-runtime
+
+- **Purpose:** own execution mechanics for allocated work.
+- **Owns:** worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (reserved, not implemented); the model provider/execution service boundary (`inference`, the Python service renamed from sifter).
+- **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own durable definitions (`registry`) or canonical history (`memory`).
+- **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the future sandbox; the `inference` RPC service.
+- **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject.
+- **Status:** introduced by the architecture refactor; `runtime/worker` carries the moved kernel runtime; `lifecycle`, `sandbox`, and `inference` are reserved boundaries.
 
 ---
 

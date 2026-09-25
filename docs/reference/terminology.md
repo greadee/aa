@@ -95,6 +95,7 @@ Used for branches, folders, and directive files.
 |---|---|
 | aa-contracts | `contracts` |
 | aa-registry | `registry` |
+| aa-runtime | `runtime` |
 | aa-obsv | `obsv` |
 | aa-kernel | `kernel` |
 | aa-memory | `memory` |

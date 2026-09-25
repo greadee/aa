@@ -16,7 +16,7 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 - The scheduler, leases, and the assignment state machine.
 - The context compiler (bounded, deterministic context bundles).
 - Execution contracts, permissions, and budgets.
-- Runtime contracts and adapters (including the supervised Codex adapter).
+- Coordination of execution, delegating execution mechanics to the top-level `runtime` module (`runtime/worker`).
 - Workspace and Git worktree management.
 - Compute-node registry and eligibility.
 - Result intake (untrusted envelopes until accepted).
@@ -65,6 +65,5 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 | [`orchestrator`](./orchestrator.md) | Package orchestrator runs aa-kernel's deterministic supervised control cycle: ready -> select worker -> build contract -> compile context -> lease -> run -> intake -> gates -> accept -> telemetry. |
 | [`plan`](./plan.md) | Package plan models work packages and their dependency graph and computes deterministic dispatch readiness. |
 | [`registry`](./registry.md) | Package registry holds durable roles and trades and the worker instances that can perform work, and selects workers deterministically. |
-| [`runtime`](./runtime.md) | Package runtime defines the provider-neutral execution adapter interface and a deterministic scripted fake. |
 | [`telemetry`](./telemetry.md) | Package telemetry records bounded execution evidence and derives deterministic learning candidates. |
 

@@ -17,8 +17,8 @@ import (
 	"github.com/greadee/aa/kernel/intake"
 	"github.com/greadee/aa/kernel/plan"
 	"github.com/greadee/aa/kernel/registry"
-	"github.com/greadee/aa/kernel/runtime"
 	"github.com/greadee/aa/kernel/telemetry"
+	"github.com/greadee/aa/runtime/worker"
 )
 
 // Sink records events and records for the outside world (memory or RPC).
@@ -39,7 +39,7 @@ func (NopSink) Record(string, string, []byte) error { return nil }
 // Config configures the orchestrator.
 type Config struct {
 	Registry      *registry.Registry
-	Runtime       runtime.Adapter
+	Runtime       worker.Adapter
 	Gates         []gate.Gate
 	Compiler      kcontext.Compiler
 	Sink          Sink
@@ -56,7 +56,7 @@ type Orchestrator struct {
 	cfg                Config
 	intake             *intake.Service
 	assignments        map[string]*control.Assignment
-	results            map[string]runtime.Result
+	results            map[string]worker.Result
 	telemetryRecords   []telemetry.Record
 	learningCandidates []telemetry.Candidate
 	sequence           int
@@ -86,14 +86,14 @@ func New(graph *plan.Graph, cfg Config) (*Orchestrator, error) {
 		return nil, fmt.Errorf("orchestrator: runtime is required when execution is enabled")
 	}
 	if !cfg.Enabled {
-		cfg.Runtime = runtime.Disabled{}
+		cfg.Runtime = worker.Disabled{}
 	}
 	return &Orchestrator{
 		graph:       graph,
 		cfg:         cfg,
 		intake:      intake.New(),
 		assignments: make(map[string]*control.Assignment),
-		results:     make(map[string]runtime.Result),
+		results:     make(map[string]worker.Result),
 	}, nil
 }
 
@@ -117,7 +117,7 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 	workPackageID := ready[0]
 	wp, _ := o.graph.Get(workPackageID)
 
-	worker, ok := o.cfg.Registry.SelectOne(registry.Requirement{
+	selected, ok := o.cfg.Registry.SelectOne(registry.Requirement{
 		Trade:        registry.Trade(wp.Trade),
 		Capabilities: wp.Capabilities,
 	})
@@ -146,19 +146,19 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 	}
 	bundle := o.cfg.Compiler.Compile(o.graph.ProjectID, workPackageID, inputs)
 
-	assignment := control.New(assignmentID, o.graph.ProjectID, workPackageID, string(worker.ID))
+	assignment := control.New(assignmentID, o.graph.ProjectID, workPackageID, string(selected.ID))
 	for _, state := range []control.State{control.StateLeased, control.StatePreparing, control.StateRunning} {
 		if err := assignment.Transition(state); err != nil {
 			return DispatchReport{}, false, err
 		}
 	}
-	assignment.LeaseFor(string(worker.ID), o.cfg.Now(), o.cfg.LeaseTTL)
+	assignment.LeaseFor(string(selected.ID), o.cfg.Now(), o.cfg.LeaseTTL)
 	_ = o.graph.SetState(workPackageID, plan.StateRunning)
 	o.emit("EXECUTION_STARTED", map[string]any{
-		"workPackageId": workPackageID, "assignmentId": assignmentID, "workerId": string(worker.ID),
+		"workPackageId": workPackageID, "assignmentId": assignmentID, "workerId": string(selected.ID),
 	})
 
-	result, err := o.cfg.Runtime.Run(ctx, runtime.Request{
+	result, err := o.cfg.Runtime.Run(ctx, worker.Request{
 		AssignmentID:   assignmentID,
 		WorkPackageID:  workPackageID,
 		ContractID:     executionContract.ID,
@@ -170,7 +170,7 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 		_ = assignment.Transition(control.StateFailed)
 		_ = o.graph.SetState(workPackageID, plan.StateDeficient)
 		o.assignments[workPackageID] = assignment
-		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(worker.ID), State: string(assignment.State), Status: "failed"}, true, nil
+		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed"}, true, nil
 	}
 	if err := assignment.Transition(control.StateCollecting); err != nil {
 		return DispatchReport{}, false, err
@@ -200,7 +200,7 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 	if result.Status != "succeeded" && result.Status != "partial" {
 		_ = assignment.Transition(control.StateFailed)
 		_ = o.graph.SetState(workPackageID, plan.StateDeficient)
-		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(worker.ID), State: string(assignment.State), Status: "failed", Gates: report, IntakeAccepted: accepted}, true, nil
+		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed", Gates: report, IntakeAccepted: accepted}, true, nil
 	}
 
 	if err := assignment.Transition(control.StateAwaitingGates); err != nil {
@@ -215,7 +215,7 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 		_ = o.graph.SetState(workPackageID, plan.StateDeficient)
 		status = "failed"
 	}
-	return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(worker.ID), State: string(assignment.State), Status: status, Gates: report, IntakeAccepted: accepted}, true, nil
+	return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: status, Gates: report, IntakeAccepted: accepted}, true, nil
 }
 
 // Resolve re-evaluates gates for a work package that is awaiting gates.
@@ -308,7 +308,7 @@ func (o *Orchestrator) accept(assignment *control.Assignment, report gate.Report
 	}
 }
 
-func (o *Orchestrator) subject(workPackageID string, result runtime.Result) gate.Subject {
+func (o *Orchestrator) subject(workPackageID string, result worker.Result) gate.Subject {
 	var tests []gate.TestSummary
 	for _, t := range result.Tests {
 		tests = append(tests, gate.TestSummary{Name: t.Name, Outcome: t.Outcome})
@@ -316,7 +316,7 @@ func (o *Orchestrator) subject(workPackageID string, result runtime.Result) gate
 	return gate.Subject{WorkPackageID: workPackageID, Status: result.Status, Tests: tests}
 }
 
-func (o *Orchestrator) recordTelemetry(assignment *control.Assignment, result runtime.Result) {
+func (o *Orchestrator) recordTelemetry(assignment *control.Assignment, result worker.Result) {
 	record := telemetry.Record{
 		AttemptID:     "att_" + assignment.ID,
 		AssignmentID:  assignment.ID,

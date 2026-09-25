@@ -6,7 +6,7 @@ import "path/filepath"
 func Modules(root string) []Module {
 	names := []string{
 		"contracts", "registry", "obsv", "memory", "sync", "toolbox",
-		"forge", "kernel", "visualizer", "console",
+		"forge", "runtime", "kernel", "visualizer", "console",
 	}
 	mods := make([]Module, 0, len(names))
 	for _, name := range names {
@@ -25,7 +25,8 @@ func Modules(root string) []Module {
 //	sync       -> contracts
 //	toolbox    -> contracts
 //	forge      -> contracts, toolbox
-//	kernel     -> contracts, registry, obsv, memory, toolbox
+//	runtime    -> contracts
+//	kernel     -> contracts, registry, obsv, memory, toolbox, runtime
 //	visualizer -> contracts, obsv, memory
 //	console    -> contracts
 //
@@ -46,7 +47,8 @@ func Allowed() map[string]map[string]bool {
 		"sync":       set("contracts"),
 		"toolbox":    set("contracts"),
 		"forge":      set("contracts", "toolbox"),
-		"kernel":     set("contracts", "registry", "obsv", "memory", "toolbox"),
+		"runtime":    set("contracts"),
+		"kernel":     set("contracts", "registry", "obsv", "memory", "toolbox", "runtime"),
 		"visualizer": set("contracts", "obsv", "memory"),
 		"console":    set("contracts"),
 	}

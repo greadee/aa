@@ -9,7 +9,7 @@ import (
 	"github.com/greadee/aa/kernel/orchestrator"
 	"github.com/greadee/aa/kernel/plan"
 	"github.com/greadee/aa/kernel/registry"
-	"github.com/greadee/aa/kernel/runtime"
+	"github.com/greadee/aa/runtime/worker"
 )
 
 func testOrchestrator(t *testing.T) *orchestrator.Orchestrator {
@@ -18,8 +18,8 @@ func testOrchestrator(t *testing.T) *orchestrator.Orchestrator {
 	_ = graph.Add(plan.WorkPackage{ID: "wp_a", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}})
 	reg := registry.New()
 	_ = reg.Add(registry.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}, Available: true})
-	fake := runtime.NewFake()
-	fake.Script("wp_a", runtime.Result{Status: "succeeded", Tests: []runtime.TestResult{{Name: "t", Outcome: "passed"}}})
+	fake := worker.NewFake()
+	fake.Script("wp_a", worker.Result{Status: "succeeded", Tests: []worker.TestResult{{Name: "t", Outcome: "passed"}}})
 	human := gate.NewHumanGate()
 	o, err := orchestrator.New(graph, orchestrator.Config{
 		Registry: reg, Runtime: fake, Gates: []gate.Gate{gate.TestsGate{}, human},

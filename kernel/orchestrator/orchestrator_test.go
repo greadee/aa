@@ -8,7 +8,7 @@ import (
 	"github.com/greadee/aa/kernel/gate"
 	"github.com/greadee/aa/kernel/plan"
 	"github.com/greadee/aa/kernel/registry"
-	"github.com/greadee/aa/kernel/runtime"
+	"github.com/greadee/aa/runtime/worker"
 )
 
 type recSink struct {
@@ -22,7 +22,7 @@ func (s *recSink) Event(_ int, eventType string, _ map[string]any) error {
 
 func (s *recSink) Record(string, string, []byte) error { return nil }
 
-func newTestOrchestrator(t *testing.T, enabled bool, sink Sink) (*Orchestrator, *runtime.Fake, *gate.HumanGate) {
+func newTestOrchestrator(t *testing.T, enabled bool, sink Sink) (*Orchestrator, *worker.Fake, *gate.HumanGate) {
 	t.Helper()
 	graph := plan.NewGraph("prj_1", "gph_1")
 	if err := graph.Add(plan.WorkPackage{ID: "wp_a", Title: "a", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}}); err != nil {
@@ -37,9 +37,9 @@ func newTestOrchestrator(t *testing.T, enabled bool, sink Sink) (*Orchestrator, 
 		t.Fatal(err)
 	}
 
-	fake := runtime.NewFake()
-	fake.Script("wp_a", runtime.Result{Status: "succeeded", Summary: "a", Tests: []runtime.TestResult{{Name: "ta", Outcome: "passed"}}})
-	fake.Script("wp_b", runtime.Result{Status: "succeeded", Summary: "b", Tests: []runtime.TestResult{{Name: "tb", Outcome: "passed"}}})
+	fake := worker.NewFake()
+	fake.Script("wp_a", worker.Result{Status: "succeeded", Summary: "a", Tests: []worker.TestResult{{Name: "ta", Outcome: "passed"}}})
+	fake.Script("wp_b", worker.Result{Status: "succeeded", Summary: "b", Tests: []worker.TestResult{{Name: "tb", Outcome: "passed"}}})
 
 	human := gate.NewHumanGate()
 	o, err := New(graph, Config{
@@ -136,8 +136,8 @@ func TestDispatchHonorsPermittedCapabilities(t *testing.T) {
 	_ = graph.Add(plan.WorkPackage{ID: "wp_a", Trade: "backend", Capabilities: []string{"write_workspace", "deploy"}})
 	reg := registry.New()
 	_ = reg.Add(registry.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "deploy"}, Available: true})
-	fake := runtime.NewFake()
-	fake.Script("wp_a", runtime.Result{Status: "succeeded", Tests: []runtime.TestResult{{Name: "t", Outcome: "passed"}}})
+	fake := worker.NewFake()
+	fake.Script("wp_a", worker.Result{Status: "succeeded", Tests: []worker.TestResult{{Name: "t", Outcome: "passed"}}})
 	o, err := New(graph, Config{
 		Registry: reg, Runtime: fake, Gates: []gate.Gate{gate.TestsGate{}},
 		Enabled: true, Permitted: []string{"write_workspace"},

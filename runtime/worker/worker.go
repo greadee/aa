@@ -1,7 +1,8 @@
-// Package runtime defines the provider-neutral execution adapter interface and
-// a deterministic scripted fake. The kernel never calls a model directly; it
-// invokes an adapter that is supplied at composition time.
-package runtime
+// Package worker defines the provider-neutral worker-execution adapter and a
+// deterministic scripted fake. It is the runtime boundary that runs an
+// allocated attempt; the kernel never calls a model directly, it invokes an
+// adapter supplied at composition time.
+package worker
 
 import (
 	"context"
