@@ -20,6 +20,8 @@ jobs:
       matrix:
         module:
           - contracts
+          - registry
+          - runtime
           - obsv
           - kernel
           - memory
