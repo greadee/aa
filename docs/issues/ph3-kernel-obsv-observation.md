@@ -5,8 +5,8 @@
 **Branch:** `ph3-kernel`
 **Phase PR:** (linked from the module summary when opened)
 **Parent umbrella:** `ISS-TRACE-LOOP` — the observation → trace → learning substrate is under-delivered (`docs/issues/trace-learning-substrate.md`)
-**Module plan:** [../../obsv/module-upd-plan.md](../../obsv/module-upd-plan.md)
-**Module summary:** [../../obsv/module-upd-summary.md](../../obsv/module-upd-summary.md)
+**Module plan:** [../modules/obsv/updates/observation-substrate/plan.md](../modules/obsv/updates/observation-substrate/plan.md)
+**Module summary:** [../modules/obsv/updates/observation-substrate/summary.md](../modules/obsv/updates/observation-substrate/summary.md)
 
 ## Goal
 

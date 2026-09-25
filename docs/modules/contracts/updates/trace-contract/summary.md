@@ -1,7 +1,7 @@
 # contracts — Module Update Summary: trace contract
 
-> Authored at the **end** of the module update, on branch `ph1-contracts`. Derived from [module-upd-plan.md](module-upd-plan.md).
-> Issue: [ISS-TRACE-1](../docs/issues/ph1-contracts-trace-contract.md) · Parent umbrella: [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md) · Phase PR: [#12](https://github.com/greadee/aa/pull/12)
+> Authored at the **end** of the module update, on branch `ph1-contracts`. Derived from [plan.md](plan.md).
+> Issue: [ISS-TRACE-1](../../../../issues/ph1-contracts-trace-contract.md) · Parent umbrella: [ISS-TRACE-LOOP](../../../../issues/trace-learning-substrate.md) · Phase PR: [#12](https://github.com/greadee/aa/pull/12)
 
 ## Delivered
 
@@ -32,7 +32,7 @@
 
 ## Is this part of a larger change?
 
-Yes. This is the first sub-issue of an umbrella change documented in full at [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md): the observation → trace → learning substrate was under-delivered across phases 0–9. This module update unblocks the remaining sub-issues on `ph2-memory`, `ph3-kernel`, `ph4-sifter`, and `ph9-joblearn`; their solutions are deliberately not specified here.
+Yes. This is the first sub-issue of an umbrella change documented in full at [ISS-TRACE-LOOP](../../../../issues/trace-learning-substrate.md): the observation → trace → learning substrate was under-delivered across phases 0–9. This module update unblocks the remaining sub-issues on `ph2-memory`, `ph3-kernel`, `ph4-sifter`, and `ph9-joblearn`; their solutions are deliberately not specified here.
 
 ## Validation
 

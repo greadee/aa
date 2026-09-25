@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P3U-005` |
-| **Source** | [obsv/module-upd-plan.md](../../obsv/module-upd-plan.md) |
+| **Source** | [docs/modules/obsv/updates/observation-substrate/plan.md](../modules/obsv/updates/observation-substrate/plan.md) |
 | **Scope** | module update · obsv |
 
 ## Context
@@ -23,7 +23,7 @@ One journal per session; a second `Ensure` attaches to the existing owner instea
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../obsv/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/obsv/updates/observation-substrate/plan.md).
 
 ## Related
 

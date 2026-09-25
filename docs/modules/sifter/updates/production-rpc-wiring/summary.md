@@ -1,6 +1,6 @@
 # sifter — Module Update Summary: production RPC wiring
 
-> Authored at the **end** of the module update, on branch `ph4-sifter`. Derived from [module-upd-plan.md](module-upd-plan.md).
+> Authored at the **end** of the module update, on branch `ph4-sifter`. Derived from [plan.md](plan.md).
 > Phase PR: [#16](https://github.com/greadee/aa/pull/16)
 > Sub-problem: `ISS-SIFTER-1` · Parent umbrella: `ISS-TRACE-LOOP`
 

@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P3U-006` |
-| **Source** | [obsv/module-upd-plan.md](../../obsv/module-upd-plan.md) |
+| **Source** | [docs/modules/obsv/updates/observation-substrate/plan.md](../modules/obsv/updates/observation-substrate/plan.md) |
 | **Scope** | module update · obsv |
 
 ## Context
@@ -23,7 +23,7 @@ Reproducible reports and fixture-stable translation
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../obsv/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/obsv/updates/observation-substrate/plan.md).
 
 ## Related
 

@@ -6,8 +6,8 @@
 **Phase PR:** [#19](https://github.com/greadee/aa/pull/19) — open
 **Parent umbrella:** none (standalone issue); dependency `ISS-OBSV-1` (`ph3-kernel`)
 **Related:** [architecture](../../docs/architecture/README.md) §3.1, §5.2, §5.9, §14; decision D10
-**Module plan:** [../../visualizer/module-upd-plan.md](../../visualizer/module-upd-plan.md)
-**Module summary:** [../../visualizer/module-upd-summary.md](../../visualizer/module-upd-summary.md)
+**Module plan:** [../modules/visualizer/updates/obsv-adoption/plan.md](../modules/visualizer/updates/obsv-adoption/plan.md)
+**Module summary:** [../modules/visualizer/updates/obsv-adoption/summary.md](../modules/visualizer/updates/obsv-adoption/summary.md)
 
 ## Goal
 
@@ -73,6 +73,6 @@ Both sub-problems are owned by the same branch, `ph8-visualizer`, and are delive
 
 ## Notes
 
-This document and the module plan are planning artifacts. Implementation slices are listed in `visualizer/module-upd-plan.md` and proceed only after the plan is reviewed.
+This document and the module plan are planning artifacts. Implementation slices are listed in `docs/modules/visualizer/updates/obsv-adoption/plan.md` and proceed only after the plan is reviewed.
 
-**Outcome.** All implementation slices are complete on `ph8-visualizer`; the as-built record is [../../visualizer/module-upd-summary.md](../../visualizer/module-upd-summary.md) and the module update PR is [#19](https://github.com/greadee/aa/pull/19).
+**Outcome.** All implementation slices are complete on `ph8-visualizer`; the as-built record is [../modules/visualizer/updates/obsv-adoption/summary.md](../modules/visualizer/updates/obsv-adoption/summary.md) and the module update PR is [#19](https://github.com/greadee/aa/pull/19).

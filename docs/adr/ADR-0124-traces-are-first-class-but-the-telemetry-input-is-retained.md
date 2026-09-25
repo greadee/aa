@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P9U-003` |
-| **Source** | [kernel/joblearn/module-upd-plan.md](../../kernel/joblearn/module-upd-plan.md) |
+| **Source** | [docs/modules/kernel/updates/joblearn-trace-distillation/plan.md](../modules/kernel/updates/joblearn-trace-distillation/plan.md) |
 | **Scope** | module update · kernel/joblearn |
 
 ## Context
@@ -23,7 +23,7 @@ Existing callers and tests keep working; traces are additive evidence, not a bre
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../kernel/joblearn/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/kernel/updates/joblearn-trace-distillation/plan.md).
 
 ## Related
 

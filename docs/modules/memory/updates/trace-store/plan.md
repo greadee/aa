@@ -1,7 +1,7 @@
 # memory — Module Update Plan: trace store
 
 > Authored at the **start** of the module update, on branch `ph2-memory` (stacked on the `ph1-contracts` trace contract).
-> Issue: [ISS-TRACE-2](../docs/issues/ph2-memory-trace-store.md) · Parent umbrella: [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md)
+> Issue: [ISS-TRACE-2](../../../../issues/ph2-memory-trace-store.md) · Parent umbrella: [ISS-TRACE-LOOP](../../../../issues/trace-learning-substrate.md)
 
 ## Objective
 

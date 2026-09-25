@@ -1,6 +1,6 @@
 # kernel/joblearn — Module Update Summary: trace distillation and evaluation
 
-> Authored at the **end** of the module update, on branch `ph9-joblearn`. Derived from [module-upd-plan.md](module-upd-plan.md).
+> Authored at the **end** of the module update, on branch `ph9-joblearn`. Derived from [plan.md](plan.md).
 > Phase PR: [#18](https://github.com/greadee/aa/pull/18)
 > Sub-problem: `ISS-LEARN-1` · Parent umbrella: `ISS-TRACE-LOOP`
 

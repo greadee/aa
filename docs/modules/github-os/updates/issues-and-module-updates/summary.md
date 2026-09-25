@@ -1,6 +1,6 @@
 # github-os — Module Update Summary: issues, sub-problems, and module updates
 
-> Authored at the **end** of the module update, on branch `ph0-scaffold`. Derived from [module-upd-plan.md](module-upd-plan.md).
+> Authored at the **end** of the module update, on branch `ph0-scaffold`. Derived from [plan.md](plan.md).
 > Phase PR: [#14](https://github.com/greadee/aa/pull/14)
 
 ## Delivered

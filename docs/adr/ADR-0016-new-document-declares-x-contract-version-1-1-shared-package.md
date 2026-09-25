@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P1U-005` |
-| **Source** | [contracts/module-upd-plan.md](../../contracts/module-upd-plan.md) |
+| **Source** | [docs/modules/contracts/updates/trace-contract/plan.md](../modules/contracts/updates/trace-contract/plan.md) |
 | **Scope** | module update · contracts |
 
 ## Context
@@ -23,7 +23,7 @@ POLICY encodes minor per document; bumping `v1.Version`/`CONTRACT_VERSION` would
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../contracts/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/contracts/updates/trace-contract/plan.md).
 
 ## Related
 

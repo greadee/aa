@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P4U-007` |
-| **Source** | [sifter/module-upd-plan.md](../../sifter/module-upd-plan.md) |
+| **Source** | [docs/modules/sifter/updates/production-rpc-wiring/plan.md](../modules/sifter/updates/production-rpc-wiring/plan.md) |
 | **Scope** | module update · sifter |
 
 ## Context
@@ -23,7 +23,7 @@ The spec requires replay-safe mutating calls
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../sifter/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/sifter/updates/production-rpc-wiring/plan.md).
 
 ## Related
 

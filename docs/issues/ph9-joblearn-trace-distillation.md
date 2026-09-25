@@ -5,8 +5,8 @@
 **Branch:** `ph9-joblearn`
 **Phase PR:** [#18](https://github.com/greadee/aa/pull/18)
 **Parent umbrella:** `ISS-TRACE-LOOP` — the observation → trace → learning substrate is under-delivered (`docs/issues/trace-learning-substrate.md`)
-**Module plan:** [../../kernel/joblearn/module-upd-plan.md](../../kernel/joblearn/module-upd-plan.md)
-**Module summary:** [../../kernel/joblearn/module-upd-summary.md](../../kernel/joblearn/module-upd-summary.md)
+**Module plan:** [../modules/kernel/updates/joblearn-trace-distillation/plan.md](../modules/kernel/updates/joblearn-trace-distillation/plan.md)
+**Module summary:** [../modules/kernel/updates/joblearn-trace-distillation/summary.md](../modules/kernel/updates/joblearn-trace-distillation/summary.md)
 
 ## Goal
 
@@ -46,4 +46,4 @@ Depends on the trace contract (`ISS-TRACE-1`, `ph1-contracts`), the canonical tr
 
 ## Notes
 
-The implementation slices are listed in `kernel/joblearn/module-upd-plan.md` and delivered on this branch; the module summary records what shipped, the decisions affirmed, and the deviations. This branch is stacked on the `ISS-TRACE-1` and `ISS-TRACE-2` substrate (`ph1-contracts`, `ph2-memory`) and is merge-ordered after them. Reference counterparts: `contracts/module-upd-plan.md` (`ISS-TRACE-1`, PR #12), `memory/module-upd-plan.md` (`ISS-TRACE-2`, PR #13), `obsv/module-upd-plan.md` (`ISS-OBSV-1`, PR #15), and `sifter/module-upd-plan.md` (`ISS-SIFTER-1`, PR #16).
+The implementation slices are listed in `docs/modules/kernel/updates/joblearn-trace-distillation/plan.md` and delivered on this branch; the module summary records what shipped, the decisions affirmed, and the deviations. This branch is stacked on the `ISS-TRACE-1` and `ISS-TRACE-2` substrate (`ph1-contracts`, `ph2-memory`) and is merge-ordered after them. Reference counterparts: `docs/modules/contracts/updates/trace-contract/plan.md` (`ISS-TRACE-1`, PR #12), `docs/modules/memory/updates/trace-store/plan.md` (`ISS-TRACE-2`, PR #13), `docs/modules/obsv/updates/observation-substrate/plan.md` (`ISS-OBSV-1`, PR #15), and `docs/modules/sifter/updates/production-rpc-wiring/plan.md` (`ISS-SIFTER-1`, PR #16).

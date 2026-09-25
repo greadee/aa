@@ -1,6 +1,6 @@
 # visualizer — Module Update Summary: obsv transport adoption and AAV protocol de-duplication
 
-> Authored at the **end** of the module update, on branch `ph8-visualizer`. Derived from [module-upd-plan.md](module-upd-plan.md).
+> Authored at the **end** of the module update, on branch `ph8-visualizer`. Derived from [plan.md](plan.md).
 > Phase PR: [#19](https://github.com/greadee/aa/pull/19)
 > Sub-problems: `ISS-OBSV-2a` (transport adoption), `ISS-OBSV-2b` (protocol/IPC/event-store de-duplication) · Dependency: `ISS-OBSV-1` (`ph3-kernel`)
 
@@ -107,4 +107,4 @@ No umbrella. This is the standalone issue `ISS-OBSV-2`; it depends on `ISS-OBSV-
 
 ### As-Built Diagram
 
-The visualizer phase diagram in [../docs/phases/ph8-visualizer/summary.uml](../docs/phases/ph8-visualizer/summary.uml) remains accurate; this update replaces the `source.Fake` stand-in with the `obsv` transport and adds the single-protocol guard.
+The visualizer phase diagram in [../docs/phases/ph8-visualizer/summary.uml](../../../../phases/ph8-visualizer/summary.uml) remains accurate; this update replaces the `source.Fake` stand-in with the `obsv` transport and adds the single-protocol guard.

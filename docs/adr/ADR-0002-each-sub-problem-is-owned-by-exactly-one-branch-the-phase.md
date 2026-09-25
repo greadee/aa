@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P0U-002` |
-| **Source** | [docs/github-os/module-upd-plan.md](../github-os/module-upd-plan.md) |
+| **Source** | [docs/modules/github-os/updates/issues-and-module-updates/plan.md](../modules/github-os/updates/issues-and-module-updates/plan.md) |
 | **Scope** | module update · github-os |
 
 ## Context
@@ -23,7 +23,7 @@ Matches the existing branch/folder ownership rule and the phase 1 and phase 2 pr
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../github-os/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/github-os/updates/issues-and-module-updates/plan.md).
 
 ## Related
 

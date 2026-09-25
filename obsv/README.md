@@ -7,7 +7,7 @@ Product-neutral work observation: protocol, durable emitter, local transport, jo
 - **Status:** implemented. The kernel host wiring (an `obsv`-backed sink) is a follow-up.
 - **Directive:** [aa-obsrv.md](aa-obsrv.md)
 - **Architecture:** [../docs/architecture/README.md](../docs/architecture/README.md)
-- **Module update:** [module-upd-plan.md](module-upd-plan.md) · [module-upd-summary.md](module-upd-summary.md)
+- **Module update:** [plan.md](../docs/modules/obsv/updates/observation-substrate/plan.md) · [summary.md](../docs/modules/obsv/updates/observation-substrate/summary.md)
 
 ## Layout
 

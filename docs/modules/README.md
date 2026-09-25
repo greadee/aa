@@ -16,3 +16,4 @@ Each module folder carries `README.md` (overview, owns/must-not, submodules) and
 | [aa-toolbox](./toolbox/README.md) | Let the platform gain tools and change workflows without changing core code, while keeping capability grants explicit and enforcing sandbox rules. |
 | [aa-visualizer](./visualizer/README.md) | Make work tangible: render the current session live and any past session as a replayable, debuggable 3D graph. |
 | [aa-console](./console/README.md) | Provide one place for a human to drive and inspect the whole platform, without coupling to module internals. |
+| [github-os](./github-os/README.md) | Process documentation: issues/sub-problems, module updates, phases, sprints, PRs, review, audits, ADRs. |

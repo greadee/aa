@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P8U-001` |
-| **Source** | [visualizer/module-upd-plan.md](../../visualizer/module-upd-plan.md) |
+| **Source** | [docs/modules/visualizer/updates/obsv-adoption/plan.md](../modules/visualizer/updates/obsv-adoption/plan.md) |
 | **Scope** | module update · visualizer |
 
 ## Context
@@ -23,7 +23,7 @@ One seam already exists; swapping the implementation must not change projection,
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../visualizer/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/visualizer/updates/obsv-adoption/plan.md).
 
 ## Related
 

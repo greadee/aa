@@ -25,7 +25,7 @@ The system of record: canonical, portable, rebuildable institutional knowledge.
 
 Phase 2 (`ph2-memory`). Directory records are canonical; projections are disposable. A SQLite projection adapter is deferred; the `Projection` interface is ready for it.
 
-Module update (trace store): canonical ingestion and query of bounded per-step traces (`v1.Trace`), with projected-view retention. See [module-upd-plan.md](module-upd-plan.md) and [module-upd-summary.md](module-upd-summary.md).
+Module update (trace store): canonical ingestion and query of bounded per-step traces (`v1.Trace`), with projected-view retention. See [plan.md](../docs/modules/memory/updates/trace-store/plan.md) and [summary.md](../docs/modules/memory/updates/trace-store/summary.md).
 
 ## Directive
 

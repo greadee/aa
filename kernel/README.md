@@ -25,7 +25,7 @@ The kernel imports only `contracts`, `obsv`, `memory`, and `toolbox`. It reaches
 
 Phase 9 (`ph9-joblearn`) adds deterministic job learning whose candidates persist as `CANDIDATE` memory records through a memory-backed promotion `Sink`. Execution is disabled by default; real runtime adapters, the `obsv` observation service, and the orchestrator's memory-backed `Sink` remain deferred. See `docs/phases/ph9-joblearn/summary.md` and `docs/phases/ph3-kernel/summary.md`.
 
-Module update: [joblearn/module-upd-plan.md](joblearn/module-upd-plan.md) · [joblearn/module-upd-summary.md](joblearn/module-upd-summary.md) — trace distillation and evaluation (`ISS-LEARN-1`).
+Module update: [plan.md](../docs/modules/kernel/updates/joblearn-trace-distillation/plan.md) · [summary.md](../docs/modules/kernel/updates/joblearn-trace-distillation/summary.md) — trace distillation and evaluation (`ISS-LEARN-1`).
 
 ## Directive
 

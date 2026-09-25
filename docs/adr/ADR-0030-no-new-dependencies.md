@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P2U-006` |
-| **Source** | [memory/module-upd-plan.md](../../memory/module-upd-plan.md) |
+| **Source** | [docs/modules/memory/updates/trace-store/plan.md](../modules/memory/updates/trace-store/plan.md) |
 | **Scope** | module update · memory |
 
 ## Context
@@ -23,7 +23,7 @@ No new dependencies
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../memory/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/memory/updates/trace-store/plan.md).
 
 ## Related
 

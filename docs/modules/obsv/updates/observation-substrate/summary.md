@@ -1,6 +1,6 @@
 # obsv — Module Update Summary: observation substrate
 
-> Authored at the **end** of the module update, on branch `ph3-kernel`. Derived from [module-upd-plan.md](module-upd-plan.md).
+> Authored at the **end** of the module update, on branch `ph3-kernel`. Derived from [plan.md](plan.md).
 > Phase PR: [#15](https://github.com/greadee/aa/pull/15)
 > Sub-problem: `ISS-OBSV-1` · Parent umbrella: `ISS-TRACE-LOOP`
 

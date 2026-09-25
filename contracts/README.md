@@ -25,7 +25,7 @@ The single source of truth for every cross-module object and wire protocol.
 
 Phase 1 complete and merged: 15 schemas under `schemas/v1`, RPC and control-plane specs, Go/TypeScript/Python bindings, and the conformance suite.
 
-Module update (trace contract): `trace.schema.json` (document contract 1.1) adds bounded, redacted per-step learning evidence. See [module-upd-plan.md](module-upd-plan.md) and [module-upd-summary.md](module-upd-summary.md).
+Module update (trace contract): `trace.schema.json` (document contract 1.1) adds bounded, redacted per-step learning evidence. See [plan.md](../docs/modules/contracts/updates/trace-contract/plan.md) and [summary.md](../docs/modules/contracts/updates/trace-contract/summary.md).
 
 ## Directive
 

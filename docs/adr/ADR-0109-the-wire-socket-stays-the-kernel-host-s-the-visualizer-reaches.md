@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P8U-004` |
-| **Source** | [visualizer/module-upd-plan.md](../../visualizer/module-upd-plan.md) |
+| **Source** | [docs/modules/visualizer/updates/obsv-adoption/plan.md](../modules/visualizer/updates/obsv-adoption/plan.md) |
 | **Scope** | module update · visualizer |
 
 ## Context
@@ -23,7 +23,7 @@ Transport ownership is `obsv`/kernel; the visualizer adds no transport of its ow
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../visualizer/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/visualizer/updates/obsv-adoption/plan.md).
 
 ## Related
 

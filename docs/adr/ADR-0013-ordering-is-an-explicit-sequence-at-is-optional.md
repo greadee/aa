@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P1U-002` |
-| **Source** | [contracts/module-upd-plan.md](../../contracts/module-upd-plan.md) |
+| **Source** | [docs/modules/contracts/updates/trace-contract/plan.md](../modules/contracts/updates/trace-contract/plan.md) |
 | **Scope** | module update · contracts |
 
 ## Context
@@ -23,7 +23,7 @@ Matches the event contract; ordering must never depend on the wall clock
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../contracts/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/contracts/updates/trace-contract/plan.md).
 
 ## Related
 

@@ -1,7 +1,7 @@
 # memory — Module Update Summary: trace store
 
-> Authored at the **end** of the module update, on branch `ph2-memory`. Derived from [module-upd-plan.md](module-upd-plan.md).
-> Issue: [ISS-TRACE-2](../docs/issues/ph2-memory-trace-store.md) · Parent umbrella: [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md) · Phase PR: [#13](https://github.com/greadee/aa/pull/13)
+> Authored at the **end** of the module update, on branch `ph2-memory`. Derived from [plan.md](plan.md).
+> Issue: [ISS-TRACE-2](../../../../issues/ph2-memory-trace-store.md) · Parent umbrella: [ISS-TRACE-LOOP](../../../../issues/trace-learning-substrate.md) · Phase PR: [#13](https://github.com/greadee/aa/pull/13)
 
 ## Delivered
 
@@ -30,7 +30,7 @@
 
 ## Is this part of a larger change?
 
-Yes. This is the second sub-issue of the umbrella change documented at [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md). It depends on [ISS-TRACE-1](../docs/issues/ph1-contracts-trace-contract.md) and unblocks the learning and capture sub-issues on `ph3-kernel` and `ph9-joblearn`; those solutions are not specified here.
+Yes. This is the second sub-issue of the umbrella change documented at [ISS-TRACE-LOOP](../../../../issues/trace-learning-substrate.md). It depends on [ISS-TRACE-1](../../../../issues/ph1-contracts-trace-contract.md) and unblocks the learning and capture sub-issues on `ph3-kernel` and `ph9-joblearn`; those solutions are not specified here.
 
 ## Validation
 

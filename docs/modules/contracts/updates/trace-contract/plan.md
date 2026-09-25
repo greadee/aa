@@ -1,7 +1,7 @@
 # contracts — Module Update Plan: trace contract
 
 > Authored at the **start** of the module update, on branch `ph1-contracts`.
-> Issue: [ISS-TRACE-1](../docs/issues/ph1-contracts-trace-contract.md) · Parent umbrella: [ISS-TRACE-LOOP](../docs/issues/trace-learning-substrate.md)
+> Issue: [ISS-TRACE-1](../../../../issues/ph1-contracts-trace-contract.md) · Parent umbrella: [ISS-TRACE-LOOP](../../../../issues/trace-learning-substrate.md)
 
 ## Objective
 
@@ -63,7 +63,7 @@ Each slice maps to exactly one commit.
 - [ ] Go, TypeScript, and Python bindings mirror the schema.
 - [ ] Go conformance decodes, validates, and round-trips a valid trace, and rejects an invalid one.
 - [ ] Python and TypeScript validate the same fixtures.
-- [ ] `contracts/README.md`, `schemas/v1/README.md`, and `POLICY.md` updated; `module-upd-summary.md` authored.
+- [ ] `contracts/README.md`, `schemas/v1/README.md`, and `POLICY.md` updated; `summary.md` authored.
 - [ ] `go build`, `go vet`, `go test`, `gofmt`, Python tests, and `tsc --noEmit` pass.
 
 ## Exit Criteria

@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Legacy id** | `ADR-P3U-001` |
-| **Source** | [obsv/module-upd-plan.md](../../obsv/module-upd-plan.md) |
+| **Source** | [docs/modules/obsv/updates/observation-substrate/plan.md](../modules/obsv/updates/observation-substrate/plan.md) |
 | **Scope** | module update · obsv |
 
 ## Context
@@ -23,7 +23,7 @@ Observation protocol v1 is owned by `obsv`; `contracts` orchestration events are
 
 ## Alternatives and consequences
 
-Not recorded in the original decision record. See the [source](../../obsv/module-upd-plan.md).
+Not recorded in the original decision record. See the [source](../modules/obsv/updates/observation-substrate/plan.md).
 
 ## Related
 
