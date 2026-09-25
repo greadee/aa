@@ -10,13 +10,17 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/greadee/aa/registry/roles"
 )
 
 // Trade is a durable capability (for example "backend").
 type Trade string
 
 // Role is a durable organizational responsibility (for example "Builder").
-type Role string
+// The canonical definition lives in registry/roles; this alias keeps the
+// transitional kernel/registry API stable until the allocator split.
+type Role = roles.Role
 
 // WorkerID identifies a worker instance.
 type WorkerID string

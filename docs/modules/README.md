@@ -7,6 +7,7 @@ Each module folder carries `README.md` (overview, owns/must-not, submodules) and
 | Module | Responsibility |
 |---|---|
 | [aa-contracts](./contracts/README.md) | Define every object and protocol that crosses a module boundary, exactly once, and generate bindings from it. |
+| [aa-registry](./registry/README.md) | The durable definition store: roles, models, teams, capabilities, routines, policies. Definitions only, no runtime instances. |
 | [aa-obsv](./obsv/README.md) | Observe work events from agents, tools, files, and git, with bounded, failure-open delivery and deterministic replay. |
 | [aa-kernel](./kernel/README.md) | Own deterministic coordination of all work: plan it, select roles and workers, dispatch it, gate it, and observe it. The kernel is the platform; models are workers. |
 | [aa-memory](./memory/README.md) | Be the canonical, portable, rebuildable system of record. Everything durable about work, projects, issues, and strategies lives here. The SQLite database is a projection; the records are the truth. |

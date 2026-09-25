@@ -1,6 +1,15 @@
-package registry
+// Package roles holds aa's durable role definitions.
+//
+// A role is a durable organizational responsibility (for example "Builder").
+// It is a reusable specification, not a running agent and not a model; workers
+// are runtime instantiations. The role vocabulary and the deterministic
+// capability-to-role mapping live here.
+package roles
 
 import "sort"
+
+// Role is a durable organizational responsibility (for example "Builder").
+type Role string
 
 // KnownRoles is the set of durable roles recognized by the registry.
 var KnownRoles = map[Role]bool{

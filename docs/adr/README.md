@@ -6,7 +6,7 @@ Statuses: `Proposed`, `Accepted`, `Superseded`, `Deprecated`, `Rejected`. See [a
 
 The core platform decisions **D1–D22** remain in [docs/architecture/README.md](../architecture/README.md) (§12.1) and are reconciled during the ten-issue phase (Issue 1).
 
-**Backfilled historical decisions:** 130.
+**Backfilled historical decisions:** 130. **Post-refactor decisions:** ADR-0131+ (architecture refactor).
 
 ## Index
 
@@ -142,3 +142,4 @@ The core platform decisions **D1–D22** remain in [docs/architecture/README.md]
 | [ADR-0128](./ADR-0128-scoring-stays-versioned-metricversion-changes-only-if-the.md) | `ADR-P9U-007` | Scoring stays versioned; `MetricVersion` changes only if the semantics change | Accepted | module update 9 | `docs/modules/kernel/updates/joblearn-trace-distillation/plan.md` |
 | [ADR-0129](./ADR-0129-gates-consume-trace-derived-counts-capabilities-remain-disabled.md) | `ADR-P9U-008` | Gates consume trace-derived counts; capabilities remain disabled by default with a fallback and no bypass | Accepted | module update 9 | `docs/modules/kernel/updates/joblearn-trace-distillation/plan.md` |
 | [ADR-0130](./ADR-0130-candidates-remain-candidates-promotion-stays-explicit-through.md) | `ADR-P9U-009` | Candidates remain candidates; promotion stays explicit through the memory lifecycle | Accepted | module update 9 | `docs/modules/kernel/updates/joblearn-trace-distillation/plan.md` |
+| [ADR-0131](./ADR-0131-introduce-a-top-level-registry-for-durable-definitions.md) | — | Introduce a top-level registry for durable definitions | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |

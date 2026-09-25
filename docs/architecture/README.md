@@ -151,12 +151,14 @@ flowchart TB
         memory["aa-memory"]
         visualizer["aa-visualizer"]
     end
+    registry["aa-registry — durable definitions"]
     contracts["aa-contracts — single source of truth"]
 
     console --> kernel
     console --> visualizer
     console --> forge
     console --> sync
+    kernel --> registry
     kernel --> toolbox
     kernel --> obsv
     kernel --> memory
@@ -169,17 +171,22 @@ flowchart TB
     obsv --> memory
     visualizer --> obsv
     visualizer --> memory
+    registry --> contracts
     Control --> contracts
     World --> contracts
     Knowledge --> contracts
     UX --> contracts
 ```
 
+`aa-registry` holds reusable durable definitions (roles, models, teams,
+capabilities, routines, policies) and no runtime instances.
+
 ### 4.2 Layering and dependency rules
 
 ```mermaid
 flowchart TD
     contracts["aa-contracts (no deps)"]
+    registry["aa-registry"]
     obsv["aa-obsv"]
     memory["aa-memory"]
     sifter["aa-sifter (Python)"]
@@ -190,6 +197,7 @@ flowchart TD
     visualizer["aa-visualizer"]
     console["aa-console"]
 
+    contracts --> registry
     contracts --> obsv
     contracts --> memory
     contracts --> sifter
@@ -199,6 +207,7 @@ flowchart TD
     contracts --> kernel
     contracts --> visualizer
     contracts --> console
+    registry --> kernel
     obsv --> memory
     memory --> kernel
     toolbox --> kernel
@@ -215,6 +224,7 @@ Rules (enforced by architecture tests in each module):
 4. `visualizer` never imports `kernel`.
 5. `console` imports `contracts` only and talks to modules through the control-plane API.
 6. Cross-module data structures exist only in `contracts`.
+7. `registry` holds durable definitions only (no runtime instances) and depends on `contracts`; `kernel` consumes it.
 
 ### 4.3 Runtime and deployment view
 
@@ -399,6 +409,15 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Interfaces:** control-plane API client, pluggable surface interface.
 - **Language:** Go (TUI + local web); a desktop surface can be added later.
 - **Remaining work:** all of it (new module, built last).
+
+### 5.11 aa-registry
+
+- **Purpose:** own aa's reusable, durable definitions.
+- **Owns:** roles, models, teams, capabilities, routines, and policies — specification and vocabulary only.
+- **Must not:** hold runtime instances (workers, crews, assignments, executions, projects, workflows), or execute/schedule/allocate; own cross-module wire schemas (that is `contracts`).
+- **Interfaces:** definition lookups consumed by `kernel` (allocation) and `contracts` (specification schemas, contracts v2).
+- **Language:** Go.
+- **Status:** introduced by the architecture refactor (`roles`, `capabilities` carry existing vocabularies; `models`, `teams`, `routines`, `policies` are reserved boundaries).
 
 ---
 

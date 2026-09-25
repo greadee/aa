@@ -94,6 +94,7 @@ Used for branches, folders, and directive files.
 | Module | Scope token |
 |---|---|
 | aa-contracts | `contracts` |
+| aa-registry | `registry` |
 | aa-obsv | `obsv` |
 | aa-kernel | `kernel` |
 | aa-memory | `memory` |

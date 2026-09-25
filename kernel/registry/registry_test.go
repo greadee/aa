@@ -1,6 +1,10 @@
 package registry
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/greadee/aa/registry/roles"
+)
 
 func testRegistry(t *testing.T) *Registry {
 	t.Helper()
@@ -84,17 +88,17 @@ func TestSelectOne(t *testing.T) {
 }
 
 func TestRolesFor(t *testing.T) {
-	roles := RolesFor([]string{"run_tests", "write_workspace", "deploy"})
-	want := []Role{"Builder", "Commissioner", "Inspector"}
-	if len(roles) != len(want) {
-		t.Fatalf("got %v", roles)
+	got := roles.RolesFor([]string{"run_tests", "write_workspace", "deploy"})
+	want := []roles.Role{"Builder", "Commissioner", "Inspector"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v", got)
 	}
 	for i := range want {
-		if roles[i] != want[i] {
-			t.Fatalf("got %v, want %v", roles, want)
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
 		}
 	}
-	if !IsKnownRole("Builder") || IsKnownRole("Wizard") {
+	if !roles.IsKnownRole("Builder") || roles.IsKnownRole("Wizard") {
 		t.Fatal("IsKnownRole failed")
 	}
 }

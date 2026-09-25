@@ -7,6 +7,7 @@ the unnumbered [update phases](../updates/) (refactors, edits, corrections).
 | Module | Description |
 |---|---|
 | [aa-contracts](../modules/contracts/README.md) | Cross-module objects, schemas, and bindings |
+| [aa-registry](../modules/registry/README.md) | Durable definitions: roles, models, teams, capabilities, routines, policies |
 | [aa-obsv](../modules/obsv/README.md) | Work observation: protocol, emitter, transport, journal, reports |
 | [aa-kernel](../modules/kernel/README.md) | Deterministic control plane and job learning |
 | [aa-memory](../modules/memory/README.md) | Canonical system of record |
