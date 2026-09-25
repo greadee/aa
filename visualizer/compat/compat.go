@@ -4,16 +4,22 @@
 // named here are normalized, values are validated, and unknown metadata is
 // ignored. This keeps the visualizer independent of any single observation
 // producer while remaining testable.
+//
+// The shared obsv transport keeps only scalar metadata, so the profile keys
+// arrive over the transport as comma-separated strings; the profile normalizes
+// both that real form and the already-split list form a native contract payload
+// may carry. Version 1.1 adds delimited-scalar normalization.
 package compat
 
 import (
 	"fmt"
+	"strings"
 
 	visualizer "github.com/greadee/aa/visualizer"
 )
 
 // Version is the profile version.
-const Version = "1.0"
+const Version = "1.1"
 
 // Canonical metadata keys and their accepted aliases.
 const (
@@ -85,10 +91,7 @@ func toStrings(field string, value any) ([]string, error) {
 	case nil:
 		return nil, nil
 	case string:
-		if v == "" {
-			return nil, nil
-		}
-		return []string{v}, nil
+		return splitDelimited(v), nil
 	case []string:
 		return append([]string(nil), v...), nil
 	case []any:
@@ -104,6 +107,24 @@ func toStrings(field string, value any) ([]string, error) {
 	default:
 		return nil, fmt.Errorf("%w: %s must be a string or list of strings", visualizer.ErrInvalid, field)
 	}
+}
+
+// splitDelimited normalizes a scalar observation-metadata value into its
+// elements. The obsv durable allowlist keeps only scalar values, so the profile
+// keys arrive over the shared transport as comma-separated strings; a single
+// undelimited value stays a one-element list. Empty elements are dropped.
+func splitDelimited(value string) []string {
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part = strings.TrimSpace(part); part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }
 
 func dedup(values []string) []string {

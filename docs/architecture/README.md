@@ -111,7 +111,7 @@ Seven existing work areas converge into the ten target modules. The table below 
 | Telemetry duplicated (`telemetry`, `insights`, `desktop/lifecycle_telemetry`) | Operational telemetry in `kernel`; canonical history in `memory` |
 | `desktop` mega-package re-implements orchestration | Split across `sync`, `kernel`, `console`, `visualizer` |
 | Three event vocabularies, three memory hierarchies | One event taxonomy and one memory hierarchy in `contracts` |
-| AAV and `obsv` protocol duplication with incompatible stripping | AAV adopts `obsv` with an explicit compatibility profile |
+| AAV and `obsv` protocol duplication with incompatible stripping | Resolved (`ISS-OBSV-2`): AAV adopts `obsv`; the visualizer defines no protocol, transport, or event-store and normalizes metadata through one explicit compatibility profile |
 | No forge, plugin/MCP, or unified interface | New `forge`, `toolbox`, `console` modules |
 
 ### 3.2 Missing capabilities and their homes
@@ -319,7 +319,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Interfaces:** `Ensure/Runtime`, `Send`, `Replay`, `Subscribe`; transport methods `hello/append/replay/subscribe`.
 - **Language:** Go (library + local service).
 - **Reused assets:** the entire `aa-obsv-module`.
-- **Remaining work:** compatibility profile allowing `secondary_paths`/`access_sequence` for the visualizer; adoption by AAV.
+- **Remaining work:** kernel orchestrator wiring (an `obsv`-backed sink) and the host socket under `ISS-OBSV-1`. The visualizer profile keys `secondary_paths`/`access_sequence` are allowlisted and normalized by `visualizer/compat` (`ISS-OBSV-2`).
 
 ### 5.3 aa-kernel (control plane)
 
@@ -385,10 +385,11 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Purpose:** make work tangible and debuggable through time travel and 3D visualization.
 - **Owns:** 3D graph, replay, session trails, live bridge, memory session browsing.
 - **Must not:** own the observation protocol or canonical history.
-- **Interfaces:** `obsv` subscribe/replay; memory queries.
+- **Interfaces:** `obsv` subscribe/replay behind `visualizer/source`; memory queries.
 - **Language:** Go core + Wails + React/Three.
 - **Reused assets:** `agent-action-visualizer` graph/session/diff/replay/UI.
-- **Remaining work:** adopt `obsv`; compatibility profile; session-state projection; identity mapping; retention.
+- **Adopted (`ISS-OBSV-2`):** `obsv` `Replay`/`Subscribe` behind one `source` seam and one `adapter` mapping; the explicit `compat` profile normalizes `secondary_paths`/`access_sequence`; session-state projection, identity mapping, deterministic layout, replay cursor, live bridge, and retention are delivered under `ph8-visualizer`; a boundary guard enforces the single observation vocabulary.
+- **Remaining work:** the Wails + React/Three UI surface and the kernel-host socket.
 
 ### 5.10 aa-console
 
@@ -614,7 +615,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 | Extraction could destabilize the working sync MVP | Keep sync as a separate, first-class module; never entangle it with kernel execution |
 | Contract churn while modules are being extracted | Version schemas early; freeze v1 before kernel work; conformance suite blocks regressions |
 | Python/Go/RPC boundary latency and error handling | Define deadlines, retries, and idempotency in the RPC contract; test with fakes |
-| AAV `obsv` compatibility (`secondary_paths`, `access_sequence`) | Explicit compatibility profile rather than a fork |
+| AAV `obsv` compatibility (`secondary_paths`, `access_sequence`) | Resolved (`ISS-OBSV-2`): the explicit `visualizer/compat` profile normalizes them over the shared `obsv` allowlist; no AAV fork |
 | Scope creep across ten modules | `ph0` governance, strict phase exit criteria, and evidence gates |
 | Learned features could mislead | Evidence gates with deterministic fallbacks; human approval stays authoritative |
 | Multi-machine parallelization without multi-writer history | Single authority; replicas read-only; revisit with a dedicated ADR |

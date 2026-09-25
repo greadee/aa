@@ -7,107 +7,177 @@ import (
 	"testing"
 	"time"
 
+	v1 "github.com/greadee/aa/contracts/go/v1"
+	"github.com/greadee/aa/obsv/protocol"
+	"github.com/greadee/aa/obsv/transport"
 	visualizer "github.com/greadee/aa/visualizer"
+	"github.com/greadee/aa/visualizer/compat"
 )
 
-func ev(id string, seq int, aggKind, aggID string) visualizer.Event {
-	e := visualizer.Event{}
-	e.ContractVersion = "1.0"
-	e.Kind = "event"
-	e.ID = id
-	e.Sequence = seq
-	e.OccurredAt = "2026-01-01T00:00:00Z"
-	e.Type = "WORK_PACKAGE_CREATED"
-	e.Aggregate = visualizer.EventAggregate{Kind: aggKind, ID: aggID}
-	e.Actor = visualizer.Actor{Kind: "agent", ID: "worker_1"}
-	return e
+func obsEvent(sourceType protocol.SourceType, workPackageID string) protocol.Event {
+	return protocol.Event{
+		Version:       protocol.Version,
+		SessionID:     "s1",
+		OccurredAt:    "2026-01-01T00:00:00Z",
+		SourceType:    sourceType,
+		Source:        "bash",
+		Action:        "run",
+		Confidence:    protocol.ConfidenceObserved,
+		Actor:         "worker_1",
+		WorkPackageID: workPackageID,
+		Metadata:      map[string]string{"command": "go test"},
+	}
 }
 
-func TestReplaySortsBySequence(t *testing.T) {
-	f := NewFake()
-	if err := f.Append("s1", ev("e2", 2, "work_package", "wp1"), ev("e1", 1, "work_package", "wp1"), ev("e3", 3, "work_package", "wp1")); err != nil {
-		t.Fatalf("Append: %v", err)
+func newLocal(t *testing.T) (*OBsv, transport.Server) {
+	t.Helper()
+	server := transport.NewLocal("test", nil)
+	t.Cleanup(func() { _ = server.Close() })
+	src, err := New(server)
+	if err != nil {
+		t.Fatalf("New: %v", err)
 	}
-	got, err := f.Replay(context.Background(), "s1")
+	return src, server
+}
+
+// appendTo seeds the real in-process transport through its session client.
+func appendTo(t *testing.T, server transport.Server, sessionID string, events ...protocol.Event) {
+	t.Helper()
+	client, err := transport.Dial(server, sessionID)
+	if err != nil {
+		t.Fatalf("Dial: %v", err)
+	}
+	for i, e := range events {
+		if _, err := client.Append(e); err != nil {
+			t.Fatalf("Append[%d]: %v", i, err)
+		}
+	}
+}
+
+func TestReplayReadsOBsvAndMaps(t *testing.T) {
+	src, server := newLocal(t)
+	appendTo(t, server, "s1", obsEvent(protocol.SourceTool, "wp1"), obsEvent(protocol.SourceWorkDelta, ""))
+
+	got, err := src.Replay(context.Background(), "s1")
 	if err != nil {
 		t.Fatalf("Replay: %v", err)
 	}
-	var seqs []int
-	for _, e := range got {
-		seqs = append(seqs, e.Sequence)
+	if len(got) != 2 {
+		t.Fatalf("events = %d, want 2", len(got))
 	}
-	if !reflect.DeepEqual(seqs, []int{1, 2, 3}) {
-		t.Fatalf("sequences = %v", seqs)
+	for i, e := range got {
+		if e.Sequence != i {
+			t.Fatalf("events[%d].Sequence = %d, want %d", i, e.Sequence, i)
+		}
+		if e.Type != v1.EventTelemetryRecorded {
+			t.Fatalf("events[%d].Type = %q", i, e.Type)
+		}
+		if err := e.Validate(); err != nil {
+			t.Fatalf("events[%d] does not validate: %v", i, err)
+		}
+	}
+	if got[0].Aggregate.Kind != "work_package" || got[0].Aggregate.ID != "wp1" {
+		t.Fatalf("aggregate = %+v", got[0].Aggregate)
+	}
+	if got[0].Payload["sessionId"] != "s1" || got[0].Payload["workPackageId"] != "wp1" {
+		t.Fatalf("payload = %#v", got[0].Payload)
 	}
 }
 
-func TestReplayUnknownSession(t *testing.T) {
-	f := NewFake()
-	_, err := f.Replay(context.Background(), "ghost")
-	if !errors.Is(err, visualizer.ErrNotFound) {
-		t.Fatalf("err = %v, want ErrNotFound", err)
+func TestReplayMetadataFeedsCompatibilityProfile(t *testing.T) {
+	src, server := newLocal(t)
+	ev := obsEvent(protocol.SourceFile, "wp1")
+	// Sanitize is the obsv durable allowlist: the profile keys survive, the
+	// content-bearing key is dropped, and the allowlisted-but-unknown key stays
+	// for compat to ignore.
+	ev.Metadata = protocol.Sanitize(map[string]any{
+		"secondary_paths": "pkg/a.go, pkg/b.go",
+		"access_sequence": "read, edit, test",
+		"tool":            "gopls",
+		"prompt":          "secret",
+	})
+	appendTo(t, server, "s1", ev)
+
+	events, err := src.Replay(context.Background(), "s1")
+	if err != nil {
+		t.Fatalf("Replay: %v", err)
+	}
+	m, err := compat.Normalize(events[0])
+	if err != nil {
+		t.Fatalf("compat.Normalize: %v", err)
+	}
+	if !reflect.DeepEqual(m.SecondaryPaths, []string{"pkg/a.go", "pkg/b.go"}) {
+		t.Fatalf("secondary paths = %v", m.SecondaryPaths)
+	}
+	if !reflect.DeepEqual(m.AccessSequence, []string{"read", "edit", "test"}) {
+		t.Fatalf("access sequence = %v", m.AccessSequence)
 	}
 }
 
 func TestReplayEmptySession(t *testing.T) {
-	f := NewFake()
-	if err := f.Append("s1"); err != nil {
-		t.Fatalf("Append: %v", err)
+	src, server := newLocal(t)
+	if _, err := transport.Dial(server, "s1"); err != nil {
+		t.Fatalf("Dial: %v", err)
 	}
-	_, err := f.Replay(context.Background(), "s1")
-	if !errors.Is(err, visualizer.ErrEmpty) {
+	if _, err := src.Replay(context.Background(), "s1"); !errors.Is(err, visualizer.ErrEmpty) {
 		t.Fatalf("err = %v, want ErrEmpty", err)
 	}
 }
 
-func TestAppendValidates(t *testing.T) {
-	f := NewFake()
-	bad := ev("e1", 1, "work_package", "wp1")
-	bad.Type = "NOT_A_TYPE"
-	if err := f.Append("s1", bad); !errors.Is(err, visualizer.ErrInvalid) {
+func TestReplayRequiresSessionID(t *testing.T) {
+	src, _ := newLocal(t)
+	if _, err := src.Replay(context.Background(), ""); !errors.Is(err, visualizer.ErrInvalid) {
 		t.Fatalf("err = %v, want ErrInvalid", err)
-	}
-	if _, err := f.Replay(context.Background(), "s1"); !errors.Is(err, visualizer.ErrNotFound) {
-		t.Fatalf("invalid event was stored: %v", err)
 	}
 }
 
-func TestReplayReturnsCopy(t *testing.T) {
-	f := NewFake()
-	_ = f.Append("s1", ev("e1", 1, "work_package", "wp1"))
-	first, _ := f.Replay(context.Background(), "s1")
-	first[0].ID = "mutated"
-	second, _ := f.Replay(context.Background(), "s1")
-	if second[0].ID != "e1" {
-		t.Fatalf("Replay aliased stored events: %q", second[0].ID)
+func TestReplayUnavailableTransport(t *testing.T) {
+	server := transport.NewLocal("test", nil)
+	if err := server.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	src, err := New(server)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if _, err := src.Replay(context.Background(), "s1"); !errors.Is(err, visualizer.ErrUnavailable) {
+		t.Fatalf("err = %v, want ErrUnavailable", err)
+	}
+}
+
+func TestNewRejectsNilTransport(t *testing.T) {
+	if _, err := New(nil); !errors.Is(err, visualizer.ErrInvalid) {
+		t.Fatalf("err = %v, want ErrInvalid", err)
 	}
 }
 
 func TestSubscribeReceivesAppended(t *testing.T) {
-	f := NewFake()
-	sub, err := f.Subscribe(context.Background(), "s1")
+	src, server := newLocal(t)
+	sub, err := src.Subscribe(context.Background(), "s1")
 	if err != nil {
 		t.Fatalf("Subscribe: %v", err)
 	}
 	defer sub.Close()
-	if err := f.Append("s1", ev("e1", 1, "work_package", "wp1"), ev("e2", 2, "work_package", "wp1")); err != nil {
-		t.Fatalf("Append: %v", err)
-	}
-	for _, want := range []string{"e1", "e2"} {
+
+	appendTo(t, server, "s1", obsEvent(protocol.SourceTool, "wp1"), obsEvent(protocol.SourceWorkDelta, "wp1"))
+	for i := 0; i < 2; i++ {
 		select {
 		case got := <-sub.Events():
-			if got.ID != want {
-				t.Fatalf("event = %q, want %q", got.ID, want)
+			if got.Sequence != i || got.Type != v1.EventTelemetryRecorded {
+				t.Fatalf("event[%d] = %+v", i, got)
 			}
 		case <-time.After(time.Second):
-			t.Fatalf("timed out waiting for %q", want)
+			t.Fatalf("timed out waiting for event %d", i)
 		}
 	}
 }
 
 func TestSubscribeCloseStopsDelivery(t *testing.T) {
-	f := NewFake()
-	sub, _ := f.Subscribe(context.Background(), "s1")
+	src, server := newLocal(t)
+	sub, err := src.Subscribe(context.Background(), "s1")
+	if err != nil {
+		t.Fatalf("Subscribe: %v", err)
+	}
 	if err := sub.Close(); err != nil {
 		t.Fatalf("Close: %v", err)
 	}
@@ -115,7 +185,19 @@ func TestSubscribeCloseStopsDelivery(t *testing.T) {
 		t.Fatal("channel still open after Close")
 	}
 	// Appending after close must not panic or block.
-	if err := f.Append("s1", ev("e1", 1, "work_package", "wp1")); err != nil {
-		t.Fatalf("Append after close: %v", err)
+	appendTo(t, server, "s1", obsEvent(protocol.SourceTool, "wp1"))
+}
+
+func TestSubscribeUnavailableTransport(t *testing.T) {
+	server := transport.NewLocal("test", nil)
+	if err := server.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	src, err := New(server)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if _, err := src.Subscribe(context.Background(), "s1"); !errors.Is(err, visualizer.ErrUnavailable) {
+		t.Fatalf("err = %v, want ErrUnavailable", err)
 	}
 }

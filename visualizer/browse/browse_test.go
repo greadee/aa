@@ -3,6 +3,7 @@ package browse
 import (
 	"encoding/json"
 	"errors"
+	"os"
 	"reflect"
 	"testing"
 
@@ -27,26 +28,6 @@ func ev(id string, seq int, project string) visualizer.Event {
 	return e
 }
 
-func rec(e visualizer.Event) store.EventRecord {
-	data, err := json.Marshal(e)
-	if err != nil {
-		panic(err)
-	}
-	return store.EventRecord{ID: e.ID, Sequence: e.Sequence, Data: data}
-}
-
-type fakeSource struct {
-	records []store.EventRecord
-	err     error
-}
-
-func (f fakeSource) Events() ([]store.EventRecord, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	return f.records, nil
-}
-
 func fixture() []visualizer.Event {
 	e1 := ev("e1", 1, "p1")
 	e2 := ev("e2", 2, "p1")
@@ -56,16 +37,38 @@ func fixture() []visualizer.Event {
 	return []visualizer.Event{e1, e2, e3, e4}
 }
 
-func TestListGroupsAndSortsSessions(t *testing.T) {
-	events := fixture()
-	records := make([]store.EventRecord, 0, len(events))
-	for _, e := range events {
-		records = append(records, rec(e))
+// newBrowser appends events to a real on-disk memory store and returns a
+// browser over the real memory query seam.
+func newBrowser(t *testing.T, events ...visualizer.Event) *Browser {
+	t.Helper()
+	b, _ := newBrowserWithStore(t, events)
+	return b
+}
+
+func newBrowserWithStore(t *testing.T, events []visualizer.Event) (*Browser, *store.Store) {
+	t.Helper()
+	s, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
 	}
-	b, err := New(fakeSource{records: records})
+	for i, e := range events {
+		data, err := json.Marshal(e)
+		if err != nil {
+			t.Fatalf("marshal event %d: %v", i, err)
+		}
+		if _, err := s.AppendEvent(data); err != nil {
+			t.Fatalf("AppendEvent %d: %v", i, err)
+		}
+	}
+	b, err := New(query.New(projection.NewMem(), s))
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
+	return b, s
+}
+
+func TestListGroupsAndSortsSessions(t *testing.T) {
+	b := newBrowser(t, fixture()...)
 	sessions, err := b.List()
 	if err != nil {
 		t.Fatalf("List: %v", err)
@@ -100,11 +103,9 @@ func TestListGroupsAndSortsSessions(t *testing.T) {
 
 func TestLoadReturnsSequenceOrder(t *testing.T) {
 	events := fixture()
-	b, err := New(fakeSource{records: []store.EventRecord{rec(events[3]), rec(events[1]), rec(events[0])}})
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
-	// sess_x owns e4 only; p1 owns e1,e2.
+	// Appended out of order; the canonical log keeps insertion order, so Load
+	// must order by event Sequence.
+	b := newBrowser(t, events[3], events[1], events[0])
 	got, err := b.Load("p1")
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -119,10 +120,7 @@ func TestLoadReturnsSequenceOrder(t *testing.T) {
 }
 
 func TestLoadUnknownAndInvalid(t *testing.T) {
-	b, err := New(fakeSource{records: []store.EventRecord{rec(ev("e1", 1, "p1"))}})
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
+	b := newBrowser(t, ev("e1", 1, "p1"))
 	if _, err := b.Load("ghost"); !errors.Is(err, visualizer.ErrNotFound) {
 		t.Fatalf("err = %v, want ErrNotFound", err)
 	}
@@ -133,14 +131,7 @@ func TestLoadUnknownAndInvalid(t *testing.T) {
 
 func TestTimelineMatchesReplay(t *testing.T) {
 	events := fixture()
-	records := make([]store.EventRecord, 0, len(events))
-	for _, e := range events {
-		records = append(records, rec(e))
-	}
-	b, err := New(fakeSource{records: records})
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
+	b := newBrowser(t, events...)
 	got, err := b.Timeline("p1")
 	if err != nil {
 		t.Fatalf("Timeline: %v", err)
@@ -174,10 +165,13 @@ func TestNewRejectsNil(t *testing.T) {
 	}
 }
 
-func TestListRejectsBadJSON(t *testing.T) {
-	b, err := New(fakeSource{records: []store.EventRecord{{ID: "e1", Data: []byte("{not json")}}})
-	if err != nil {
-		t.Fatalf("New: %v", err)
+func TestListRejectsBadEvent(t *testing.T) {
+	// A well-formed log entry that is not a valid visualizer event: the store
+	// probe (id/sequence) accepts it, the visualizer decode must reject it.
+	b, s := newBrowserWithStore(t, nil)
+	line := []byte(`{"id":"e1","sequence":1,"aggregate":"not-an-object"}` + "\n")
+	if err := os.WriteFile(s.Layout().EventsPath(), line, 0o600); err != nil {
+		t.Fatalf("write corrupt event: %v", err)
 	}
 	if _, err := b.List(); !errors.Is(err, visualizer.ErrInvalid) {
 		t.Fatalf("err = %v, want ErrInvalid", err)
@@ -185,24 +179,7 @@ func TestListRejectsBadJSON(t *testing.T) {
 }
 
 func TestBrowserOverMemoryQuery(t *testing.T) {
-	s, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	for _, e := range fixture() {
-		data, err := json.Marshal(e)
-		if err != nil {
-			t.Fatalf("marshal: %v", err)
-		}
-		if _, err := s.AppendEvent(data); err != nil {
-			t.Fatalf("AppendEvent: %v", err)
-		}
-	}
-	q := query.New(projection.NewMem(), s)
-	b, err := New(q)
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
+	b := newBrowser(t, fixture()...)
 	sessions, err := b.List()
 	if err != nil {
 		t.Fatalf("List: %v", err)
