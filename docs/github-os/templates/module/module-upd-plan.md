@@ -1,6 +1,7 @@
 # {module} — Module Update Plan: {topic}
 
-> Authored at the **start** of the module update, on branch `ph{N}-{scope}`.
+> Authored at the **start** of the module update, in `docs/modules/<module>/updates/<slug>/plan.md`,
+> on the retained phase branch (or the update-phase branch). Linked from the owning update phase.
 
 ## Objective
 

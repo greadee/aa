@@ -1,6 +1,7 @@
 # {module} — Module Update Summary: {topic}
 
-> Authored at the **end** of the module update, on branch `ph{N}-{scope}`. Derived from the module update plan.
+> Authored at the **end** of the module update, in `docs/modules/<module>/updates/<slug>/summary.md`.
+> Derived from the module update plan. Linked from the owning update phase.
 > Phase PR: #...
 
 ## Delivered

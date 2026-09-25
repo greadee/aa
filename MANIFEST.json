@@ -42,6 +42,10 @@
     "docs/github-os/git-workflow.md",
     "docs/github-os/model-selection.md",
     "docs/github-os/module-upd-plan.md",
-    "docs/github-os/module-upd-summary.md"
+    "docs/github-os/module-upd-summary.md",
+    "docs/index/modules.md",
+    "docs/adr/README.md",
+    "docs/modules/README.md",
+    "docs/updates/README.md"
   ]
 }
