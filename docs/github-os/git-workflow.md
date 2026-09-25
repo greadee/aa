@@ -46,7 +46,7 @@ ph1-contracts
 ph2-memory
 ph5-forge
 ph9-joblearn
-ph10-console
+ph10-ui
 ```
 
 Rules:

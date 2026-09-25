@@ -38,7 +38,7 @@ The plan is authored at the **start** of the phase. The summary is authored at t
 | 7 | `ph7-toolbox` | `aa-toolbox` plugins/MCP and configurable workflows |
 | 8 | `ph8-visualizer` | `aa-visualizer` completion |
 | 9 | `ph9-joblearn` | Job learning and optimization loop |
-| 10 | `ph10-console` | `aa-console` unified interface |
+| 10 | `ph10-ui` | `aa-ui` unified interface |
 | 11 | `ph11-release` | Hardening, security, release, docs, audits |
 
 The full phase plan with goals, deliverables, exit criteria, and testing is in the [architecture document](../architecture/README.md#11-end-to-end-phase-plan).

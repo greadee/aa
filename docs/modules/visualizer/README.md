@@ -27,7 +27,7 @@ Make work tangible: render the current session live and any past session as a re
 
 - `obsv` `Subscribe` / `Replay`.
 - `memory` query API for past sessions.
-- Control-plane API for the console.
+- Control-plane API for the ui.
 
 ## Submodules
 

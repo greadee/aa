@@ -17,7 +17,7 @@ the unnumbered [update phases](../updates/) (refactors, edits, corrections).
 | [aa-forge](../modules/forge/README.md) | Git/GitHub lifecycle orchestration |
 | [aa-toolbox](../modules/toolbox/README.md) | Tools/plugins/MCP and workflow runtime |
 | [aa-visualizer](../modules/visualizer/README.md) | 3D graph, replay, and time-travel browsing |
-| [aa-console](../modules/console/README.md) | Unified interface (scaffold) |
+| [aa-ui](../modules/ui/README.md) | Unified interface: CLI and TUI surfaces (scaffold) |
 
 Index of records: [docs/modules/README.md](../modules/README.md).
 

@@ -31,7 +31,7 @@ The system is built from ten independently versioned modules joined by a single 
 
 ```mermaid
 flowchart TB
-    console["aa-console<br/>TUI + local web control plane"]
+    ui["aa-ui<br/>TUI + local web control plane"]
     kernel["aa-kernel<br/>control plane"]
     sync["aa-sync<br/>remote/offline/parallel"]
     forge["aa-forge<br/>git/github orchestration"]
@@ -42,10 +42,10 @@ flowchart TB
     memory["aa-memory<br/>system of record"]
     sifter["aa-sifter<br/>model/compute router"]
 
-    console --> kernel
-    console --> visualizer
-    console --> forge
-    console --> sync
+    ui --> kernel
+    ui --> visualizer
+    ui --> forge
+    ui --> sync
     kernel --> contracts
     sync --> contracts
     forge --> contracts
@@ -95,7 +95,7 @@ Seven existing work areas converge into the ten target modules. The table below 
 
 | Existing area | What it is | Destination |
 |---|---|---|
-| `file transfer app` (Go `syncgate`) | Sync MVP plus a complete but disabled kernel and half a memory system | `sync` (transfer/pairing/identity) + `kernel` (orchestration/scheduler/execution) + `memory` (records/projections) + `console`/`visualizer` (API/browser) |
+| `file transfer app` (Go `syncgate`) | Sync MVP plus a complete but disabled kernel and half a memory system | `sync` (transfer/pairing/identity) + `kernel` (orchestration/scheduler/execution) + `memory` (records/projections) + `ui`/`visualizer` (API/browser) |
 | `agent-action-visualizer` | Go + Wails + React/Three 3D time-travel app with a duplicated observation protocol | `visualizer`, stripping protocol/IPC/event-store into `obsv` |
 | `aa-obsv-module` | Product-neutral work-observation library | `obsv` |
 | `compute-sifter` | Python `sifter`: classify → gate → route → execute → verify → escalate | `sifter` |
@@ -109,10 +109,10 @@ Seven existing work areas converge into the ten target modules. The table below 
 |---|---|
 | Task/DAG modeled four ways (`project`, `orchestration`, `taskspec`, `workhistory`) | One task/work-package model in `contracts` |
 | Telemetry duplicated (`telemetry`, `insights`, `desktop/lifecycle_telemetry`) | Operational telemetry in `kernel`; canonical history in `memory` |
-| `desktop` mega-package re-implements orchestration | Split across `sync`, `kernel`, `console`, `visualizer` |
+| `desktop` mega-package re-implements orchestration | Split across `sync`, `kernel`, `ui`, `visualizer` |
 | Three event vocabularies, three memory hierarchies | One event taxonomy and one memory hierarchy in `contracts` |
 | AAV and `obsv` protocol duplication with incompatible stripping | Resolved (`ISS-OBSV-2`): AAV adopts `obsv`; the visualizer defines no protocol, transport, or event-store and normalizes metadata through one explicit compatibility profile |
-| No forge, plugin/MCP, or unified interface | New `forge`, `toolbox`, `console` modules |
+| No forge, plugin/MCP, or unified interface | New `forge`, `toolbox`, `ui` modules |
 
 ### 3.2 Missing capabilities and their homes
 
@@ -123,7 +123,7 @@ Seven existing work areas converge into the ten target modules. The table below 
 | Issue repository | `memory` |
 | GitHub orchestration: projects, issues, PRs, checkpoints, releases | `forge` |
 | Optimization loop | `kernel` + `memory` |
-| Interface that ties everything together | `console` |
+| Interface that ties everything together | `ui` |
 | Tools/plugins/MCP and workflow configuration | `toolbox` |
 
 ---
@@ -135,7 +135,7 @@ Seven existing work areas converge into the ten target modules. The table below 
 ```mermaid
 flowchart TB
     subgraph UX["Interface"]
-        console["aa-console"]
+        ui["aa-ui"]
     end
     subgraph Control["Control plane"]
         kernel["aa-kernel"]
@@ -155,10 +155,10 @@ flowchart TB
     registry["aa-registry — durable definitions"]
     contracts["aa-contracts — single source of truth"]
 
-    console --> kernel
-    console --> visualizer
-    console --> forge
-    console --> sync
+    ui --> kernel
+    ui --> visualizer
+    ui --> forge
+    ui --> sync
     kernel --> registry
     kernel --> runtime
     kernel --> toolbox
@@ -198,7 +198,7 @@ flowchart TD
     runtime["aa-runtime"]
     kernel["aa-kernel"]
     visualizer["aa-visualizer"]
-    console["aa-console"]
+    ui["aa-ui"]
 
     contracts --> registry
     contracts --> runtime
@@ -211,7 +211,7 @@ flowchart TD
     contracts --> forge
     contracts --> kernel
     contracts --> visualizer
-    contracts --> console
+    contracts --> ui
     registry --> kernel
     obsv --> memory
     memory --> kernel
@@ -227,7 +227,7 @@ Rules (enforced by architecture tests in each module):
 2. A module may import only **downward** in the diagram; no cycles.
 3. `kernel` never imports `sync`, `forge`, or `sifter` code — it calls them over RPC.
 4. `visualizer` never imports `kernel`.
-5. `console` imports `contracts` only and talks to modules through the control-plane API.
+5. `ui` imports `contracts` only and talks to modules through the control-plane API.
 6. Cross-module data structures exist only in `contracts`.
 7. `registry` holds durable definitions only (no runtime instances) and depends on `contracts`; `kernel` consumes it.
 8. `runtime` owns execution mechanics and depends on `contracts`; `kernel` dispatches work to it. Runtime mechanics are never imported by `memory`, `sync`, `forge`, or `toolbox`.
@@ -242,8 +242,8 @@ flowchart LR
         sifterProc["aa-sifter service (Python)"]
         forgeProc["aa-forge adapters (git/gh)"]
         sqlite["memory store (records + SQLite)"]
-        web["console local web"]
-        tui["console TUI"]
+        web["ui local web"]
+        tui["ui TUI"]
     end
     subgraph MachineB["Machine B (replica / worker)"]
         syncNode["aa-sync node"]
@@ -268,7 +268,7 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-    participant U as User (console)
+    participant U as User (ui)
     participant K as aa-kernel
     participant M as aa-memory
     participant S as aa-sifter
@@ -408,7 +408,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Adopted (`ISS-OBSV-2`):** `obsv` `Replay`/`Subscribe` behind one `source` seam and one `adapter` mapping; the explicit `compat` profile normalizes `secondary_paths`/`access_sequence`; session-state projection, identity mapping, deterministic layout, replay cursor, live bridge, and retention are delivered under `ph8-visualizer`; a boundary guard enforces the single observation vocabulary.
 - **Remaining work:** the Wails + React/Three UI surface and the kernel-host socket.
 
-### 5.10 aa-console
+### 5.10 aa-ui
 
 - **Purpose:** tie the platform together for humans.
 - **Owns:** CLI/TUI and local web control plane behind pluggable **surfaces**; workflow configuration; plugin/MCP management; memory/issue/strategy/visualizer browsing; multi-machine status; approval and gate UI.
@@ -443,7 +443,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **RPC, not imports.** Cross-module calls use a versioned JSON-RPC protocol over an authenticated local socket (named pipe on Windows, Unix domain socket elsewhere). Messages carry schema version, request id, and identity.
 - **Versioning.** Schemas are versioned `v1`, `v2`, …; additive changes are backward compatible; breaking changes require a major bump and a migration plan. Compatibility is checked in the conformance suite.
 - **Conformance suite.** One test suite validates every generator and every module against the schemas.
-- **Control-plane API.** The console and visualizer use a versioned HTTP/JSON control-plane API (OpenAPI-documented). Write operations are idempotent and auditable.
+- **Control-plane API.** The ui and visualizer use a versioned HTTP/JSON control-plane API (OpenAPI-documented). Write operations are idempotent and auditable.
 
 ---
 
@@ -494,7 +494,7 @@ Testing is continuous and layered. Every module owns its pyramid; `contracts` ow
 | Chaos/Recovery | Failure handling | crash mid-transfer, DB quarantine, lease expiry |
 | E2E | Real workflows | two/three-machine sync, supervised run, forge phase lifecycle, plugin add |
 | Live smoke | Optional, paid/network | one provider connectivity check, gated by env |
-| UI | Renderer and console | replay + console workflows via Playwright |
+| UI | Renderer and ui | replay + ui workflows via Playwright |
 
 Rules:
 
@@ -569,7 +569,7 @@ Each phase is a GitHub milestone with a tracking issue, a phase branch equal to 
 - **Exit:** each feature enables only after its evidence gate passes; backtests; deterministic fallbacks retained.
 - **Testing:** evidence gates, backtesting, golden fallbacks.
 
-### Phase 10 — `ph10-console` — Unified interface
+### Phase 10 — `ph10-ui` — Unified interface
 - **Goal:** one entry point drives the whole workflow.
 - **Deliverables:** CLI/TUI; local web control plane; workflow configuration; plugin management; memory/issue/strategy/visualizer browsing; multi-machine status; approvals/gates.
 - **Exit:** end-to-end workflow usable from one surface; UI e2e; desktop surface addable.
@@ -612,7 +612,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 | D19 | **Layered testing plus evidence gates before learned features** | Correctness and safe enablement |
 | D20 | **Event-sourced, deterministic control plane; model never source of truth** | Reconstructability and auditability |
 | D21 | **Metadata-only observation; redact before cloud; OS credential store; least privilege** | Privacy and security by default |
-| D22 | **`aa-console` last and thin**, built on pluggable surfaces | Avoids coupling UX to volatile internals; a desktop surface can be added later |
+| D22 | **`aa-ui` last and thin**, built on pluggable surfaces | Avoids coupling UX to volatile internals; a desktop surface can be added later |
 
 ### 12.2 Tooling required
 
@@ -637,7 +637,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 3. **Memory and obsv before kernel.** The kernel needs a system of record and an observation host; build those first.
 4. **Kernel extraction.** Move orchestration/scheduler/execution out of syncgate, deleting the `desktop` mega-package's duplicated orchestration as boundaries are proven.
 5. **Sifter behind RPC.** Wrap `compute-sifter` as a service and route all model access through it.
-6. **Forge, then toolbox, then visualizer, then console.** External automation and extensibility before interface.
+6. **Forge, then toolbox, then visualizer, then ui.** External automation and extensibility before interface.
 7. **Retire:** stale `doc.go` "will own" notes, duplicate `[G]` vs `[LG]` docs (`docs/github-os/` is canonical), and overlapping phase/slice/stage numbering.
 8. **Each move is a phase slice with its own commit and validation**, not a single large refactor.
 
@@ -654,7 +654,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 | Scope creep across ten modules | `ph0` governance, strict phase exit criteria, and evidence gates |
 | Learned features could mislead | Evidence gates with deterministic fallbacks; human approval stays authoritative |
 | Multi-machine parallelization without multi-writer history | Single authority; replicas read-only; revisit with a dedicated ADR |
-| Interface built too early | `aa-console` is last; surfaces are pluggable; control-plane API is stable first |
+| Interface built too early | `aa-ui` is last; surfaces are pluggable; control-plane API is stable first |
 
 ## Glossary
 

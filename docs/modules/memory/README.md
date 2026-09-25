@@ -28,7 +28,7 @@ Be the canonical, portable, rebuildable system of record. Everything durable abo
 ## Interfaces
 
 - Record read/write.
-- Query API consumed by `kernel`, `visualizer`, `console`, and `forge`.
+- Query API consumed by `kernel`, `visualizer`, `ui`, and `forge`.
 - Projection rebuild.
 
 ## Submodules

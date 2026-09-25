@@ -17,7 +17,7 @@
     "forge",
     "toolbox",
     "visualizer",
-    "console"
+    "ui"
   ],
   "docs": [
     "docs/index/README.md",
@@ -48,6 +48,7 @@
     "docs/modules/README.md",
     "docs/modules/registry/README.md",
     "docs/modules/runtime/README.md",
+    "docs/modules/ui/README.md",
     "docs/modules/github-os/README.md",
     "docs/updates/README.md"
   ]

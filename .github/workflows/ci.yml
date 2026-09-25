@@ -27,7 +27,7 @@ jobs:
           - forge
           - toolbox
           - visualizer
-          - console
+          - ui
     steps:
       - uses: actions/checkout@v4
 

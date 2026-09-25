@@ -104,4 +104,4 @@ Used for branches, folders, and directive files.
 | aa-forge | `forge` |
 | aa-toolbox | `toolbox` |
 | aa-visualizer | `visualizer` |
-| aa-console | `console` |
+| aa-ui | `ui` |

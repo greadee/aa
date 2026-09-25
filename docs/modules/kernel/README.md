@@ -35,7 +35,7 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 
 ## Interfaces
 
-- Control-plane API for `console` and `visualizer`.
+- Control-plane API for `ui` and `visualizer`.
 - RPC clients to `sifter`, `sync`, and `forge`.
 - `obsv` host APIs.
 - `memory` query and record APIs.

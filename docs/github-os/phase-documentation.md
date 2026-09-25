@@ -17,7 +17,7 @@ docs/phases/ph0-scaffold/     branch: ph0-scaffold
 docs/phases/ph1-contracts/    branch: ph1-contracts
 docs/phases/ph5-forge/        branch: ph5-forge
 docs/phases/ph9-joblearn/     branch: ph9-joblearn
-docs/phases/ph10-console/     branch: ph10-console
+docs/phases/ph10-ui/     branch: ph10-ui
 ```
 
 Rules: no zero-padding, hyphen between number and scope, short lowercase kebab-case scope. The scope names the module or workstream the phase delivers.
