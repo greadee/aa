@@ -4,10 +4,10 @@ Time-travel work history, debugging, and 3D graph visualization.
 
 - **Owns:** 3D graph, replay, session trails, live bridge, and memory session browsing.
 - **Must not:** own the observation protocol, transport, or event-store; own canonical history.
-- **Status:** delivered in `ph8-visualizer`: deterministic projection, layout, replay, browsing, and live `obsv` transport adoption. The shared `obsv` protocol and the `compat` profile replace the protocol, IPC, and event-store duplicated from AAV (see the [module update](module-upd-plan.md), `ISS-OBSV-2`). The Wails/Three UI surface is the remaining follow-up.
+- **Status:** delivered in `ph8-visualizer`: deterministic projection, layout, replay, browsing, and live `obsv` transport adoption. The shared `obsv` protocol and the `compat` profile replace the protocol, IPC, and event-store duplicated from AAV (see the [module update](../docs/modules/visualizer/updates/obsv-adoption/plan.md), `ISS-OBSV-2`). The Wails/Three UI surface is the remaining follow-up.
 - **Directive:** [aa-visualizer.md](aa-visualizer.md)
 - **Architecture:** [../docs/architecture/README.md](../docs/architecture/README.md)
-- **Module update:** [module-upd-plan.md](module-upd-plan.md)
+- **Module update:** [plan.md](../docs/modules/visualizer/updates/obsv-adoption/plan.md) · [summary.md](../docs/modules/visualizer/updates/obsv-adoption/summary.md)
 
 ## Packages
 

@@ -12,8 +12,9 @@ import (
 	"sort"
 
 	"github.com/greadee/aa/kernel/joblearn"
-	"github.com/greadee/aa/kernel/registry"
 	"github.com/greadee/aa/kernel/telemetry"
+	"github.com/greadee/aa/registry/roles"
+	"github.com/greadee/aa/runtime/worker"
 )
 
 // GateOutcome is one gate's result for an attempt.
@@ -38,9 +39,9 @@ type Meta struct {
 
 // MetaForWorker derives role, trade, and worker from a registered worker. When
 // role is empty it falls back to the worker's lexicographically smallest role.
-func MetaForWorker(w registry.Worker, role registry.Role) Meta {
+func MetaForWorker(w worker.Worker, role roles.Role) Meta {
 	if role == "" {
-		roles := append([]registry.Role(nil), w.Roles...)
+		roles := append([]roles.Role(nil), w.Roles...)
 		sort.Slice(roles, func(i, j int) bool { return roles[i] < roles[j] })
 		if len(roles) > 0 {
 			role = roles[0]

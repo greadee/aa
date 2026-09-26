@@ -1,6 +1,6 @@
 # aa-contracts TypeScript bindings
 
-TypeScript types mirroring the v1 schemas, for `aa-visualizer` and `aa-console` consumers.
+TypeScript types mirroring the v1 schemas, for `aa-visualizer` and `aa-ui` consumers.
 
 - Source: `v1/index.ts`.
 - Check: `npm install && npm run typecheck` (TypeScript `tsc --noEmit`).

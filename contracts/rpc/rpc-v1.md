@@ -123,4 +123,4 @@ The observation service uses its own protocol (`hello` / `append` / `replay` / `
 
 ## Control plane vs RPC
 
-The RPC surface is **internal** (module to module). The **external** surface for `console` and `visualizer` is the versioned HTTP/JSON control plane described in `../openapi/control-plane-v1.yaml`. The console never calls RPC methods directly.
+The RPC surface is **internal** (module to module). The **external** surface for `ui` and `visualizer` is the versioned HTTP/JSON control plane described in `../openapi/control-plane-v1.yaml`. The ui never calls RPC methods directly.

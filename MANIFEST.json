@@ -7,15 +7,17 @@
   "primaryDirective": "AA.md",
   "modules": [
     "contracts",
+    "registry",
     "obsv",
     "kernel",
+    "runtime",
     "memory",
     "sync",
     "sifter",
     "forge",
     "toolbox",
     "visualizer",
-    "console"
+    "ui"
   ],
   "docs": [
     "docs/index/README.md",
@@ -41,7 +43,13 @@
     "docs/github-os/documentation-system.md",
     "docs/github-os/git-workflow.md",
     "docs/github-os/model-selection.md",
-    "docs/github-os/module-upd-plan.md",
-    "docs/github-os/module-upd-summary.md"
+    "docs/index/modules.md",
+    "docs/adr/README.md",
+    "docs/modules/README.md",
+    "docs/modules/registry/README.md",
+    "docs/modules/runtime/README.md",
+    "docs/modules/ui/README.md",
+    "docs/modules/github-os/README.md",
+    "docs/updates/README.md"
   ]
 }

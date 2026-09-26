@@ -1,0 +1,95 @@
+@startuml
+title Architecture Refactor 1 — target boundaries (change-scoped)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+package "aa-contracts (v2.0)" as contracts #DDEEFF {
+  [schemas + bindings]
+  note bottom of [schemas + bindings]
+    + RoleSpec, ModelSpec, TeamSpec
+    + WorkPlan, ExecutionPlan, Routine
+    - trade (retired)
+  end note
+}
+
+package "aa-kernel" as kernel #E8F5E9 {
+  [context] as kctx
+  package "allocator" as alloc {
+    [planner] as planner
+    [role_allocator] as role
+    [model_allocator] as model
+    [compute_allocator] as compute
+  }
+  [scheduler] as scheduler
+  [contract / gate / telemetry / joblearn / api / intake] as ktransitional
+}
+
+package "aa-registry" as registry #FFF3E0 {
+  [roles] as regroles
+  [models] as regmodels
+  [teams] as regteams
+  [capabilities] as regcaps
+  [routines] as regroutines
+  [policies] as regpolicies
+}
+
+package "aa-runtime (top level)" as runtime #F3E5F5 {
+  [lifecycle] as lifecycle
+  [worker] as worker
+  [sandbox (reserved)] as sandbox
+  [inference (python)] as inference
+}
+
+package "aa-memory" as memory #E1F5FE {
+  [retrieval] as retrieval
+  [projection / repo / retention / store] as memcore
+}
+
+package "aa-ui" as ui #FBE9E7 {
+  [components / views / state] as uicore
+  [surfaces: cli, tui] as surfaces
+}
+
+[obsv] as obsv #ECEFF1
+[toolbox] as toolbox #ECEFF1
+[forge] as forge #ECEFF1
+[sync] as sync #ECEFF1
+[visualizer] as visualizer #ECEFF1
+
+' dependencies
+planner --> regroles
+role --> regroles
+model --> regmodels
+compute --> worker
+kctx --> retrieval
+scheduler --> planner
+scheduler --> runtime
+runtime --> contracts
+kernel --> contracts
+registry --> contracts
+memory --> contracts
+ui --> contracts
+obsv --> contracts
+toolbox --> contracts
+visualizer --> contracts
+
+note right of kernel
+  moves:
+  plan -> allocator/planner
+  orchestrator+control -> scheduler
+  registry -> deleted (split)
+  runtime -> top-level
+  intake/context/contract/gate/
+  telemetry/joblearn/api stay
+  (transitional; future documented)
+end note
+
+note right of runtime
+  kernel/runtime moved here
+  sifter -> inference (python)
+  worker/crew/execution instances
+  sandbox reserved (not implemented)
+end note
+
+@enduml

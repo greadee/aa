@@ -7,4 +7,4 @@ Decode a prompt and route it to the appropriate local or cloud model under budge
 - **Status:** implemented (phase 4); production RPC wiring implemented (module update).
 - **Directive:** [aa-sifter.md](aa-sifter.md)
 - **Architecture:** [../docs/architecture/README.md](../docs/architecture/README.md)
-- **Module update:** [module-upd-plan.md](module-upd-plan.md) · [module-upd-summary.md](module-upd-summary.md)
+- **Module update:** [plan.md](../docs/modules/sifter/updates/production-rpc-wiring/plan.md) · [summary.md](../docs/modules/sifter/updates/production-rpc-wiring/summary.md)

@@ -22,12 +22,21 @@ Recommended:
 ```text
 docs/
 ├── index/
+├── architecture/
+├── adr/
+├── modules/
 ├── phases/
+├── updates/
 ├── issues/
 ├── features/
-├── architecture/
 └── reference/
 ```
+
+Two axes organize the record:
+
+- **Work history** — `phases/` (numbered **major additions**) and `updates/`
+  (unnumbered **update phases**: refactors, edits, corrections).
+- **Project history** — `modules/` (the current state of each module).
 
 Every meaningful document should be reachable from an index.
 
@@ -39,20 +48,45 @@ docs/
 ├── index/
 │   ├── README.md
 │   ├── phases.md
+│   ├── modules.md
 │   ├── features.md
 │   ├── architecture.md
 │   └── sprints.md
 │
-├── phases/
+├── architecture/
+│   ├── README.md
+│   ├── system-overview.md
+│   ├── data-flow.md
+│   └── diagrams/
+│
+├── adr/
+│   ├── README.md                  index: maps ADR-NNNN <-> legacy ADR-Px-NNN
+│   └── ADR-NNNN-<slug>.md         one decision per file, global chronological ids
+│
+├── modules/
+│   └── <module>/                  project history
+│       ├── README.md              overview, owns/must-not, submodules
+│       ├── <submodule>.md         one page per submodule
+│       └── updates/
+│           └── <slug>/
+│               ├── plan.md        module update plan
+│               └── summary.md     module update summary
+│
+├── phases/                        work history: numbered major additions
 │   └── ph{N}-{scope}/
 │       ├── plan.md
 │       ├── plan.uml
 │       ├── summary.md
 │       ├── summary.uml
-│       ├── adr.md
 │       └── issues/
-│           ├── issue-123-name.md
-│           └── ...
+│           └── issue-123-name.md
+│
+├── updates/                       work history: unnumbered update phases
+│   └── <slug>/
+│       ├── plan.md
+│       ├── plan.uml
+│       ├── summary.md
+│       └── summary.uml
 │
 ├── issues/
 │   ├── README.md
@@ -65,12 +99,6 @@ docs/
 │       ├── implementation.md
 │       ├── testing.md
 │       └── pitfalls.md
-│
-├── architecture/
-│   ├── README.md
-│   ├── system-overview.md
-│   ├── data-flow.md
-│   └── diagrams/
 │
 └── reference/
     ├── cli.md
@@ -98,9 +126,11 @@ plan.md
 plan.uml
 summary.md
 summary.uml
-adr.md
 issues/
 ```
+
+ADRs are no longer stored per phase; every accepted decision lives in the global
+[ADR store](../adr/README.md) and is linked from the phase/update that made it.
 
 The plan documents (`plan.md`, `plan.uml`) are authored at the start of the phase; the summary documents (`summary.md`, `summary.uml`) are authored at the end. The branch name equals the folder name. See [phase-documentation.md](phase-documentation.md).
 
@@ -272,14 +302,57 @@ A problem that spans more than one module, phase, or branch is recorded as an **
 
 ## Module Update Documentation
 
-Work that belongs to a module whose phase already merged is delivered as a module update on the retained phase branch, with the plan and summary beside the module:
+Work that belongs to a module whose phase already merged is delivered as a module
+update on the retained phase branch. The plan and summary live in **project
+history**, under the module:
 
 ```text
-<module>/module-upd-plan.md
-<module>/module-upd-summary.md
+docs/modules/<module>/updates/<slug>/plan.md
+docs/modules/<module>/updates/<slug>/summary.md
 ```
 
-For a documentation-only update, the plan and summary sit with the documentation they change. Together they are the durable record of the update, exactly as `plan.md` and `summary.md` are for a phase. See [module-updates.md](module-updates.md).
+The owning **update phase** (`docs/updates/<slug>/`) is the **work history** and
+links its module updates. Together the plan and summary are the durable record of
+the update, exactly as `plan.md` and `summary.md` are for a phase. See
+[module-updates.md](module-updates.md).
+
+## Module Documentation
+
+Each module has a **project-history** folder:
+
+```text
+docs/modules/<module>/
+├── README.md          overview: responsibility, owns/must-not, submodule index
+├── <submodule>.md     one page per submodule
+└── updates/<slug>/    module update plans and summaries
+```
+
+Rules:
+
+- one page per submodule (package / directory);
+- the module `README.md` indexes its submodules and links its `updates/`;
+- module directives (`aa-<module>.md`) stay **beside the module source** and are
+  linked from the module `README.md`;
+- modules describe the **current** state; history lives in `phases/` and `updates/`.
+
+Index: [docs/modules/README.md](../modules/README.md).
+
+## Update Phases
+
+Refactors, edits, corrections, and module updates are **unnumbered update phases**,
+not numbered phases:
+
+```text
+docs/updates/<slug>/
+├── plan.md
+├── plan.uml
+├── summary.md
+└── summary.uml
+```
+
+Numbered phases are reserved for **major additions**. An update phase carries the
+same plan/summary discipline as a phase, links the module updates it contains, and
+its diagrams are lightweight and change-scoped.
 
 ## Feature Folders
 
@@ -323,7 +396,7 @@ Before phase merge:
 [ ] required end state verified
 [ ] significant issues have issue docs
 [ ] issue docs link relevant ADRs
-[ ] ADR file reflects accepted decisions
+[ ] accepted decisions recorded in the global ADR store
 [ ] decisions affirmed and deviations recorded
 [ ] important pitfalls recorded
 [ ] deferred work identified

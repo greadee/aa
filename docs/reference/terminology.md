@@ -94,6 +94,8 @@ Used for branches, folders, and directive files.
 | Module | Scope token |
 |---|---|
 | aa-contracts | `contracts` |
+| aa-registry | `registry` |
+| aa-runtime | `runtime` |
 | aa-obsv | `obsv` |
 | aa-kernel | `kernel` |
 | aa-memory | `memory` |
@@ -102,4 +104,4 @@ Used for branches, folders, and directive files.
 | aa-forge | `forge` |
 | aa-toolbox | `toolbox` |
 | aa-visualizer | `visualizer` |
-| aa-console | `console` |
+| aa-ui | `ui` |

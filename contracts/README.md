@@ -9,7 +9,7 @@ The single source of truth for every cross-module object and wire protocol.
 | [POLICY.md](POLICY.md) | Versioning, compatibility, deprecation, and change process |
 | [schemas/v1/](schemas/v1/README.md) | JSON Schema (draft 2020-12) definitions for all cross-module objects |
 | [rpc/rpc-v1.md](rpc/rpc-v1.md) | Inter-module JSON-RPC specification |
-| [openapi/control-plane-v1.yaml](openapi/control-plane-v1.yaml) | External control-plane HTTP API for console and visualizer |
+| [openapi/control-plane-v1.yaml](openapi/control-plane-v1.yaml) | External control-plane HTTP API for the ui and visualizer |
 | `go/v1/` | Go bindings and validators |
 | `typescript/v1/` | TypeScript bindings |
 | `python/aa_contracts/` | Python bindings |
@@ -25,7 +25,7 @@ The single source of truth for every cross-module object and wire protocol.
 
 Phase 1 complete and merged: 15 schemas under `schemas/v1`, RPC and control-plane specs, Go/TypeScript/Python bindings, and the conformance suite.
 
-Module update (trace contract): `trace.schema.json` (document contract 1.1) adds bounded, redacted per-step learning evidence. See [module-upd-plan.md](module-upd-plan.md) and [module-upd-summary.md](module-upd-summary.md).
+Module update (trace contract): `trace.schema.json` (document contract 1.1) adds bounded, redacted per-step learning evidence. See [plan.md](../docs/modules/contracts/updates/trace-contract/plan.md) and [summary.md](../docs/modules/contracts/updates/trace-contract/summary.md).
 
 ## Directive
 

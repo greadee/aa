@@ -11,23 +11,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-)
 
-// KnownCapabilities is the closed capability vocabulary.
-var KnownCapabilities = map[string]bool{
-	"read_project":         true,
-	"write_workspace":      true,
-	"execute_command":      true,
-	"run_tests":            true,
-	"network_access":       true,
-	"install_dependencies": true,
-	"call_model":           true,
-	"read_secrets":         true,
-	"create_artifact":      true,
-	"open_pull_request":    true,
-	"merge":                true,
-	"deploy":               true,
-}
+	"github.com/greadee/aa/registry/capabilities"
+)
 
 // Budget bounds an attempt.
 type Budget struct {
@@ -92,7 +78,7 @@ func Build(req Request) (Contract, error) {
 		return Contract{}, fmt.Errorf("contract: workPackageId and assignmentId are required")
 	}
 	for _, cap := range append(append([]string{}, req.Requested...), req.Permitted...) {
-		if !KnownCapabilities[cap] {
+		if !capabilities.Known[cap] {
 			return Contract{}, fmt.Errorf("contract: unknown capability %q", cap)
 		}
 	}

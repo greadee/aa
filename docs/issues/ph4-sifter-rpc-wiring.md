@@ -5,8 +5,8 @@
 **Branch:** `ph4-sifter`
 **Phase PR:** [#16](https://github.com/greadee/aa/pull/16)
 **Parent umbrella:** `ISS-TRACE-LOOP` — the observation → trace → learning substrate is under-delivered (`docs/issues/trace-learning-substrate.md`)
-**Module plan:** [../../sifter/module-upd-plan.md](../../sifter/module-upd-plan.md)
-**Module summary:** [../../sifter/module-upd-summary.md](../../sifter/module-upd-summary.md)
+**Module plan:** [../modules/sifter/updates/production-rpc-wiring/plan.md](../modules/sifter/updates/production-rpc-wiring/plan.md)
+**Module summary:** [../modules/sifter/updates/production-rpc-wiring/summary.md](../modules/sifter/updates/production-rpc-wiring/summary.md)
 
 ## Goal
 
@@ -43,4 +43,4 @@ The sifter server and client land on `ph4-sifter`. The kernel-side production ru
 
 ## Notes
 
-The implementation slices are listed in `sifter/module-upd-plan.md` and delivered on this branch; the module summary records what shipped, the decisions affirmed, and the deviations.
+The implementation slices are listed in `docs/modules/sifter/updates/production-rpc-wiring/plan.md` and delivered on this branch; the module summary records what shipped, the decisions affirmed, and the deviations.

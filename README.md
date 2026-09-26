@@ -19,7 +19,7 @@ The platform separates concerns into independently versioned modules that commun
 | `forge` | Git and GitHub orchestration: projects, issues, PRs, checkpoints, audits, releases |
 | `toolbox` | Tool, plugin, and MCP registry plus configurable workflow runtime |
 | `visualizer` | Time-travel work history, debugging, and 3D graph visualization |
-| `console` | Unified interface: TUI and local web control plane (pluggable surfaces) |
+| `ui` | Unified interface: CLI and TUI surfaces (pluggable) |
 
 ## Documentation
 

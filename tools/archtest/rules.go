@@ -5,8 +5,8 @@ import "path/filepath"
 // Modules returns the aa product modules in dependency order.
 func Modules(root string) []Module {
 	names := []string{
-		"contracts", "obsv", "memory", "sync", "toolbox",
-		"forge", "kernel", "visualizer", "console",
+		"contracts", "registry", "obsv", "memory", "sync", "toolbox",
+		"forge", "runtime", "kernel", "visualizer", "ui",
 	}
 	mods := make([]Module, 0, len(names))
 	for _, name := range names {
@@ -17,16 +17,18 @@ func Modules(root string) []Module {
 
 // Allowed returns the permitted direct-and-transitive aa dependencies per module.
 //
-// contracts depends on nothing. A module may depend only on modules below it:
+//	contracts depends on nothing. A module may depend only on modules below it:
 //
+//	registry   -> contracts
 //	obsv       -> contracts
 //	memory     -> contracts, obsv
 //	sync       -> contracts
 //	toolbox    -> contracts
 //	forge      -> contracts, toolbox
-//	kernel     -> contracts, obsv, memory, toolbox
+//	runtime    -> contracts, registry
+//	kernel     -> contracts, registry, obsv, memory, toolbox, runtime
 //	visualizer -> contracts, obsv, memory
-//	console    -> contracts
+//	ui         -> contracts
 //
 // kernel reaches sync, forge, and sifter over RPC, not by import.
 func Allowed() map[string]map[string]bool {
@@ -39,14 +41,16 @@ func Allowed() map[string]map[string]bool {
 	}
 	return map[string]map[string]bool{
 		"contracts":  set(),
+		"registry":   set("contracts"),
 		"obsv":       set("contracts"),
 		"memory":     set("contracts", "obsv"),
 		"sync":       set("contracts"),
 		"toolbox":    set("contracts"),
 		"forge":      set("contracts", "toolbox"),
-		"kernel":     set("contracts", "obsv", "memory", "toolbox"),
+		"runtime":    set("contracts", "registry"),
+		"kernel":     set("contracts", "registry", "obsv", "memory", "toolbox", "runtime"),
 		"visualizer": set("contracts", "obsv", "memory"),
-		"console":    set("contracts"),
+		"ui":         set("contracts"),
 	}
 }
 
