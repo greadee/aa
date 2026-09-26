@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	"github.com/greadee/aa/kernel/joblearn"
-	"github.com/greadee/aa/kernel/registry"
 	"github.com/greadee/aa/kernel/telemetry"
+	"github.com/greadee/aa/registry/roles"
+	"github.com/greadee/aa/runtime/worker"
 )
 
 func record(outcome string) telemetry.Record {
@@ -25,14 +26,14 @@ func record(outcome string) telemetry.Record {
 }
 
 func TestMetaForWorker(t *testing.T) {
-	w := registry.Worker{ID: "w1", Trade: "backend", Roles: []registry.Role{"Builder", "Architect"}}
+	w := worker.Worker{ID: "w1", Trade: "backend", Roles: []roles.Role{"Builder", "Architect"}}
 	if got := MetaForWorker(w, ""); got.Role != "Architect" || got.Trade != "backend" || got.Worker != "w1" {
 		t.Fatalf("MetaForWorker = %+v", got)
 	}
 	if got := MetaForWorker(w, "Builder"); got.Role != "Builder" {
 		t.Fatalf("explicit role not kept: %+v", got)
 	}
-	if got := MetaForWorker(registry.Worker{ID: "w2", Trade: "qa"}, ""); got.Role != "" {
+	if got := MetaForWorker(worker.Worker{ID: "w2", Trade: "qa"}, ""); got.Role != "" {
 		t.Fatalf("role should stay empty: %+v", got)
 	}
 }

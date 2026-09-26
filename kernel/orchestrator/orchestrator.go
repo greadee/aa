@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/greadee/aa/kernel/allocator/planner"
+	"github.com/greadee/aa/kernel/allocator/role_allocator"
 	kcontext "github.com/greadee/aa/kernel/context"
 	"github.com/greadee/aa/kernel/contract"
 	"github.com/greadee/aa/kernel/control"
 	"github.com/greadee/aa/kernel/gate"
 	"github.com/greadee/aa/kernel/intake"
-	"github.com/greadee/aa/kernel/registry"
 	"github.com/greadee/aa/kernel/telemetry"
 	"github.com/greadee/aa/runtime/worker"
 )
@@ -38,7 +38,7 @@ func (NopSink) Record(string, string, []byte) error { return nil }
 
 // Config configures the orchestrator.
 type Config struct {
-	Registry      *registry.Registry
+	Registry      *role_allocator.Registry
 	Runtime       worker.Adapter
 	Gates         []gate.Gate
 	Compiler      kcontext.Compiler
@@ -117,8 +117,8 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 	workPackageID := ready[0]
 	wp, _ := o.graph.Get(workPackageID)
 
-	selected, ok := o.cfg.Registry.SelectOne(registry.Requirement{
-		Trade:        registry.Trade(wp.Trade),
+	selected, ok := o.cfg.Registry.SelectOne(role_allocator.Requirement{
+		Trade:        worker.Trade(wp.Trade),
 		Capabilities: wp.Capabilities,
 	})
 	if !ok {

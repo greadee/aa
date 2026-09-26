@@ -12,7 +12,7 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 
 - The `obsv` host (journal + local socket) for current sessions.
 - Planning: task aggregate, dependency graph, readiness.
-- Role, trade, and worker registry plus deterministic role selection.
+- The allocator: planning, and role/model/compute allocation (worker instances live in `runtime/worker`).
 - The scheduler, leases, and the assignment state machine.
 - The context compiler (bounded, deterministic context bundles).
 - Execution contracts, permissions, and budgets.
@@ -64,6 +64,8 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 | [`joblearn/tracesource`](./joblearn-tracesource.md) | Package tracesource is the pure seam through which joblearn consumes bounded per-step traces. |
 | [`orchestrator`](./orchestrator.md) | Package orchestrator runs aa-kernel's deterministic supervised control cycle: ready -> select worker -> build contract -> compile context -> lease -> run -> intake -> gates -> accept -> telemetry. |
 | [`allocator/planner`](./allocator-planner.md) | The allocator's planning stage: work packages, dependency graph, and deterministic dispatch readiness. |
-| [`registry`](./registry.md) | Package registry holds durable roles and trades and the worker instances that can perform work, and selects workers deterministically. |
+| [`allocator/role_allocator`](./role-allocator.md) | Deterministic worker selection by role, capability, and (transitionally) trade, with rejection reasons. |
+| [`allocator/model_allocator`](./model-allocator.md) | Reserved: model allocation (no behavior yet). |
+| [`allocator/compute_allocator`](./compute-allocator.md) | Reserved: compute allocation (no behavior yet). |
 | [`telemetry`](./telemetry.md) | Package telemetry records bounded execution evidence and derives deterministic learning candidates. |
 

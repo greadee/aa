@@ -1,9 +1,12 @@
-// Package registry holds durable roles and trades and the worker instances
-// that can perform work, and selects workers deterministically.
+// Package role_allocator selects the worker instances whose expertise satisfies
+// a work requirement, deterministically, with rejection reasons.
 //
-// A role is a durable responsibility; a trade is a capability; a worker is an
-// instantiation of a trade on a provider. Models are backends, never identity.
-package registry
+// It answers one allocation question: what expertise is required? It allocates
+// against role, capability, and (transitionally) trade; it does not choose a
+// model or decide compute quantity. Selection is deterministic: accepted
+// workers are ordered by cost weight then id, and rejected workers are reported
+// with a reason.
+package role_allocator
 
 import (
 	"errors"
@@ -12,48 +15,26 @@ import (
 	"strings"
 
 	"github.com/greadee/aa/registry/roles"
+	"github.com/greadee/aa/runtime/worker"
 )
 
-// Trade is a durable capability (for example "backend").
-type Trade string
-
-// Role is a durable organizational responsibility (for example "Builder").
-// The canonical definition lives in registry/roles; this alias keeps the
-// transitional kernel/registry API stable until the allocator split.
-type Role = roles.Role
-
-// WorkerID identifies a worker instance.
-type WorkerID string
-
-// Worker is an instantiation of a trade on a provider.
-type Worker struct {
-	ID           WorkerID
-	Trade        Trade
-	Roles        []Role
-	Capabilities []string
-	Available    bool
-	Node         string
-	Provider     string
-	CostWeight   int
-}
-
-// Registry is a set of worker instances.
+// Registry is a set of worker instances the allocator can select from.
 type Registry struct {
-	workers map[WorkerID]Worker
+	workers map[worker.WorkerID]worker.Worker
 }
 
 // New returns an empty registry.
 func New() *Registry {
-	return &Registry{workers: make(map[WorkerID]Worker)}
+	return &Registry{workers: make(map[worker.WorkerID]worker.Worker)}
 }
 
 // ErrDuplicate is returned when a worker id already exists.
-var ErrDuplicate = errors.New("registry: duplicate worker")
+var ErrDuplicate = errors.New("role_allocator: duplicate worker")
 
 // Add registers a worker.
-func (r *Registry) Add(w Worker) error {
+func (r *Registry) Add(w worker.Worker) error {
 	if w.ID == "" {
-		return fmt.Errorf("registry: worker id is required")
+		return fmt.Errorf("role_allocator: worker id is required")
 	}
 	if _, ok := r.workers[w.ID]; ok {
 		return fmt.Errorf("%w: %s", ErrDuplicate, w.ID)
@@ -63,14 +44,14 @@ func (r *Registry) Add(w Worker) error {
 }
 
 // Get returns a worker by id.
-func (r *Registry) Get(id WorkerID) (Worker, bool) {
+func (r *Registry) Get(id worker.WorkerID) (worker.Worker, bool) {
 	w, ok := r.workers[id]
 	return w, ok
 }
 
 // List returns all workers sorted by id.
-func (r *Registry) List() []Worker {
-	out := make([]Worker, 0, len(r.workers))
+func (r *Registry) List() []worker.Worker {
+	out := make([]worker.Worker, 0, len(r.workers))
 	for _, w := range r.workers {
 		out = append(out, w)
 	}
@@ -80,20 +61,20 @@ func (r *Registry) List() []Worker {
 
 // Requirement describes what a work package needs.
 type Requirement struct {
-	Trade        Trade
-	Roles        []Role
+	Trade        worker.Trade
+	Roles        []roles.Role
 	Capabilities []string
 }
 
 // Candidate is an eligible worker with selection reasons.
 type Candidate struct {
-	Worker  Worker
+	Worker  worker.Worker
 	Reasons []string
 }
 
 // Rejection is a worker that did not satisfy a requirement, with a reason.
 type Rejection struct {
-	Worker Worker
+	Worker worker.Worker
 	Reason string
 }
 
@@ -129,15 +110,15 @@ func (r *Registry) Select(req Requirement) ([]Candidate, []Rejection) {
 }
 
 // SelectOne returns the preferred eligible worker, if any.
-func (r *Registry) SelectOne(req Requirement) (Worker, bool) {
+func (r *Registry) SelectOne(req Requirement) (worker.Worker, bool) {
 	accepted, _ := r.Select(req)
 	if len(accepted) == 0 {
-		return Worker{}, false
+		return worker.Worker{}, false
 	}
 	return accepted[0].Worker, true
 }
 
-func hasAnyRole(have, want []Role) bool {
+func hasAnyRole(have, want []roles.Role) bool {
 	for _, w := range want {
 		for _, h := range have {
 			if h == w {

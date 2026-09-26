@@ -340,7 +340,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.3 aa-kernel (control plane)
 
 - **Purpose:** deterministic coordination of all work.
-- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; role/model/compute allocation); role/trade/worker registry and role selection; scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
+- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; `allocator/role_allocator`: deterministic worker selection; reserved `allocator/model_allocator` and `allocator/compute_allocator`); scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
 - **Must not:** own transfer, own canonical history, call models directly, own execution mechanics (use `aa-runtime`), or expose a remote shell.
 - **Interfaces:** control-plane API; the `aa-runtime` worker adapter; RPC to `sifter`/`sync`/`forge`; `obsv` host; memory query.
 - **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there.
@@ -429,7 +429,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.12 aa-runtime
 
 - **Purpose:** own execution mechanics for allocated work.
-- **Owns:** worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (reserved, not implemented); the model provider/execution service boundary (`inference`, the Python service renamed from sifter).
+- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (reserved, not implemented); the model provider/execution service boundary (`inference`, the Python service renamed from sifter).
 - **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own durable definitions (`registry`) or canonical history (`memory`).
 - **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the future sandbox; the `inference` RPC service.
 - **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject.

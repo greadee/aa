@@ -10,7 +10,7 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 
 - The `obsv` host (journal + local socket) for current sessions.
 - Planning: task aggregate, dependency graph, readiness.
-- Role, trade, and worker registry plus deterministic role selection.
+- The allocator: planning, and role/model/compute allocation (worker instances live in `runtime/worker`).
 - The scheduler, leases, and the assignment state machine.
 - The context compiler (bounded, deterministic context bundles).
 - Execution contracts, permissions, and budgets.

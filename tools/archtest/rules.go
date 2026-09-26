@@ -25,7 +25,7 @@ func Modules(root string) []Module {
 //	sync       -> contracts
 //	toolbox    -> contracts
 //	forge      -> contracts, toolbox
-//	runtime    -> contracts
+//	runtime    -> contracts, registry
 //	kernel     -> contracts, registry, obsv, memory, toolbox, runtime
 //	visualizer -> contracts, obsv, memory
 //	ui         -> contracts
@@ -47,7 +47,7 @@ func Allowed() map[string]map[string]bool {
 		"sync":       set("contracts"),
 		"toolbox":    set("contracts"),
 		"forge":      set("contracts", "toolbox"),
-		"runtime":    set("contracts"),
+		"runtime":    set("contracts", "registry"),
 		"kernel":     set("contracts", "registry", "obsv", "memory", "toolbox", "runtime"),
 		"visualizer": set("contracts", "obsv", "memory"),
 		"ui":         set("contracts"),

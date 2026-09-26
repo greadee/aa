@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/greadee/aa/kernel/allocator/planner"
+	"github.com/greadee/aa/kernel/allocator/role_allocator"
 	kcontext "github.com/greadee/aa/kernel/context"
 	"github.com/greadee/aa/kernel/gate"
-	"github.com/greadee/aa/kernel/registry"
 	"github.com/greadee/aa/runtime/worker"
 )
 
@@ -32,8 +32,8 @@ func newTestOrchestrator(t *testing.T, enabled bool, sink Sink) (*Orchestrator, 
 		t.Fatal(err)
 	}
 
-	reg := registry.New()
-	if err := reg.Add(registry.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}, Available: true}); err != nil {
+	reg := role_allocator.New()
+	if err := reg.Add(worker.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}, Available: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -134,8 +134,8 @@ func TestExecutionDisabled(t *testing.T) {
 func TestDispatchHonorsPermittedCapabilities(t *testing.T) {
 	graph := planner.NewGraph("prj_1", "gph_1")
 	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Trade: "backend", Capabilities: []string{"write_workspace", "deploy"}})
-	reg := registry.New()
-	_ = reg.Add(registry.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "deploy"}, Available: true})
+	reg := role_allocator.New()
+	_ = reg.Add(worker.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "deploy"}, Available: true})
 	fake := worker.NewFake()
 	fake.Script("wp_a", worker.Result{Status: "succeeded", Tests: []worker.TestResult{{Name: "t", Outcome: "passed"}}})
 	o, err := New(graph, Config{
@@ -162,8 +162,8 @@ func TestDispatchHonorsPermittedCapabilities(t *testing.T) {
 func TestNoEligibleWorker(t *testing.T) {
 	graph := planner.NewGraph("prj_1", "gph_1")
 	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Trade: "mobile", Capabilities: []string{"write_workspace"}})
-	reg := registry.New()
-	_ = reg.Add(registry.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace"}, Available: true})
+	reg := role_allocator.New()
+	_ = reg.Add(worker.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace"}, Available: true})
 	o, err := New(graph, Config{Registry: reg, Enabled: false})
 	if err != nil {
 		t.Fatal(err)

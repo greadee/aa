@@ -4,8 +4,9 @@ The deterministic control plane: planning, roles, orchestration, execution, gate
 
 ## What it does
 
-- **registry** — roles, trades, and worker instances with deterministic selection and rejection reasons.
 - **allocator/planner** — work packages, a validated dependency graph, cycle detection, and readiness (the allocator's planning stage).
+- **allocator/role_allocator** — deterministic worker selection by role, capability, and (transitionally) trade, with rejection reasons.
+- **allocator/model_allocator**, **allocator/compute_allocator** — reserved allocation boundaries (no behavior yet).
 - **control** — the assignment state machine and expiring leases.
 - **contract** — least-privilege execution contracts: the intersection of requested and permitted capabilities, with denials recorded.
 - **context** — a pure, bounded, digest-stable context compiler.
