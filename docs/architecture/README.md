@@ -335,7 +335,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Interfaces:** `Ensure/Runtime`, `Send`, `Replay`, `Subscribe`; transport methods `hello/append/replay/subscribe`.
 - **Language:** Go (library + local service).
 - **Reused assets:** the entire `aa-obsv-module`.
-- **Remaining work:** kernel orchestrator wiring (an `obsv`-backed sink) and the host socket under `ISS-OBSV-1`. The visualizer profile keys `secondary_paths`/`access_sequence` are allowlisted and normalized by `visualizer/compat` (`ISS-OBSV-2`).
+- **Remaining work:** kernel scheduler wiring (an `obsv`-backed sink) and the host socket under `ISS-OBSV-1`. The visualizer profile keys `secondary_paths`/`access_sequence` are allowlisted and normalized by `visualizer/compat` (`ISS-OBSV-2`).
 
 ### 5.3 aa-kernel (control plane)
 

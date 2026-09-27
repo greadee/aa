@@ -27,14 +27,14 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 
 - Perform file transfer (use `sync`).
 - Store canonical history (use `memory`).
-- Call models directly (use `sifter` over RPC).
+- Call models directly (use the `inference` service over RPC).
 - Open a remote shell or arbitrary remote execution (use a capability-scoped runtime adapter).
-- Import `sync`, `forge`, or `sifter` code; only RPC.
+- Import `sync`, `forge`, or `inference` code; only RPC.
 
 ## Interfaces
 
 - Control-plane API for `ui` and `visualizer`.
-- RPC clients to `sifter`, `sync`, and `forge`.
+- RPC clients to `inference`, `sync`, and `forge`.
 - `obsv` host APIs.
 - `memory` query and record APIs.
 

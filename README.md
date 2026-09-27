@@ -11,9 +11,11 @@ The platform separates concerns into independently versioned modules that commun
 | Module | Responsibility |
 |---|---|
 | `contracts` | Single source of truth for schemas, RPC, and generated bindings |
+| `registry` | Durable definitions: roles, models, teams, capabilities, routines, policies |
 | `obsv` | Product-neutral work observation: protocol, emitter, transport, journal, reports |
-| `kernel` | Control plane: planning, roles, orchestration, execution, gates, job learning |
-| `memory` | System of record: work/git/job/project history, issue and strategy repositories, promotion |
+| `kernel` | Control plane: planning, allocation, scheduling, gates, job learning |
+| `runtime` | Execution mechanics: worker runtime, reserved lifecycle/sandbox, inference service |
+| `memory` | System of record: work/git/job/project history, issue and strategy repositories, retrieval, promotion |
 | `sync` | Remote sync, offline file sharing, and parallelization across machines |
 | `forge` | Git and GitHub orchestration: projects, issues, PRs, checkpoints, audits, releases |
 | `toolbox` | Tool, plugin, and MCP registry plus configurable workflow runtime |
