@@ -1,4 +1,4 @@
-package query
+package retrieval
 
 import (
 	"encoding/json"

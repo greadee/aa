@@ -351,12 +351,12 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.4 aa-memory (system of record)
 
 - **Purpose:** canonical, portable, rebuildable institutional knowledge.
-- **Owns:** canonical records and portable `.aa-project/` layout; rebuildable SQLite projections; work/git/job/project histories; **issue repository**; **strategy repository**; memory hierarchy with lifecycle and deterministic promotion; provenance; relational/event/graph indexes (vector optional); deterministic query API.
+- **Owns:** canonical records and portable `.aa-project/` layout; rebuildable SQLite projections; work/git/job/project histories; **issue repository**; **strategy repository**; memory hierarchy with lifecycle and deterministic promotion; provenance; relational/event/graph indexes (vector optional); deterministic retrieval API.
 - **Must not:** execute work or call models.
-- **Interfaces:** record read/write, query API, projection rebuild.
+- **Interfaces:** record read/write, retrieval API, projection rebuild.
 - **Language:** Go.
 - **Reused assets:** `project`, `projector`, `workhistory`, `insights`, telemetry storage, `projectmigration`, obsv work reports.
-- **Remaining work:** issue/strategy repos, promotion engine, git-history reader, query API.
+- **Remaining work:** issue/strategy repos, promotion engine, git-history reader, retrieval API.
 
 ### 5.5 aa-sync
 

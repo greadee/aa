@@ -152,3 +152,4 @@ The core platform decisions **D1–D22** remain in [docs/architecture/README.md]
 | [ADR-0138](./ADR-0138-retire-trade.md) | — | Retire the `trade` concept | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
 | [ADR-0139](./ADR-0139-consumers-use-contracts-v2.md) | — | Consumers use contracts v2; registry and allocator expose the spec/plan contracts | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
 | [ADR-0140](./ADR-0140-rename-sifter-to-inference-under-runtime.md) | — | Rename the Python sifter service to inference under runtime | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
+| [ADR-0141](./ADR-0141-rename-memory-query-to-retrieval.md) | — | Rename `memory/query` to `memory/retrieval` | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |

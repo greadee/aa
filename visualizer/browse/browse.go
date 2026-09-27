@@ -21,7 +21,7 @@ import (
 // explicit session id nor a project id.
 const DefaultSessionID visualizer.SessionID = "default"
 
-// EventSource is the aa-memory query seam. It is satisfied by *query.Query; the
+// EventSource is the aa-memory retrieval seam. It is satisfied by *retrieval.Query; the
 // visualizer reads canonical history but never writes it.
 type EventSource interface {
 	// Events returns the canonical event log in insertion order.

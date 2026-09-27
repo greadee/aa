@@ -6,10 +6,10 @@ The system of record: canonical, portable, rebuildable institutional knowledge.
 
 - **Canonical store** (`memory/store`): records write to `.aa-project/records/<kind>/<id>.json`; events append to `.aa-project/events.jsonl`. Writes are atomic and hashed; ingestion is idempotent.
 - **Projection** (`memory/projection`): a derived, disposable view. `Rebuild` reconstructs it from canonical records to an identical digest.
-- **Query** (`memory/query`): deterministic reads plus derived work, project, and job histories.
+- **Retrieval** (`memory/retrieval`): deterministic reads plus derived work, project, and job histories.
 - **Repositories** (`memory/repo`): typed issue, strategy, and memory-record repositories with the memory lifecycle promotion state machine. Memory records enter as `CANDIDATE` and promote only through explicit, validated transitions.
-- **Trace store** (`memory/repo` `TraceRepository`, `memory/query`, `memory/retention`): canonical, idempotent trace ingestion; deterministic trace summaries for the learning loop; and projected-view retention that bounds a view without ever touching canonical records.
-- **Facade**: `memory.Open(root)` wires store, projection, repositories, and query.
+- **Trace store** (`memory/repo` `TraceRepository`, `memory/retrieval`, `memory/retention`): canonical, idempotent trace ingestion; deterministic trace summaries for the learning loop; and projected-view retention that bounds a view without ever touching canonical records.
+- **Facade**: `memory.Open(root)` wires store, projection, repositories, and retrieval.
 
 ## Portable layout
 

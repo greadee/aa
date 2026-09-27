@@ -17,7 +17,7 @@ Be the canonical, portable, rebuildable system of record. Everything durable abo
 - The strategy repository (see [aa-strgy.md](../../../memory/aa-strgy.md)).
 - The memory hierarchy and deterministic promotion lifecycle.
 - Provenance and retention.
-- Deterministic query API.
+- Deterministic retrieval API.
 
 ## Must not
 
@@ -36,7 +36,7 @@ Be the canonical, portable, rebuildable system of record. Everything durable abo
 | Submodule | Responsibility |
 |---|---|
 | [`projection`](./projection.md) | Package projection provides aa-memory's derived, disposable views over canonical records. |
-| [`query`](./query.md) | Package query provides deterministic read access to aa-memory's projection and derives work, project, and job histories from the event log. |
+| [`retrieval`](./retrieval.md) | The retrieval package provides deterministic read access to aa-memory's projection and derives work, project, and job histories from the event log. |
 | [`repo`](./repo.md) | Package repo provides typed repositories over the canonical store and the memory lifecycle promotion state machine. |
 | [`retention`](./retention.md) | Package retention trims a projected trace view deterministically. |
 | [`store`](./store.md) | Package store implements aa-memory's canonical, portable record store. |

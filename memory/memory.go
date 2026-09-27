@@ -2,8 +2,8 @@ package memory
 
 import (
 	"github.com/greadee/aa/memory/projection"
-	"github.com/greadee/aa/memory/query"
 	"github.com/greadee/aa/memory/repo"
+	"github.com/greadee/aa/memory/retrieval"
 	"github.com/greadee/aa/memory/store"
 )
 
@@ -12,7 +12,7 @@ import (
 type Memory struct {
 	store      *store.Store
 	projection projection.Projection
-	query      *query.Query
+	query      *retrieval.Query
 	issues     *repo.IssueRepository
 	strategies *repo.StrategyRepository
 	records    *repo.MemoryRecordRepository
@@ -30,7 +30,7 @@ func Open(root string) (*Memory, error) {
 		return nil, err
 	}
 	m := &Memory{store: s, projection: p}
-	m.query = query.New(p, s)
+	m.query = retrieval.New(p, s)
 	m.issues = repo.NewIssueRepository(s, p)
 	m.strategies = repo.NewStrategyRepository(s, p)
 	m.records = repo.NewMemoryRecordRepository(s, p)
@@ -45,7 +45,7 @@ func (m *Memory) Store() *store.Store { return m.store }
 func (m *Memory) Projection() projection.Projection { return m.projection }
 
 // Query returns the read API.
-func (m *Memory) Query() *query.Query { return m.query }
+func (m *Memory) Query() *retrieval.Query { return m.query }
 
 // Issues returns the issue repository.
 func (m *Memory) Issues() *repo.IssueRepository { return m.issues }
