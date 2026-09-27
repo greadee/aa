@@ -40,6 +40,12 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 - `obsv` host APIs.
 - `memory` query and record APIs.
 
+## Boundaries
+
+Current placement is not final ownership. The intended home of each package, and
+the constraints on transitional packages, are recorded in
+[transitional-boundaries.md](./transitional-boundaries.md).
+
 ## Submodules
 
 | Submodule | Responsibility |

@@ -20,6 +20,8 @@ The deterministic control plane: planning, roles, orchestration, execution, gate
 
 The kernel imports `contracts`, `registry`, `runtime`, `obsv`, `memory`, and `toolbox`. Execution mechanics live in `aa-runtime`; the worker adapter it uses is `runtime/worker`. It reaches `sync`, `forge`, and `sifter` over RPC. No model is called in the control path.
 
+Current package placement is not final ownership. The intended home of each package (and the rules for transitional ones) is in [docs/modules/kernel/transitional-boundaries.md](../docs/modules/kernel/transitional-boundaries.md).
+
 ## Status
 
 Phase 9 (`ph9-joblearn`) adds deterministic job learning whose candidates persist as `CANDIDATE` memory records through a memory-backed promotion `Sink`. Execution is disabled by default; real runtime adapters, the `obsv` observation service, and the orchestrator's memory-backed `Sink` remain deferred. See `docs/phases/ph9-joblearn/summary.md` and `docs/phases/ph3-kernel/summary.md`.
