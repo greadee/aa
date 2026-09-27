@@ -99,7 +99,6 @@ Used for branches, folders, and directive files.
 | aa-kernel | `kernel` |
 | aa-memory | `memory` |
 | aa-sync | `sync` |
-| aa-sifter | `sifter` |
 | aa-forge | `forge` |
 | aa-toolbox | `toolbox` |
 | aa-visualizer | `visualizer` |

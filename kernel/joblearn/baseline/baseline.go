@@ -1,11 +1,11 @@
-// Package baseline adapts the governed sifter recommender to a backtest
+// Package baseline adapts the governed inference recommender to a backtest
 // baseline.
 //
-// The sifter is never imported: the kernel reaches it over the aa inter-module
+// The inference is never imported: the kernel reaches it over the aa inter-module
 // RPC, so the engine depends only on the Recommender seam. The production
 // adapter (the kernel host) implements that seam; tests provide deterministic
 // fakes. A predictor always carries a deterministic fallback, so a disabled or
-// unreachable sifter never changes a comparison.
+// unreachable inference never changes a comparison.
 package baseline
 
 import (
@@ -15,7 +15,7 @@ import (
 	"github.com/greadee/aa/kernel/joblearn/backtest"
 )
 
-// Recommender is the governed sifter recommender reached over RPC. It maps
+// Recommender is the governed inference recommender reached over RPC. It maps
 // content-free features to a predicted label.
 type Recommender interface {
 	// Name identifies the recommender for reporting.
@@ -24,35 +24,35 @@ type Recommender interface {
 	Recommend(features map[string]string) (string, error)
 }
 
-// SifterPredictor adapts a recommender to a backtest Predictor. When the
+// InferencePredictor adapts a recommender to a backtest Predictor. When the
 // recommender is unavailable or returns no label, it falls back to the
 // deterministic predictor it was built with.
-type SifterPredictor struct {
+type InferencePredictor struct {
 	recommender Recommender
 	fallback    backtest.Predictor
 }
 
-// NewSifterPredictor validates the seam and returns a predictor. Both the
+// NewInferencePredictor validates the seam and returns a predictor. Both the
 // recommender and the deterministic fallback are required.
-func NewSifterPredictor(recommender Recommender, fallback backtest.Predictor) (*SifterPredictor, error) {
+func NewInferencePredictor(recommender Recommender, fallback backtest.Predictor) (*InferencePredictor, error) {
 	if recommender == nil {
 		return nil, invalid("recommender is required")
 	}
 	if fallback == nil {
 		return nil, invalid("deterministic fallback is required")
 	}
-	return &SifterPredictor{recommender: recommender, fallback: fallback}, nil
+	return &InferencePredictor{recommender: recommender, fallback: fallback}, nil
 }
 
 // Name returns the predictor name used in backtest reports.
-func (p *SifterPredictor) Name() string {
-	return "sifter/" + p.recommender.Name()
+func (p *InferencePredictor) Name() string {
+	return "inference/" + p.recommender.Name()
 }
 
 // Predict returns the recommender's label, or the deterministic fallback when
 // the recommender is unavailable or empty. It never panics and never blocks the
 // caller on a missing fallback.
-func (p *SifterPredictor) Predict(features backtest.Features) string {
+func (p *InferencePredictor) Predict(features backtest.Features) string {
 	label, err := p.recommender.Recommend(features)
 	if err != nil || label == "" {
 		return p.fallback.Predict(features)

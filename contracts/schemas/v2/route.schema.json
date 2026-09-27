@@ -3,7 +3,7 @@
   "$id": "https://github.com/greadee/aa/contracts/schemas/v2/route.schema.json",
   "title": "aa-route",
   "x-contract-version": "2.0",
-  "description": "Model/compute routing request and response exchanged between aa-kernel and aa-sifter.",
+  "description": "Model/compute routing request and response exchanged between aa-kernel and aa-inference.",
   "$defs": {
     "request": {
       "type": "object",

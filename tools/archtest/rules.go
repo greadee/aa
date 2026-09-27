@@ -30,7 +30,7 @@ func Modules(root string) []Module {
 //	visualizer -> contracts, obsv, memory
 //	ui         -> contracts
 //
-// kernel reaches sync, forge, and sifter over RPC, not by import.
+// kernel reaches sync, forge, and inference over RPC, not by import.
 func Allowed() map[string]map[string]bool {
 	set := func(names ...string) map[string]bool {
 		m := make(map[string]bool, len(names))

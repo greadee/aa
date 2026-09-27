@@ -12,5 +12,5 @@
 //   - `lifecycle` — worker lifecycle (start, stop, termination, events), reserved;
 //   - `sandbox`  — process/workload isolation, reserved and not implemented;
 //   - `inference` — the Python model provider/execution service (renamed from
-//     sifter), a nested subproject.
+//     inference), a nested subproject.
 package runtime

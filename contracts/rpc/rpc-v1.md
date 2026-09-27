@@ -15,7 +15,7 @@ Modules never import each other's internals. They call each other over an authen
 {
   "jsonrpc": "2.0",
   "id": "rpc_01H...",
-  "method": "sifter.route",
+  "method": "inference.route",
   "params": { "contractVersion": "1.0", "kind": "route_request", "id": "req_01H..." },
   "aa": {
     "rpcVersion": "1.0",
@@ -68,13 +68,13 @@ Errors that are retryable set `data.retryable: true`.
 
 ## Methods
 
-### sifter (model/compute routing)
+### inference (model/compute routing)
 
 | Method | Params | Result |
 |---|---|---|
-| `sifter.route` | `route_request` | `route_response` |
-| `sifter.generate` | `{tier, messages, budget, idempotencyKey}` | `{text, usage}` |
-| `sifter.health` | `{}` | `{available, providers[]}` |
+| `inference.route` | `route_request` | `route_response` |
+| `inference.generate` | `{tier, messages, budget, idempotencyKey}` | `{text, usage}` |
+| `inference.health` | `{}` | `{available, providers[]}` |
 
 ### memory (system of record)
 

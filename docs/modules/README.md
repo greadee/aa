@@ -13,7 +13,6 @@ Each module folder carries `README.md` (overview, owns/must-not, submodules) and
 | [aa-kernel](./kernel/README.md) | Own deterministic coordination of all work: plan it, select roles and workers, dispatch it, gate it, and observe it. The kernel is the platform; models are workers. |
 | [aa-memory](./memory/README.md) | Be the canonical, portable, rebuildable system of record. Everything durable about work, projects, issues, and strategies lives here. The SQLite database is a projection; the records are the truth. |
 | [aa-sync](./sync/README.md) | Move files and work between machines securely and resiliently, and coordinate parallel work across machines without assuming execution authority. |
-| [aa-sifter](./sifter/README.md) | Given a prompt and context, decide which model tier and provider should handle it, enforce budget and approval, execute, verify, and escalate on failure. The sifter is the sole path to any model. |
 | [aa-forge](./forge/README.md) | Automate the Git and GitHub engineering lifecycle as first-class, auditable objects, and keep the durable record in `memory` in sync. |
 | [aa-toolbox](./toolbox/README.md) | Let the platform gain tools and change workflows without changing core code, while keeping capability grants explicit and enforcing sandbox rules. |
 | [aa-visualizer](./visualizer/README.md) | Make work tangible: render the current session live and any past session as a replayable, debuggable 3D graph. |

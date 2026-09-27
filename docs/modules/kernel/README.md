@@ -29,14 +29,14 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 
 - Perform file transfer (use `sync`).
 - Store canonical history (use `memory`).
-- Call models directly (use `sifter` over RPC).
+- Call models directly (use `inference` over RPC).
 - Open a remote shell or arbitrary remote execution (use a capability-scoped runtime adapter).
-- Import `sync`, `forge`, or `sifter` code; only RPC.
+- Import `sync`, `forge`, or `inference` code; only RPC.
 
 ## Interfaces
 
 - Control-plane API for `ui` and `visualizer`.
-- RPC clients to `sifter`, `sync`, and `forge`.
+- RPC clients to `inference`, `sync`, and `forge`.
 - `obsv` host APIs.
 - `memory` query and record APIs.
 
@@ -58,7 +58,7 @@ the constraints on transitional packages, are recorded in
 | [`joblearn`](./joblearn.md) | Package joblearn turns completed work into evidence and evidence into learning candidates. |
 | [`joblearn/attribution`](./joblearn-attribution.md) | Package attribution links completed attempts to their work packages, roles, and workers, and normalizes evidence into versioned scores. |
 | [`joblearn/backtest`](./joblearn-backtest.md) | Package backtest compares a learned policy against a deterministic baseline over a bounded set of labeled historical samples. |
-| [`joblearn/baseline`](./joblearn-baseline.md) | Package baseline adapts the governed sifter recommender to a backtest baseline. |
+| [`joblearn/baseline`](./joblearn-baseline.md) | Package baseline adapts the governed inference recommender to a backtest baseline. |
 | [`joblearn/candidates`](./joblearn-candidates.md) | Package candidates derives learning candidates from attributed outcomes. |
 | [`joblearn/distill`](./joblearn-distill.md) | Package distill synthesizes scoped subagent artifacts from trace evidence. |
 | [`joblearn/features`](./joblearn-features.md) | Package features extracts step-level, content-free features from a trace. |

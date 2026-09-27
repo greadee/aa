@@ -13,7 +13,6 @@ the unnumbered [update phases](../updates/) (refactors, edits, corrections).
 | [aa-kernel](../modules/kernel/README.md) | Deterministic control plane and job learning |
 | [aa-memory](../modules/memory/README.md) | Canonical system of record |
 | [aa-sync](../modules/sync/README.md) | Remote sync, transfer, and parallelization transport |
-| [aa-sifter](../modules/sifter/README.md) | Model routing, budgets, approval, verification |
 | [aa-forge](../modules/forge/README.md) | Git/GitHub lifecycle orchestration |
 | [aa-toolbox](../modules/toolbox/README.md) | Tools/plugins/MCP and workflow runtime |
 | [aa-visualizer](../modules/visualizer/README.md) | 3D graph, replay, and time-travel browsing |

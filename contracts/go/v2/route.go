@@ -2,7 +2,7 @@ package v2
 
 import "fmt"
 
-// RouteRequest asks aa-sifter to route a prompt.
+// RouteRequest asks aa-inference to route a prompt.
 type RouteRequest struct {
 	Envelope
 	AttemptID string         `json:"attemptId,omitempty"`
@@ -33,7 +33,7 @@ func (r RouteRequest) Validate() error {
 	return OptionalIdentifier("attemptId", r.AttemptID)
 }
 
-// RouteResponse is aa-sifter's routing decision.
+// RouteResponse is aa-inference's routing decision.
 type RouteResponse struct {
 	Envelope
 	RequestID             string   `json:"requestId"`

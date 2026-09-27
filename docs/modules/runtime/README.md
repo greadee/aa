@@ -30,4 +30,4 @@ decide allocation or scheduling.
 | [`worker`](./worker.md) | Provider-neutral execution adapter and deterministic fake |
 | [`lifecycle`](./lifecycle.md) | Reserved: worker lifecycle |
 | [`sandbox`](./sandbox.md) | Reserved: execution isolation (not implemented) |
-| [`inference`](./inference.md) | Model provider/execution service (renamed from sifter; nested Python subproject) |
+| [`inference`](./inference/README.md) | Model provider/execution service (the former `aa-sifter`, renamed; nested Python subproject) |

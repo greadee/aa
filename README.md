@@ -15,7 +15,6 @@ The platform separates concerns into independently versioned modules that commun
 | `kernel` | Control plane: planning, roles, orchestration, execution, gates, job learning |
 | `memory` | System of record: work/git/job/project history, issue and strategy repositories, promotion |
 | `sync` | Remote sync, offline file sharing, and parallelization across machines |
-| `sifter` | Prompt decoding and compute/model routing across local and cloud models |
 | `forge` | Git and GitHub orchestration: projects, issues, PRs, checkpoints, audits, releases |
 | `toolbox` | Tool, plugin, and MCP registry plus configurable workflow runtime |
 | `visualizer` | Time-travel work history, debugging, and 3D graph visualization |

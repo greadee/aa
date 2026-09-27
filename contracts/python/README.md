@@ -1,6 +1,6 @@
 # aa-contracts Python bindings
 
-Standard-library Python bindings for the v1 schemas, for `aa-sifter` consumers.
+Standard-library Python bindings for the v1 schemas, for `aa-inference` consumers.
 
 - Package: `aa_contracts` (`v1.py`).
 - Objects are plain dictionaries validated by `decode`/`validate`; `TypedDict` definitions provide static shape.
