@@ -4,7 +4,7 @@
 
 **Responsibility** — Deterministic selection of the worker instances whose
 expertise satisfies a work requirement, with rejection reasons. It answers "what
-expertise is required" by matching role, capability, and (transitionally) trade;
+expertise is required" by matching role and capability;
 accepted workers are ordered by cost weight then id.
 
 **Source** — [`kernel/allocator/role_allocator/`](../../../kernel/allocator/role_allocator/)

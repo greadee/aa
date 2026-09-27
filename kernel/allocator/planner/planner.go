@@ -25,7 +25,6 @@ type WorkPackage struct {
 	ID           string
 	Title        string
 	Role         string
-	Trade        string
 	Capabilities []string
 	DependsOn    []string
 	Acceptance   []string

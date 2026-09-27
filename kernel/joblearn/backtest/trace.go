@@ -19,9 +19,6 @@ func TraceDataset(results []attribution.Result) []Sample {
 		if attr.Role != "" {
 			features["role"] = attr.Role
 		}
-		if attr.Trade != "" {
-			features["trade"] = attr.Trade
-		}
 		if attr.WorkPackageID != "" {
 			features["workPackageId"] = attr.WorkPackageID
 		}

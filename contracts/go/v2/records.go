@@ -47,10 +47,9 @@ type MemoryContent struct {
 	Tags    []string `json:"tags,omitempty"`
 }
 
-// Applicability scopes a memory record to roles, trades, or languages.
+// Applicability scopes a memory record to roles or languages.
 type Applicability struct {
 	Roles     []string `json:"roles,omitempty"`
-	Trades    []string `json:"trades,omitempty"`
 	Languages []string `json:"languages,omitempty"`
 }
 

@@ -19,7 +19,6 @@ type Actor struct {
 	Kind     string `json:"kind"`
 	ID       string `json:"id"`
 	Role     string `json:"role,omitempty"`
-	Trade    string `json:"trade,omitempty"`
 	WorkerID string `json:"workerId,omitempty"`
 	Model    string `json:"model,omitempty"`
 }

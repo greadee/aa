@@ -11,11 +11,11 @@ func testRegistry(t *testing.T) *Registry {
 	t.Helper()
 	r := New()
 	workers := []worker.Worker{
-		{ID: "w_fast", Trade: "backend", Roles: []roles.Role{"Builder"}, Capabilities: []string{"read_project", "write_workspace", "run_tests"}, Available: true, CostWeight: 1},
-		{ID: "w_slow", Trade: "backend", Roles: []roles.Role{"Builder"}, Capabilities: []string{"read_project", "write_workspace", "run_tests"}, Available: true, CostWeight: 5},
-		{ID: "w_busy", Trade: "backend", Roles: []roles.Role{"Builder"}, Capabilities: []string{"read_project", "write_workspace"}, Available: false},
-		{ID: "w_front", Trade: "frontend", Roles: []roles.Role{"Builder"}, Capabilities: []string{"read_project", "write_workspace"}, Available: true},
-		{ID: "w_qa", Trade: "backend", Roles: []roles.Role{"Inspector"}, Capabilities: []string{"read_project", "run_tests"}, Available: true},
+		{ID: "w_fast", Roles: []roles.Role{"Builder"}, Capabilities: []string{"read_project", "write_workspace", "run_tests"}, Available: true, CostWeight: 1},
+		{ID: "w_slow", Roles: []roles.Role{"Builder"}, Capabilities: []string{"read_project", "write_workspace", "run_tests"}, Available: true, CostWeight: 5},
+		{ID: "w_busy", Roles: []roles.Role{"Builder"}, Capabilities: []string{"read_project", "write_workspace"}, Available: false},
+		{ID: "w_front", Roles: []roles.Role{"Designer"}, Capabilities: []string{"read_project", "write_workspace"}, Available: true, CostWeight: 3},
+		{ID: "w_qa", Roles: []roles.Role{"Inspector"}, Capabilities: []string{"read_project", "run_tests"}, Available: true},
 	}
 	for _, w := range workers {
 		if err := r.Add(w); err != nil {
@@ -27,7 +27,7 @@ func testRegistry(t *testing.T) *Registry {
 
 func TestAddRejectsDuplicate(t *testing.T) {
 	r := testRegistry(t)
-	if err := r.Add(worker.Worker{ID: "w_fast"}); err == nil {
+	if err := r.Add(worker.Worker{ID: "w_fast", Roles: []roles.Role{"Builder"}}); err == nil {
 		t.Fatal("expected duplicate error")
 	}
 }
@@ -35,7 +35,7 @@ func TestAddRejectsDuplicate(t *testing.T) {
 func TestSelectPrefersLowCostAndReportsRejections(t *testing.T) {
 	r := testRegistry(t)
 	accepted, rejected := r.Select(Requirement{
-		Trade: "backend", Roles: []roles.Role{"Builder"}, Capabilities: []string{"write_workspace"},
+		Roles: []roles.Role{"Builder"}, Capabilities: []string{"write_workspace"},
 	})
 	if len(accepted) != 2 {
 		t.Fatalf("expected 2 accepted, got %d: %+v", len(accepted), accepted)
@@ -50,7 +50,7 @@ func TestSelectPrefersLowCostAndReportsRejections(t *testing.T) {
 	if reasons["w_busy"] != "unavailable" {
 		t.Errorf("w_busy reason = %q", reasons["w_busy"])
 	}
-	if reasons["w_front"] != "trade mismatch" {
+	if reasons["w_front"] != "role mismatch" {
 		t.Errorf("w_front reason = %q", reasons["w_front"])
 	}
 	if reasons["w_qa"] != "role mismatch" {
@@ -61,7 +61,7 @@ func TestSelectPrefersLowCostAndReportsRejections(t *testing.T) {
 func TestSelectRejectsMissingCapabilities(t *testing.T) {
 	r := testRegistry(t)
 	accepted, rejected := r.Select(Requirement{
-		Trade: "backend", Capabilities: []string{"read_project", "run_tests", "deploy"},
+		Capabilities: []string{"read_project", "run_tests", "deploy"},
 	})
 	if len(accepted) != 0 {
 		t.Fatalf("expected none, got %+v", accepted)
@@ -79,11 +79,11 @@ func TestSelectRejectsMissingCapabilities(t *testing.T) {
 
 func TestSelectOne(t *testing.T) {
 	r := testRegistry(t)
-	w, ok := r.SelectOne(Requirement{Trade: "backend", Capabilities: []string{"write_workspace"}})
+	w, ok := r.SelectOne(Requirement{Capabilities: []string{"write_workspace"}})
 	if !ok || w.ID != "w_fast" {
 		t.Fatalf("got %+v ok=%v", w, ok)
 	}
-	if _, ok := r.SelectOne(Requirement{Trade: "nope"}); ok {
+	if _, ok := r.SelectOne(Requirement{Capabilities: []string{"deploy"}}); ok {
 		t.Fatal("expected no worker")
 	}
 }

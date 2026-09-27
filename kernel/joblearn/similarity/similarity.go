@@ -2,7 +2,7 @@
 // conflicting learning candidates.
 //
 // Similarity is feature-based and model-free: features are derived from role,
-// trade, outcome, and normalized cost and duration, and compared with the
+// outcome, and normalized cost and duration, and compared with the
 // Jaccard coefficient. Unique identifiers are excluded so outcomes can cluster
 // across attempts, workers, and work packages. Clusters and conflicts are
 // returned in a canonical order.
@@ -31,7 +31,6 @@ func Features(r attribution.Result) []string {
 		}
 	}
 	add("role", a.Role)
-	add("trade", a.Trade)
 	add("outcome", string(a.Outcome))
 	add("cost", bucket(r.Score.Cost))
 	add("duration", bucket(r.Score.Duration))
@@ -151,8 +150,8 @@ func dedup(values []string) []string {
 func resultKey(r attribution.Result) string {
 	a := r.Attribution
 	s := r.Score
-	return fmt.Sprintf("%s|%s|%s|%s|%s|%d|%v|%v",
-		a.ProjectID, a.Role, a.Trade, a.WorkPackageID, a.AttemptID, a.Sequence, s.Cost, s.Overall)
+	return fmt.Sprintf("%s|%s|%s|%s|%d|%v|%v",
+		a.ProjectID, a.Role, a.WorkPackageID, a.AttemptID, a.Sequence, s.Cost, s.Overall)
 }
 
 func invalid(format string, args ...any) error {

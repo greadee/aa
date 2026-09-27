@@ -286,7 +286,6 @@ class Actor(TypedDict, total=False):
     kind: str
     id: str
     role: str
-    trade: str
     workerId: str
     model: str
 
@@ -339,7 +338,6 @@ class WorkPackage(Envelope, total=False):
     title: str
     description: str
     state: str
-    trade: str
     role: str
     dependencies: List[str]
     inputs: List[Reference]

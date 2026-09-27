@@ -52,7 +52,7 @@ func TestTraceOutcomeTruncatedIsPartial(t *testing.T) {
 
 func TestAttributeTraceRecordsIdentityAndEvidence(t *testing.T) {
 	trace := traceWith(step(0, v1.TraceSucceeded))
-	meta := Meta{ProjectID: "proj_1", Role: "engineer", Trade: "backend", Worker: "w_1", Sequence: 7}
+	meta := Meta{ProjectID: "proj_1", Role: "engineer", Worker: "w_1", Sequence: 7}
 
 	attr, err := AttributeTrace(trace, meta)
 	if err != nil {

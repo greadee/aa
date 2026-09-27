@@ -15,9 +15,9 @@ import (
 func testOrchestrator(t *testing.T) *scheduler.Scheduler {
 	t.Helper()
 	graph := planner.NewGraph("prj_1", "gph_1")
-	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}})
+	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Capabilities: []string{"write_workspace", "run_tests"}})
 	reg := role_allocator.New()
-	_ = reg.Add(worker.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}, Available: true})
+	_ = reg.Add(worker.Worker{ID: "w1", Capabilities: []string{"write_workspace", "run_tests"}, Available: true})
 	fake := worker.NewFake()
 	fake.Script("wp_a", worker.Result{Status: "succeeded", Tests: []worker.TestResult{{Name: "t", Outcome: "passed"}}})
 	human := gate.NewHumanGate()

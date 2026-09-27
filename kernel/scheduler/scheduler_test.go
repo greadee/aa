@@ -25,15 +25,15 @@ func (s *recSink) Record(string, string, []byte) error { return nil }
 func newTestScheduler(t *testing.T, enabled bool, sink Sink) (*Scheduler, *worker.Fake, *gate.HumanGate) {
 	t.Helper()
 	graph := planner.NewGraph("prj_1", "gph_1")
-	if err := graph.Add(planner.WorkPackage{ID: "wp_a", Title: "a", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}}); err != nil {
+	if err := graph.Add(planner.WorkPackage{ID: "wp_a", Title: "a", Capabilities: []string{"write_workspace", "run_tests"}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := graph.Add(planner.WorkPackage{ID: "wp_b", Title: "b", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}, DependsOn: []string{"wp_a"}}); err != nil {
+	if err := graph.Add(planner.WorkPackage{ID: "wp_b", Title: "b", Capabilities: []string{"write_workspace", "run_tests"}, DependsOn: []string{"wp_a"}}); err != nil {
 		t.Fatal(err)
 	}
 
 	reg := role_allocator.New()
-	if err := reg.Add(worker.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}, Available: true}); err != nil {
+	if err := reg.Add(worker.Worker{ID: "w1", Capabilities: []string{"write_workspace", "run_tests"}, Available: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -133,9 +133,9 @@ func TestExecutionDisabled(t *testing.T) {
 
 func TestDispatchHonorsPermittedCapabilities(t *testing.T) {
 	graph := planner.NewGraph("prj_1", "gph_1")
-	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Trade: "backend", Capabilities: []string{"write_workspace", "deploy"}})
+	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Capabilities: []string{"write_workspace", "deploy"}})
 	reg := role_allocator.New()
-	_ = reg.Add(worker.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "deploy"}, Available: true})
+	_ = reg.Add(worker.Worker{ID: "w1", Capabilities: []string{"write_workspace", "deploy"}, Available: true})
 	fake := worker.NewFake()
 	fake.Script("wp_a", worker.Result{Status: "succeeded", Tests: []worker.TestResult{{Name: "t", Outcome: "passed"}}})
 	o, err := New(graph, Config{
@@ -161,9 +161,9 @@ func TestDispatchHonorsPermittedCapabilities(t *testing.T) {
 
 func TestNoEligibleWorker(t *testing.T) {
 	graph := planner.NewGraph("prj_1", "gph_1")
-	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Trade: "mobile", Capabilities: []string{"write_workspace"}})
+	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Capabilities: []string{"deploy"}})
 	reg := role_allocator.New()
-	_ = reg.Add(worker.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace"}, Available: true})
+	_ = reg.Add(worker.Worker{ID: "w1", Capabilities: []string{"write_workspace"}, Available: true})
 	o, err := New(graph, Config{Registry: reg, Enabled: false})
 	if err != nil {
 		t.Fatal(err)

@@ -7,7 +7,6 @@ type WorkflowStep struct {
 	ID        string         `json:"id"`
 	Kind      string         `json:"kind"`
 	Role      string         `json:"role,omitempty"`
-	Trade     string         `json:"trade,omitempty"`
 	ToolID    string         `json:"toolId,omitempty"`
 	DependsOn []string       `json:"dependsOn,omitempty"`
 	Retries   *int           `json:"retries,omitempty"`

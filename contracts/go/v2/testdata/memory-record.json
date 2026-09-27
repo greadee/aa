@@ -8,8 +8,15 @@
   "title": "Contract-first extraction works",
   "content": {
     "summary": "Define schemas before moving behavior between modules.",
-    "tags": ["contracts", "migration"]
+    "tags": [
+      "contracts",
+      "migration"
+    ]
   },
-  "applicability": { "roles": ["Architect"], "trades": ["backend"] },
+  "applicability": {
+    "roles": [
+      "Architect"
+    ]
+  },
   "confidence": 0.8
 }

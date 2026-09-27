@@ -8,7 +8,22 @@
   "workPackageId": "wp_01HBBB0001",
   "status": "succeeded",
   "summary": "Added schemas and conformance tests.",
-  "artifacts": [{ "kind": "patch", "id": "art_01HIII0001", "uri": "artifact://patch/1" }],
-  "tests": [{ "name": "conformance", "outcome": "passed", "durationMs": 42 }],
-  "producedBy": { "kind": "agent", "id": "worker_01H", "trade": "backend" }
+  "artifacts": [
+    {
+      "kind": "patch",
+      "id": "art_01HIII0001",
+      "uri": "artifact://patch/1"
+    }
+  ],
+  "tests": [
+    {
+      "name": "conformance",
+      "outcome": "passed",
+      "durationMs": 42
+    }
+  ],
+  "producedBy": {
+    "kind": "agent",
+    "id": "worker_01H"
+  }
 }

@@ -35,9 +35,9 @@ func disabledGates(t *testing.T) *gate.Registry {
 	return r
 }
 
-func result(role, trade, worker string, overall float64) attribution.Result {
+func result(role, worker string, overall float64) attribution.Result {
 	return attribution.Result{
-		Attribution: joblearn.Attribution{Role: role, Trade: trade, Worker: worker, Outcome: joblearn.OutcomeSucceeded},
+		Attribution: joblearn.Attribution{Role: role, Worker: worker, Outcome: joblearn.OutcomeSucceeded},
 		Score:       joblearn.Score{Version: joblearn.MetricVersion, Overall: overall},
 	}
 }
@@ -45,16 +45,16 @@ func result(role, trade, worker string, overall float64) attribution.Result {
 func backendHistory() []attribution.Result {
 	var out []attribution.Result
 	for i := 0; i < 5; i++ {
-		out = append(out, result("Builder", "backend", "w1", 0.9))
+		out = append(out, result("Builder", "w1", 0.9))
 	}
 	for i := 0; i < 5; i++ {
-		out = append(out, result("Builder", "backend", "w2", 0.3))
+		out = append(out, result("Builder", "w2", 0.3))
 	}
 	return out
 }
 
 func request() Request {
-	return Request{WorkPackageID: "wp1", Role: "Builder", Trade: "backend", Fallback: "fb"}
+	return Request{WorkPackageID: "wp1", Role: "Builder", Fallback: "fb"}
 }
 
 func mustRouter(t *testing.T, gates *gate.Registry, policy Policy) *Router {
@@ -106,7 +106,7 @@ func TestEnabledOffersLearnedHint(t *testing.T) {
 func TestFallbackWhenNoMargin(t *testing.T) {
 	var history []attribution.Result
 	for i := 0; i < 5; i++ {
-		history = append(history, result("Builder", "backend", "w1", 0.5), result("Builder", "backend", "w2", 0.5))
+		history = append(history, result("Builder", "w1", 0.5), result("Builder", "w2", 0.5))
 	}
 	router := mustRouter(t, enabledGates(t), DefaultPolicy())
 	hint, err := router.Route(request(), history)
@@ -200,7 +200,7 @@ func TestRouteOrderIndependent(t *testing.T) {
 
 func TestFallbackRequired(t *testing.T) {
 	router := mustRouter(t, enabledGates(t), DefaultPolicy())
-	if _, err := router.Route(Request{Trade: "backend"}, backendHistory()); !errors.Is(err, joblearn.ErrInvalid) {
+	if _, err := router.Route(Request{Role: "Builder"}, backendHistory()); !errors.Is(err, joblearn.ErrInvalid) {
 		t.Fatalf("err = %v, want ErrInvalid", err)
 	}
 }

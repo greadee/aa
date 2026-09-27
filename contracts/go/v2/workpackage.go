@@ -15,7 +15,6 @@ type WorkPackage struct {
 	Title        string           `json:"title"`
 	Description  string           `json:"description,omitempty"`
 	State        WorkPackageState `json:"state"`
-	Trade        string           `json:"trade,omitempty"`
 	Role         string           `json:"role,omitempty"`
 	Dependencies []string         `json:"dependencies,omitempty"`
 	Inputs       []Reference      `json:"inputs,omitempty"`

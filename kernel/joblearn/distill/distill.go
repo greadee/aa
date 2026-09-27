@@ -1,7 +1,7 @@
 // Package distill synthesizes scoped subagent artifacts from trace evidence.
 //
 // Distillation is deterministic and model-free: the same attributed traces
-// always yield the same candidates. Candidates are scoped to a role, trade, or
+// always yield the same candidates. Candidates are scoped to a role or
 // task, carry the trace evidence as provenance, and use the existing candidate
 // kinds. They are proposals only; memory owns promotion.
 package distill
@@ -96,7 +96,6 @@ func (d *Distiller) Distill(records []Record) ([]joblearn.Candidate, error) {
 	var out []joblearn.Candidate
 
 	out = append(out, d.scopeArtifacts(ordered, attribution.ByRole, joblearn.LevelRole, scopeRole)...)
-	out = append(out, d.scopeArtifacts(ordered, attribution.ByTrade, joblearn.LevelRole, scopeTrade)...)
 	out = append(out, d.scopeArtifacts(ordered, attribution.ByWorkPackage, joblearn.LevelTask, scopeWorkPackage)...)
 
 	return dedupSort(out), nil
@@ -175,7 +174,7 @@ func canonical(records []Record) []Record {
 
 func recordKey(record Record) string {
 	a := record.Result.Attribution
-	return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%d|%v", a.ProjectID, a.WorkPackageID, a.AttemptID, a.Role, a.Trade, a.Worker, a.Sequence, a.Outcome)
+	return fmt.Sprintf("%s|%s|%s|%s|%s|%d|%v", a.ProjectID, a.WorkPackageID, a.AttemptID, a.Role, a.Worker, a.Sequence, a.Outcome)
 }
 
 func resultsOf(group []Record) []attribution.Result {
@@ -230,8 +229,6 @@ func dimensionValue(a joblearn.Attribution, dimension attribution.Dimension) str
 	switch dimension {
 	case attribution.ByRole:
 		return a.Role
-	case attribution.ByTrade:
-		return a.Trade
 	case attribution.ByWorkPackage:
 		return a.WorkPackageID
 	default:
@@ -332,7 +329,6 @@ func clamp01(v float64) float64 {
 // Scope prefixes.
 const (
 	scopeRole        = "role:"
-	scopeTrade       = "trade:"
 	scopeWorkPackage = "work_package:"
 )
 

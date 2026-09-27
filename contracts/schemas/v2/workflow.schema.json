@@ -30,7 +30,6 @@
         "id": { "$ref": "common.schema.json#/$defs/identifier" },
         "kind": { "enum": ["task", "tool", "gate", "human_approval", "parallel", "conditional"] },
         "role": { "type": "string", "maxLength": 64 },
-        "trade": { "type": "string", "maxLength": 64 },
         "toolId": { "$ref": "common.schema.json#/$defs/identifier" },
         "dependsOn": {
           "type": "array",

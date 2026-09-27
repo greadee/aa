@@ -119,7 +119,6 @@ func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) 
 	wp, _ := o.graph.Get(workPackageID)
 
 	selected, ok := o.cfg.Registry.SelectOne(role_allocator.Requirement{
-		Trade:        worker.Trade(wp.Trade),
 		Capabilities: wp.Capabilities,
 	})
 	if !ok {

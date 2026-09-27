@@ -20,7 +20,6 @@ export interface Actor {
   kind: ActorKind;
   id: Identifier;
   role?: string;
-  trade?: string;
   workerId?: Identifier;
   model?: string;
 }
@@ -116,7 +115,6 @@ export interface WorkPackage extends Envelope {
   title: string;
   description?: string;
   state: WorkPackageState;
-  trade?: string;
   role?: string;
   dependencies?: Identifier[];
   inputs?: Reference[];
@@ -285,7 +283,6 @@ export interface MemoryContent {
 
 export interface Applicability {
   roles?: string[];
-  trades?: string[];
   languages?: string[];
 }
 
@@ -386,7 +383,6 @@ export interface WorkflowStep {
   id: Identifier;
   kind: "task" | "tool" | "gate" | "human_approval" | "parallel" | "conditional";
   role?: string;
-  trade?: string;
   toolId?: Identifier;
   dependsOn?: Identifier[];
   retries?: number;

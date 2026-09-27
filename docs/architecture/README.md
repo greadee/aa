@@ -304,7 +304,7 @@ flowchart TB
     L1["L1 Working — context bundles (kernel context compiler)"]
     L2["L2 Project — work/git/job/project history (aa-memory)"]
     L3["L3 Institutional — issues + strategies (aa-memory)"]
-    L4["L4 Workforce — role/trade learning (kernel engine, memory store)"]
+    L4["L4 Workforce — role learning (kernel engine, memory store)"]
 
     L0 --> L1 --> L2 --> L3 --> L4
     L4 -.feeds.-> L1
@@ -463,7 +463,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **One event taxonomy** (defined in `contracts`) with `WORK_PACKAGE_*` and `EXECUTION_*` families; no parallel `AGENT_*` state.
 - **One state registry** covering project, work package, assignment, readiness, issue, and sprint states, each with an explicit owner.
 - **Event sourcing:** state is derived from ordered, deduplicated events; ordering is resolved from record fields, not wall clock.
-- **Memory hierarchy:** `Session → Task/Workstream → Project → Role/Trade → Workforce`, with lifecycle `EPHEMERAL → CANDIDATE → VALIDATED → ACTIVE → SUPERSEDED → ARCHIVED` and deterministic promotion rules.
+- **Memory hierarchy:** `Session → Task/Workstream → Project → Role → Workforce`, with lifecycle `EPHEMERAL → CANDIDATE → VALIDATED → ACTIVE → SUPERSEDED → ARCHIVED` and deterministic promotion rules.
 - **Indexes are not truth:** relational, event, graph, and optional vector indexes are rebuildable views. Canonical records remain the source of truth.
 
 ---
@@ -601,7 +601,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 | D8 | Separate **operational telemetry / work history / memory** | Different authority, retention, and truth semantics; removes duplication |
 | D9 | **Hierarchical memory with explicit lifecycle and deterministic promotion** | Evidence-based learning that resists knowledge poisoning |
 | D10 | Extract work observation as **`aa-obsv`**, hosted by kernel, consumed by visualizer | One observation protocol; removes AAV duplication; stays product-neutral |
-| D11 | **Role = durable responsibility; trade = capability; worker = instantiation; model = backend** | Provider/model independence and stable identity |
+| D11 | **Role = durable responsibility (versioned spec); model = inference; worker = Role × Model instance; trade retired** | Provider/model independence and stable identity |
 | D12 | **Deterministic role selection** from the registry; LLM proposes only within bounds | Reproducibility, safety, and testability |
 | D13 | **Model/compute routing only via `aa-sifter`** behind an interface | One enforcement point for budgets, approval, and redaction |
 | D14 | **Execution is opt-in, capability-scoped, and separate** | Prevents sync from becoming a hidden remote shell |

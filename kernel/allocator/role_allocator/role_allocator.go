@@ -2,8 +2,8 @@
 // a work requirement, deterministically, with rejection reasons.
 //
 // It answers one allocation question: what expertise is required? It allocates
-// against role, capability, and (transitionally) trade; it does not choose a
-// model or decide compute quantity. Selection is deterministic: accepted
+// against role and capability; it does not choose a model or decide compute
+// quantity. Selection is deterministic: accepted
 // workers are ordered by cost weight then id, and rejected workers are reported
 // with a reason.
 package role_allocator
@@ -61,7 +61,6 @@ func (r *Registry) List() []worker.Worker {
 
 // Requirement describes what a work package needs.
 type Requirement struct {
-	Trade        worker.Trade
 	Roles        []roles.Role
 	Capabilities []string
 }
@@ -87,8 +86,6 @@ func (r *Registry) Select(req Requirement) ([]Candidate, []Rejection) {
 		switch {
 		case !w.Available:
 			rejected = append(rejected, Rejection{w, "unavailable"})
-		case req.Trade != "" && w.Trade != req.Trade:
-			rejected = append(rejected, Rejection{w, "trade mismatch"})
 		case len(req.Roles) > 0 && !hasAnyRole(w.Roles, req.Roles):
 			rejected = append(rejected, Rejection{w, "role mismatch"})
 		default:

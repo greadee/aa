@@ -38,7 +38,6 @@
         "kind": { "enum": ["human", "agent", "system", "service"] },
         "id": { "$ref": "#/$defs/identifier" },
         "role": { "type": "string", "maxLength": 64 },
-        "trade": { "type": "string", "maxLength": 64 },
         "workerId": { "$ref": "#/$defs/identifier" },
         "model": { "type": "string", "maxLength": 128 }
       },

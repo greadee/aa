@@ -56,7 +56,7 @@ the constraints on transitional packages, are recorded in
 | [`gate`](./gate.md) | Package gate evaluates deterministic and human gates before work is accepted. |
 | [`intake`](./intake.md) | Package intake validates untrusted result envelopes and deduplicates them. |
 | [`joblearn`](./joblearn.md) | Package joblearn turns completed work into evidence and evidence into learning candidates. |
-| [`joblearn/attribution`](./joblearn-attribution.md) | Package attribution links completed attempts to their work packages, roles, trades, and workers, and normalizes evidence into versioned scores. |
+| [`joblearn/attribution`](./joblearn-attribution.md) | Package attribution links completed attempts to their work packages, roles, and workers, and normalizes evidence into versioned scores. |
 | [`joblearn/backtest`](./joblearn-backtest.md) | Package backtest compares a learned policy against a deterministic baseline over a bounded set of labeled historical samples. |
 | [`joblearn/baseline`](./joblearn-baseline.md) | Package baseline adapts the governed sifter recommender to a backtest baseline. |
 | [`joblearn/candidates`](./joblearn-candidates.md) | Package candidates derives learning candidates from attributed outcomes. |
@@ -69,7 +69,7 @@ the constraints on transitional packages, are recorded in
 | [`joblearn/tracesource`](./joblearn-tracesource.md) | Package tracesource is the pure seam through which joblearn consumes bounded per-step traces. |
 | [`scheduler`](./scheduler.md) | Runs the supervised control cycle, and owns the assignment state machine, dispatch readiness, concurrency policy, and leases. |
 | [`allocator/planner`](./allocator-planner.md) | The allocator's planning stage: work packages, dependency graph, and deterministic dispatch readiness. |
-| [`allocator/role_allocator`](./role-allocator.md) | Deterministic worker selection by role, capability, and (transitionally) trade, with rejection reasons. |
+| [`allocator/role_allocator`](./role-allocator.md) | Deterministic worker selection by role and capability, with rejection reasons. |
 | [`allocator/model_allocator`](./model-allocator.md) | Reserved: model allocation (no behavior yet). |
 | [`allocator/compute_allocator`](./compute-allocator.md) | Reserved: compute allocation (no behavior yet). |
 | [`telemetry`](./telemetry.md) | Package telemetry records bounded execution evidence and derives deterministic learning candidates. |

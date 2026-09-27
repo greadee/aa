@@ -22,7 +22,7 @@ type (
 	Reference = v1.Reference
 	// Provenance records where a record came from.
 	Provenance = v1.Provenance
-	// Applicability scopes a record to roles, trades, or languages.
+	// Applicability scopes a record to roles or languages.
 	Applicability = v1.Applicability
 )
 
@@ -53,15 +53,14 @@ func (o Outcome) Valid() bool {
 	}
 }
 
-// Attribution links one attempt's evidence to the work package, role, trade,
-// and worker that produced it. Sequence orders attributions deterministically.
+// Attribution links one attempt's evidence to the work package, role, and
+// worker that produced it. Sequence orders attributions deterministically.
 type Attribution struct {
 	ProjectID     string      `json:"projectId,omitempty"`
 	WorkPackageID string      `json:"workPackageId"`
 	AttemptID     string      `json:"attemptId"`
 	AssignmentID  string      `json:"assignmentId,omitempty"`
 	Role          string      `json:"role,omitempty"`
-	Trade         string      `json:"trade,omitempty"`
 	Worker        string      `json:"worker,omitempty"`
 	Outcome       Outcome     `json:"outcome"`
 	Sequence      int         `json:"sequence"`
