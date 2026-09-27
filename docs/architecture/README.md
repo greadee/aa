@@ -40,7 +40,8 @@ flowchart TB
     contracts["aa-contracts<br/>schemas · RPC · generated types"]
     obsv["aa-obsv<br/>work observation"]
     memory["aa-memory<br/>system of record"]
-    inference["aa-inference<br/>model/compute router"]
+    registry["aa-registry<br/>durable definitions"]
+    runtime["aa-runtime<br/>worker/lifecycle/sandbox/inference"]
 
     ui --> kernel
     ui --> visualizer
@@ -53,9 +54,11 @@ flowchart TB
     toolbox --> contracts
     obsv --> contracts
     memory --> contracts
-    inference --> contracts
+    registry --> contracts
+    runtime --> contracts
     kernel -.hosts.-> obsv
-    kernel -.RPC.-> inference
+    kernel --> registry
+    kernel --> runtime
     kernel -.RPC.-> sync
     kernel -.RPC.-> forge
     visualizer -.subscribes.-> obsv
@@ -139,13 +142,12 @@ flowchart TB
     end
     subgraph Control["Control plane"]
         kernel["aa-kernel"]
-        runtime["aa-runtime"]
+        runtime["aa-runtime<br/>worker · lifecycle · sandbox · inference"]
         toolbox["aa-toolbox"]
     end
     subgraph World["External interactions"]
         forge["aa-forge"]
         sync["aa-sync"]
-        inference["aa-inference"]
     end
     subgraph Knowledge["Observation and knowledge"]
         obsv["aa-obsv"]
@@ -164,10 +166,8 @@ flowchart TB
     kernel --> toolbox
     kernel --> obsv
     kernel --> memory
-    kernel --> inference
     kernel --> sync
     kernel --> forge
-    inference --> memory
     forge --> memory
     sync --> memory
     obsv --> memory
@@ -191,11 +191,10 @@ flowchart TD
     registry["aa-registry"]
     obsv["aa-obsv"]
     memory["aa-memory"]
-    inference["aa-inference (Python)"]
     sync["aa-sync"]
     toolbox["aa-toolbox"]
     forge["aa-forge"]
-    runtime["aa-runtime"]
+    runtime["aa-runtime (worker, lifecycle, sandbox, inference)"]
     kernel["aa-kernel"]
     visualizer["aa-visualizer"]
     ui["aa-ui"]
@@ -205,7 +204,6 @@ flowchart TD
     runtime --> kernel
     contracts --> obsv
     contracts --> memory
-    contracts --> inference
     contracts --> sync
     contracts --> toolbox
     contracts --> forge
@@ -602,7 +600,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 | D10 | Extract work observation as **`aa-obsv`**, hosted by kernel, consumed by visualizer | One observation protocol; removes AAV duplication; stays product-neutral |
 | D11 | **Role = durable responsibility (versioned spec); model = inference; worker = Role × Model instance; trade retired** | Provider/model independence and stable identity |
 | D12 | **Deterministic role selection** from the registry; LLM proposes only within bounds | Reproducibility, safety, and testability |
-| D13 | **Model/compute routing only via `aa-inference`** behind an interface | One enforcement point for budgets, approval, and redaction |
+| D13 | **Model/compute routing only via the `inference` service (`runtime/inference`)** behind an interface | One enforcement point for budgets, approval, and redaction |
 | D14 | **Execution is opt-in, capability-scoped, and separate** | Prevents sync from becoming a hidden remote shell |
 | D15 | **`aa-forge` as a first-class module** with forge abstraction and a fake | Testable without network; decouples GitHub lifecycle from kernel/memory |
 | D16 | **`aa-toolbox` as a first-class module** for tools/plugins/MCP | Extensibility without core changes; explicit capability grants |

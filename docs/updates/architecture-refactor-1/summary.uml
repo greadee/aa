@@ -1,0 +1,95 @@
+@startuml
+title Architecture Refactor 1 — as-built boundaries
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+package "aa-contracts (v2.0, current generation; v1 retained)" as contracts #DDEEFF {
+  [schemas/v2 + go/v2 + typescript/v2 + python/v2]
+  note bottom of [schemas/v2 + go/v2 + typescript/v2 + python/v2]
+    delivered: role_spec, model_spec, team_spec,
+    work_plan, execution_plan, routine
+    retired: trade
+    consumers migrated to v2
+  end note
+}
+
+package "aa-kernel" as kernel #E8F5E9 {
+  [context] as kctx
+  package "allocator" as alloc {
+    [planner] as planner
+    [role_allocator] as role
+    [model_allocator (reserved)] as model
+    [compute_allocator (reserved)] as compute
+  }
+  [scheduler] as scheduler
+  [contract / gate / telemetry / joblearn / api / intake] as ktransitional
+  note right of ktransitional
+    transitional placement;
+    intended homes documented in
+    docs/modules/kernel/transitional-boundaries.md
+  end note
+}
+
+package "aa-registry (top level)" as registry #FFF3E0 {
+  [roles + RoleSpec] as regroles
+  [models + ModelSpec] as regmodels
+  [teams + TeamSpec] as regteams
+  [capabilities] as regcaps
+  [routines + RoutineSpec] as regroutines
+  [policies (reserved)] as regpolicies
+}
+
+package "aa-runtime (top level)" as runtime #F3E5F5 {
+  [worker] as worker
+  [lifecycle (reserved)] as lifecycle
+  [sandbox (reserved, not implemented)] as sandbox
+  package "inference (python, renamed from sifter)" as inference #F3E5F5 {
+    [provider + execution]
+  }
+}
+
+package "aa-memory" as memory #E1F5FE {
+  [retrieval] as retrieval
+  [projection / repo / retention / store] as memcore
+}
+
+package "aa-ui (renamed from console)" as ui #FBE9E7 {
+  [components / views / state] as uicore
+  [surfaces: cli, tui] as surfaces
+}
+
+[obsv (name kept)] as obsv #ECEFF1
+[toolbox] as toolbox #ECEFF1
+[forge] as forge #ECEFF1
+[sync] as sync #ECEFF1
+[visualizer] as visualizer #ECEFF1
+
+' dependencies (as built)
+scheduler --> planner
+role --> regroles
+model --> regmodels
+compute --> worker
+kctx --> retrieval
+kernel --> runtime
+kernel --> registry
+runtime --> contracts
+registry --> contracts
+memory --> contracts
+ui --> contracts
+obsv --> contracts
+toolbox --> contracts
+visualizer --> contracts
+
+note bottom of kernel
+  kernel/plan -> allocator/planner
+  kernel/orchestrator + kernel/control -> scheduler
+  kernel/registry -> deleted (split across registry,
+    allocator, runtime/worker)
+end note
+
+note bottom of memory
+  memory/query -> retrieval
+end note
+
+@enduml
