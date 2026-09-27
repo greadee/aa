@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v2/model-spec.schema.json",
+  "title": "aa-model-spec",
+  "x-contract-version": "2.0",
+  "description": "A durable specification of an available inference configuration, independent of roles.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "provider", "identifier"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "model_spec" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "revision": { "type": "integer", "minimum": 0 },
+    "provider": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "modelVersion": { "type": "string", "maxLength": 64 },
+    "capabilities": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "maxItems": 256 },
+    "contextWindow": { "type": "integer", "minimum": 0 },
+    "toolUse": { "type": "boolean" },
+    "locality": { "enum": ["local", "cloud", "either"] },
+    "available": { "type": "boolean" },
+    "costPer1kInput": { "type": "number", "minimum": 0 },
+    "costPer1kOutput": { "type": "number", "minimum": 0 },
+    "latencyMs": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": true
+}

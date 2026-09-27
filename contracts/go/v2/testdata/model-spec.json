@@ -1,0 +1,14 @@
+{
+  "contractVersion": "2.0",
+  "kind": "model_spec",
+  "id": "model_local_1",
+  "provider": "ollama",
+  "identifier": "qwen2.5-coder",
+  "modelVersion": "7b",
+  "capabilities": ["code"],
+  "contextWindow": 32768,
+  "toolUse": true,
+  "locality": "local",
+  "available": true,
+  "latencyMs": 120
+}

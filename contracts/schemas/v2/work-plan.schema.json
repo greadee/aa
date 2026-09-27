@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v2/work-plan.schema.json",
+  "title": "aa-work-plan",
+  "x-contract-version": "2.0",
+  "description": "The Planner's output: what work needs to happen and how it depends.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "units"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "work_plan" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "revision": { "type": "integer", "minimum": 0 },
+    "sourceWorkflow": { "$ref": "common.schema.json#/$defs/reference" },
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/identifier" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 512 },
+          "outputs": { "type": "array", "items": { "type": "string", "maxLength": 512 }, "maxItems": 256 },
+          "completion": { "type": "array", "items": { "type": "string", "maxLength": 512 }, "maxItems": 256 },
+          "dependsOn": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/identifier" }, "maxItems": 4096 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "constraints": { "type": "array", "items": { "type": "string", "maxLength": 512 }, "maxItems": 256 }
+  },
+  "additionalProperties": true
+}

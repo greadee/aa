@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v2/execution-plan.schema.json",
+  "title": "aa-execution-plan",
+  "x-contract-version": "2.0",
+  "description": "The allocator's output: a WorkPlan plus allocated roles, models, worker counts, budgets, concurrency, and placement.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "execution_plan" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "revision": { "type": "integer", "minimum": 0 },
+    "workPlan": { "$ref": "common.schema.json#/$defs/reference" },
+    "assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": { "$ref": "common.schema.json#/$defs/identifier" },
+          "model": { "$ref": "common.schema.json#/$defs/identifier" },
+          "workers": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "budget": { "$ref": "common.schema.json#/$defs/budget" },
+    "concurrency": { "type": "integer", "minimum": 0 },
+    "placement": { "type": "array", "items": { "type": "string", "maxLength": 128 }, "maxItems": 256 },
+    "constraints": { "type": "array", "items": { "type": "string", "maxLength": 512 }, "maxItems": 256 }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,7 @@
+{
+  "contractVersion": "2.0",
+  "kind": "team_spec",
+  "id": "team_engineering",
+  "title": "Engineering",
+  "roles": ["Builder", "Inspector"]
+}
