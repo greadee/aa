@@ -1,4 +1,4 @@
-package control
+package scheduler
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestTransitionLifecycle(t *testing.T) {
-	a := New("asg_1", "prj_1", "wp_1", "w_1")
+	a := NewAssignment("asg_1", "prj_1", "wp_1", "w_1")
 	steps := []State{StateLeased, StatePreparing, StateRunning, StateCollecting, StateAwaitingGates, StateAccepted}
 	for _, s := range steps {
 		if err := a.Transition(s); err != nil {
@@ -20,7 +20,7 @@ func TestTransitionLifecycle(t *testing.T) {
 }
 
 func TestTransitionFailsClosed(t *testing.T) {
-	a := New("asg_1", "prj_1", "wp_1", "w_1")
+	a := NewAssignment("asg_1", "prj_1", "wp_1", "w_1")
 	if err := a.Transition(StateRunning); err == nil {
 		t.Fatal("expected invalid planned -> running")
 	}
@@ -37,7 +37,7 @@ func TestTransitionFailsClosed(t *testing.T) {
 
 func TestLeaseExpiry(t *testing.T) {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	a := New("asg_1", "prj_1", "wp_1", "w_1")
+	a := NewAssignment("asg_1", "prj_1", "wp_1", "w_1")
 	if err := a.Transition(StateLeased); err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestLeaseExpiry(t *testing.T) {
 
 func TestExpireAndRetry(t *testing.T) {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	a := New("asg_1", "prj_1", "wp_1", "w_1")
+	a := NewAssignment("asg_1", "prj_1", "wp_1", "w_1")
 	_ = a.Transition(StateLeased)
 	a.LeaseFor("kernel", now, time.Minute)
 	if err := a.Expire(now); err != nil {
@@ -79,7 +79,7 @@ func TestExpireAndRetry(t *testing.T) {
 }
 
 func TestRetryRejectedFromRunning(t *testing.T) {
-	a := New("asg_1", "prj_1", "wp_1", "w_1")
+	a := NewAssignment("asg_1", "prj_1", "wp_1", "w_1")
 	_ = a.Transition(StateLeased)
 	_ = a.Transition(StatePreparing)
 	_ = a.Transition(StateRunning)

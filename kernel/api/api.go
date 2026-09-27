@@ -1,6 +1,6 @@
 // Package api exposes the kernel control plane as an in-process service.
 //
-// It is a thin, concurrency-safe surface over the orchestrator. Execution is
+// It is a thin, concurrency-safe surface over the scheduler. Execution is
 // disabled unless the service is explicitly enabled; a disabled service
 // refuses to dispatch. The transport (HTTP/socket) lands with the console.
 package api
@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/greadee/aa/kernel/orchestrator"
+	"github.com/greadee/aa/kernel/scheduler"
 )
 
 // ErrDisabled is returned when the service is not enabled.
@@ -19,23 +19,23 @@ var ErrDisabled = errors.New("api: execution is disabled")
 
 // Config configures the control-plane service.
 type Config struct {
-	Orchestrator *orchestrator.Orchestrator
-	Enabled      bool
+	Scheduler *scheduler.Scheduler
+	Enabled   bool
 }
 
 // Service is the control-plane surface.
 type Service struct {
 	mu      sync.Mutex
-	orch    *orchestrator.Orchestrator
+	orch    *scheduler.Scheduler
 	enabled bool
 }
 
 // New returns a control-plane service.
 func New(cfg Config) (*Service, error) {
-	if cfg.Orchestrator == nil {
-		return nil, fmt.Errorf("api: orchestrator is required")
+	if cfg.Scheduler == nil {
+		return nil, fmt.Errorf("api: scheduler is required")
 	}
-	return &Service{orch: cfg.Orchestrator, enabled: cfg.Enabled}, nil
+	return &Service{orch: cfg.Scheduler, enabled: cfg.Enabled}, nil
 }
 
 // Enabled reports whether execution is enabled.
@@ -46,18 +46,18 @@ func (s *Service) Enabled() bool {
 }
 
 // Status returns the current project status.
-func (s *Service) Status() orchestrator.ProjectStatus {
+func (s *Service) Status() scheduler.ProjectStatus {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.orch.Status()
 }
 
 // Dispatch dispatches the next ready work package.
-func (s *Service) Dispatch(ctx context.Context) (orchestrator.DispatchReport, bool, error) {
+func (s *Service) Dispatch(ctx context.Context) (scheduler.DispatchReport, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !s.enabled {
-		return orchestrator.DispatchReport{}, false, ErrDisabled
+		return scheduler.DispatchReport{}, false, ErrDisabled
 	}
 	return s.orch.Dispatch(ctx)
 }
@@ -70,7 +70,7 @@ func (s *Service) Approve(workPackageID string) {
 }
 
 // Resolve re-evaluates gates for a work package that is awaiting gates.
-func (s *Service) Resolve(workPackageID string) (orchestrator.DispatchReport, error) {
+func (s *Service) Resolve(workPackageID string) (scheduler.DispatchReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.orch.Resolve(workPackageID)

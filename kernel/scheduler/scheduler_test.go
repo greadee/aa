@@ -1,4 +1,4 @@
-package orchestrator
+package scheduler
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func (s *recSink) Event(_ int, eventType string, _ map[string]any) error {
 
 func (s *recSink) Record(string, string, []byte) error { return nil }
 
-func newTestOrchestrator(t *testing.T, enabled bool, sink Sink) (*Orchestrator, *worker.Fake, *gate.HumanGate) {
+func newTestScheduler(t *testing.T, enabled bool, sink Sink) (*Scheduler, *worker.Fake, *gate.HumanGate) {
 	t.Helper()
 	graph := planner.NewGraph("prj_1", "gph_1")
 	if err := graph.Add(planner.WorkPackage{ID: "wp_a", Title: "a", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}}); err != nil {
@@ -61,7 +61,7 @@ func newTestOrchestrator(t *testing.T, enabled bool, sink Sink) (*Orchestrator, 
 
 func TestSupervisedRun(t *testing.T) {
 	sink := &recSink{}
-	o, fake, _ := newTestOrchestrator(t, true, sink)
+	o, fake, _ := newTestScheduler(t, true, sink)
 
 	// wp_a dispatches first and waits on the human gate.
 	report, dispatched, err := o.Dispatch(context.Background())
@@ -118,7 +118,7 @@ func TestSupervisedRun(t *testing.T) {
 
 func TestExecutionDisabled(t *testing.T) {
 	sink := &recSink{}
-	o, fake, _ := newTestOrchestrator(t, false, sink)
+	o, fake, _ := newTestScheduler(t, false, sink)
 	report, dispatched, err := o.Dispatch(context.Background())
 	if err != nil || !dispatched {
 		t.Fatalf("dispatch dispatched=%v err=%v", dispatched, err)

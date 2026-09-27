@@ -1,8 +1,10 @@
-// Package orchestrator runs aa-kernel's deterministic supervised control cycle:
+// Package scheduler runs aa-kernel's deterministic supervised control cycle:
 // ready -> select worker -> build contract -> compile context -> lease -> run
-// -> intake -> gates -> accept -> telemetry. No model is called in the control
-// path; execution goes through an adapter and is disabled unless enabled.
-package orchestrator
+// -> intake -> gates -> accept -> telemetry. It owns ordering, dispatch
+// readiness, concurrency policy, the assignment state machine, and leases. No
+// model is called in the control path; execution goes through an adapter and is
+// disabled unless enabled.
+package scheduler
 
 import (
 	"context"
@@ -14,7 +16,6 @@ import (
 	"github.com/greadee/aa/kernel/allocator/role_allocator"
 	kcontext "github.com/greadee/aa/kernel/context"
 	"github.com/greadee/aa/kernel/contract"
-	"github.com/greadee/aa/kernel/control"
 	"github.com/greadee/aa/kernel/gate"
 	"github.com/greadee/aa/kernel/intake"
 	"github.com/greadee/aa/kernel/telemetry"
@@ -50,12 +51,12 @@ type Config struct {
 	Now           func() time.Time
 }
 
-// Orchestrator runs the control cycle over one project graph.
-type Orchestrator struct {
+// Scheduler runs the control cycle over one project graph.
+type Scheduler struct {
 	graph              *planner.Graph
 	cfg                Config
 	intake             *intake.Service
-	assignments        map[string]*control.Assignment
+	assignments        map[string]*Assignment
 	results            map[string]worker.Result
 	telemetryRecords   []telemetry.Record
 	learningCandidates []telemetry.Candidate
@@ -63,12 +64,12 @@ type Orchestrator struct {
 }
 
 // New validates the config and graph and returns an orchestrator.
-func New(graph *planner.Graph, cfg Config) (*Orchestrator, error) {
+func New(graph *planner.Graph, cfg Config) (*Scheduler, error) {
 	if graph == nil {
-		return nil, fmt.Errorf("orchestrator: graph is required")
+		return nil, fmt.Errorf("scheduler: graph is required")
 	}
 	if cfg.Registry == nil {
-		return nil, fmt.Errorf("orchestrator: registry is required")
+		return nil, fmt.Errorf("scheduler: registry is required")
 	}
 	if err := graph.Validate(); err != nil {
 		return nil, err
@@ -83,16 +84,16 @@ func New(graph *planner.Graph, cfg Config) (*Orchestrator, error) {
 		cfg.LeaseTTL = time.Minute
 	}
 	if cfg.Enabled && cfg.Runtime == nil {
-		return nil, fmt.Errorf("orchestrator: runtime is required when execution is enabled")
+		return nil, fmt.Errorf("scheduler: runtime is required when execution is enabled")
 	}
 	if !cfg.Enabled {
 		cfg.Runtime = worker.Disabled{}
 	}
-	return &Orchestrator{
+	return &Scheduler{
 		graph:       graph,
 		cfg:         cfg,
 		intake:      intake.New(),
-		assignments: make(map[string]*control.Assignment),
+		assignments: make(map[string]*Assignment),
 		results:     make(map[string]worker.Result),
 	}, nil
 }
@@ -109,7 +110,7 @@ type DispatchReport struct {
 
 // Dispatch runs the next ready work package if one exists. The boolean reports
 // whether work was dispatched.
-func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, error) {
+func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) {
 	ready := o.graph.Ready()
 	if len(ready) == 0 {
 		return DispatchReport{}, false, nil
@@ -122,7 +123,7 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 		Capabilities: wp.Capabilities,
 	})
 	if !ok {
-		return DispatchReport{}, false, fmt.Errorf("orchestrator: no eligible worker for %s", workPackageID)
+		return DispatchReport{}, false, fmt.Errorf("scheduler: no eligible worker for %s", workPackageID)
 	}
 
 	assignmentID := "asg_" + workPackageID
@@ -146,8 +147,8 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 	}
 	bundle := o.cfg.Compiler.Compile(o.graph.ProjectID, workPackageID, inputs)
 
-	assignment := control.New(assignmentID, o.graph.ProjectID, workPackageID, string(selected.ID))
-	for _, state := range []control.State{control.StateLeased, control.StatePreparing, control.StateRunning} {
+	assignment := NewAssignment(assignmentID, o.graph.ProjectID, workPackageID, string(selected.ID))
+	for _, state := range []State{StateLeased, StatePreparing, StateRunning} {
 		if err := assignment.Transition(state); err != nil {
 			return DispatchReport{}, false, err
 		}
@@ -167,12 +168,12 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 		Capabilities:   executionContract.Capabilities,
 	})
 	if err != nil {
-		_ = assignment.Transition(control.StateFailed)
+		_ = assignment.Transition(StateFailed)
 		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
 		o.assignments[workPackageID] = assignment
 		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed"}, true, nil
 	}
-	if err := assignment.Transition(control.StateCollecting); err != nil {
+	if err := assignment.Transition(StateCollecting); err != nil {
 		return DispatchReport{}, false, err
 	}
 
@@ -198,12 +199,12 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 	report := gate.Evaluate(o.cfg.Gates, o.subject(workPackageID, result))
 
 	if result.Status != "succeeded" && result.Status != "partial" {
-		_ = assignment.Transition(control.StateFailed)
+		_ = assignment.Transition(StateFailed)
 		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
 		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed", Gates: report, IntakeAccepted: accepted}, true, nil
 	}
 
-	if err := assignment.Transition(control.StateAwaitingGates); err != nil {
+	if err := assignment.Transition(StateAwaitingGates); err != nil {
 		return DispatchReport{}, false, err
 	}
 	if report.Passed {
@@ -211,7 +212,7 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 	}
 	status := "pending"
 	if !report.Pending {
-		_ = assignment.Transition(control.StateFailed)
+		_ = assignment.Transition(StateFailed)
 		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
 		status = "failed"
 	}
@@ -219,13 +220,13 @@ func (o *Orchestrator) Dispatch(ctx context.Context) (DispatchReport, bool, erro
 }
 
 // Resolve re-evaluates gates for a work package that is awaiting gates.
-func (o *Orchestrator) Resolve(workPackageID string) (DispatchReport, error) {
+func (o *Scheduler) Resolve(workPackageID string) (DispatchReport, error) {
 	assignment, ok := o.assignments[workPackageID]
 	if !ok {
-		return DispatchReport{}, fmt.Errorf("orchestrator: unknown assignment for %s", workPackageID)
+		return DispatchReport{}, fmt.Errorf("scheduler: unknown assignment for %s", workPackageID)
 	}
-	if assignment.State != control.StateAwaitingGates {
-		return DispatchReport{}, fmt.Errorf("orchestrator: %s is not awaiting gates", workPackageID)
+	if assignment.State != StateAwaitingGates {
+		return DispatchReport{}, fmt.Errorf("scheduler: %s is not awaiting gates", workPackageID)
 	}
 	result := o.results[workPackageID]
 	report := gate.Evaluate(o.cfg.Gates, o.subject(workPackageID, result))
@@ -235,13 +236,13 @@ func (o *Orchestrator) Resolve(workPackageID string) (DispatchReport, error) {
 	if report.Pending {
 		return DispatchReport{WorkPackageID: workPackageID, WorkerID: assignment.WorkerID, State: string(assignment.State), Status: "pending", Gates: report}, nil
 	}
-	_ = assignment.Transition(control.StateFailed)
+	_ = assignment.Transition(StateFailed)
 	_ = o.graph.SetState(workPackageID, planner.StateDeficient)
 	return DispatchReport{WorkPackageID: workPackageID, WorkerID: assignment.WorkerID, State: string(assignment.State), Status: "failed", Gates: report}, nil
 }
 
 // Approve records human approval for a work package in every approver gate.
-func (o *Orchestrator) Approve(workPackageID string) {
+func (o *Scheduler) Approve(workPackageID string) {
 	for _, g := range o.cfg.Gates {
 		if approver, ok := g.(interface{ Approve(string) }); ok {
 			approver.Approve(workPackageID)
@@ -250,14 +251,14 @@ func (o *Orchestrator) Approve(workPackageID string) {
 }
 
 // Telemetry returns recorded telemetry in order.
-func (o *Orchestrator) Telemetry() []telemetry.Record {
+func (o *Scheduler) Telemetry() []telemetry.Record {
 	out := make([]telemetry.Record, len(o.telemetryRecords))
 	copy(out, o.telemetryRecords)
 	return out
 }
 
 // Candidates returns derived learning candidates in order.
-func (o *Orchestrator) Candidates() []telemetry.Candidate {
+func (o *Scheduler) Candidates() []telemetry.Candidate {
 	out := make([]telemetry.Candidate, len(o.learningCandidates))
 	copy(out, o.learningCandidates)
 	return out
@@ -281,7 +282,7 @@ type ProjectStatus struct {
 }
 
 // Status returns the current project status.
-func (o *Orchestrator) Status() ProjectStatus {
+func (o *Scheduler) Status() ProjectStatus {
 	status := ProjectStatus{ProjectID: o.graph.ProjectID, GraphID: o.graph.ID, WorkPackages: o.graph.List()}
 	for _, id := range sortedKeys(o.assignments) {
 		a := o.assignments[id]
@@ -292,8 +293,8 @@ func (o *Orchestrator) Status() ProjectStatus {
 	return status
 }
 
-func (o *Orchestrator) accept(assignment *control.Assignment, report gate.Report, accepted bool) DispatchReport {
-	_ = assignment.Transition(control.StateAccepted)
+func (o *Scheduler) accept(assignment *Assignment, report gate.Report, accepted bool) DispatchReport {
+	_ = assignment.Transition(StateAccepted)
 	_ = o.graph.SetState(assignment.WorkPackageID, planner.StateCompleted)
 	o.emit("WORK_ACCEPTED", map[string]any{
 		"workPackageId": assignment.WorkPackageID, "assignmentId": assignment.ID,
@@ -308,7 +309,7 @@ func (o *Orchestrator) accept(assignment *control.Assignment, report gate.Report
 	}
 }
 
-func (o *Orchestrator) subject(workPackageID string, result worker.Result) gate.Subject {
+func (o *Scheduler) subject(workPackageID string, result worker.Result) gate.Subject {
 	var tests []gate.TestSummary
 	for _, t := range result.Tests {
 		tests = append(tests, gate.TestSummary{Name: t.Name, Outcome: t.Outcome})
@@ -316,7 +317,7 @@ func (o *Orchestrator) subject(workPackageID string, result worker.Result) gate.
 	return gate.Subject{WorkPackageID: workPackageID, Status: result.Status, Tests: tests}
 }
 
-func (o *Orchestrator) recordTelemetry(assignment *control.Assignment, result worker.Result) {
+func (o *Scheduler) recordTelemetry(assignment *Assignment, result worker.Result) {
 	record := telemetry.Record{
 		AttemptID:     "att_" + assignment.ID,
 		AssignmentID:  assignment.ID,
@@ -333,7 +334,7 @@ func (o *Orchestrator) recordTelemetry(assignment *control.Assignment, result wo
 	o.learningCandidates = append(o.learningCandidates, telemetry.Derive(record, failed)...)
 }
 
-func (o *Orchestrator) emit(eventType string, payload map[string]any) {
+func (o *Scheduler) emit(eventType string, payload map[string]any) {
 	o.sequence++
 	_ = o.cfg.Sink.Event(o.sequence, eventType, payload)
 }
@@ -347,7 +348,7 @@ func gateNames(gates []gate.Gate) []string {
 	return names
 }
 
-func sortedKeys(m map[string]*control.Assignment) []string {
+func sortedKeys(m map[string]*Assignment) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)

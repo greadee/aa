@@ -47,7 +47,6 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 | [`api`](./api.md) | Package api exposes the kernel control plane as an in-process service. |
 | [`context`](./context.md) | Package context compiles deterministic, bounded context bundles. |
 | [`contract`](./contract.md) | Package contract builds immutable, least-privilege execution contracts. |
-| [`control`](./control.md) | Package control owns the assignment state machine and leases. |
 | [`gate`](./gate.md) | Package gate evaluates deterministic and human gates before work is accepted. |
 | [`intake`](./intake.md) | Package intake validates untrusted result envelopes and deduplicates them. |
 | [`joblearn`](./joblearn.md) | Package joblearn turns completed work into evidence and evidence into learning candidates. |
@@ -62,7 +61,7 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 | [`joblearn/route`](./joblearn-route.md) | Package route exposes learned routing as a non-authoritative hint. |
 | [`joblearn/similarity`](./joblearn-similarity.md) | Package similarity clusters attributed outcomes deterministically and detects conflicting learning candidates. |
 | [`joblearn/tracesource`](./joblearn-tracesource.md) | Package tracesource is the pure seam through which joblearn consumes bounded per-step traces. |
-| [`orchestrator`](./orchestrator.md) | Package orchestrator runs aa-kernel's deterministic supervised control cycle: ready -> select worker -> build contract -> compile context -> lease -> run -> intake -> gates -> accept -> telemetry. |
+| [`scheduler`](./scheduler.md) | Runs the supervised control cycle, and owns the assignment state machine, dispatch readiness, concurrency policy, and leases. |
 | [`allocator/planner`](./allocator-planner.md) | The allocator's planning stage: work packages, dependency graph, and deterministic dispatch readiness. |
 | [`allocator/role_allocator`](./role-allocator.md) | Deterministic worker selection by role, capability, and (transitionally) trade, with rejection reasons. |
 | [`allocator/model_allocator`](./model-allocator.md) | Reserved: model allocation (no behavior yet). |

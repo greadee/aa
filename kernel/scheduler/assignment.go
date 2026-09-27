@@ -1,6 +1,6 @@
-// Package control owns the assignment state machine and leases. Transitions
-// fail closed and leases expire deterministically.
-package control
+// Assignment state machine and leases for the scheduler. Transitions fail
+// closed and leases expire deterministically.
+package scheduler
 
 import (
 	"errors"
@@ -27,7 +27,7 @@ const (
 )
 
 // ErrInvalidTransition is returned for an illegal assignment transition.
-var ErrInvalidTransition = errors.New("control: invalid assignment transition")
+var ErrInvalidTransition = errors.New("scheduler: invalid assignment transition")
 
 var transitions = map[State]map[State]bool{
 	StatePlanned:       {StateLeased: true, StateCanceled: true},
@@ -66,7 +66,7 @@ type Assignment struct {
 }
 
 // New returns a planned assignment.
-func New(id, projectID, workPackageID, workerID string) *Assignment {
+func NewAssignment(id, projectID, workPackageID, workerID string) *Assignment {
 	return &Assignment{
 		ID:            id,
 		ProjectID:     projectID,
