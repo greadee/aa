@@ -424,7 +424,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Must not:** hold runtime instances (workers, crews, assignments, executions, projects, workflows), or execute/schedule/allocate; own cross-module wire schemas (that is `contracts`).
 - **Interfaces:** definition lookups consumed by `kernel` (allocation) and `contracts` (specification schemas, contracts v2).
 - **Language:** Go.
-- **Status:** introduced by the architecture refactor (`roles`, `capabilities` carry existing vocabularies; `models`, `teams`, `routines`, `policies` are reserved boundaries).
+- **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models`, `teams`, and `routines` re-export their contracts v2 specifications (`ModelSpec`, `TeamSpec`, `RoutineSpec`); `policies` remains a reserved boundary. Consumers use contracts v2.
 
 ### 5.12 aa-runtime
 

@@ -4,8 +4,8 @@
 
 **Responsibility** — Reserved boundary for the durable routine specification: an
 organization-owned, reusable process for recurring work. A project deploys a
-routine as a workflow; the workflow engine lives in `toolbox`. Specification
-types land with contracts v2.
+routine as a workflow; the workflow engine lives in `toolbox`. `RoutineSpec`
+re-exports the contracts v2 `routine`.
 
 **Source** — [`registry/routines/`](../../../registry/routines/)
 

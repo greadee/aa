@@ -150,3 +150,4 @@ The core platform decisions **D1–D22** remain in [docs/architecture/README.md]
 | [ADR-0136](./ADR-0136-kernel-transitional-package-placement.md) | — | Kernel transitional package placement and intended ownership | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
 | [ADR-0137](./ADR-0137-contracts-v2-generation.md) | — | Contracts v2 generation | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
 | [ADR-0138](./ADR-0138-retire-trade.md) | — | Retire the `trade` concept | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
+| [ADR-0139](./ADR-0139-consumers-use-contracts-v2.md) | — | Consumers use contracts v2; registry and allocator expose the spec/plan contracts | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |

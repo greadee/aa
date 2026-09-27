@@ -4,28 +4,28 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
-	"github.com/greadee/aa/contracts/go/v1"
+	"github.com/greadee/aa/contracts/go/v2"
 )
 
 // Cross-module data structures live only in contracts; toolbox re-exports the
 // ones it uses so callers can stay within one package boundary.
 type (
 	// Envelope is the shared header for contract objects.
-	Envelope = v1.Envelope
+	Envelope = v2.Envelope
 	// Manifest declares a tool, plugin, or MCP server.
-	Manifest = v1.ToolManifest
+	Manifest = v2.ToolManifest
 	// SandboxSpec declares a tool's isolation requirements.
-	SandboxSpec = v1.SandboxSpec
+	SandboxSpec = v2.SandboxSpec
 	// Workflow is a declarative, resumable process definition.
-	Workflow = v1.Workflow
+	Workflow = v2.Workflow
 	// WorkflowStep is one step in a workflow.
-	WorkflowStep = v1.WorkflowStep
+	WorkflowStep = v2.WorkflowStep
 	// Capability is a granted authority in an execution contract.
-	Capability = v1.Capability
+	Capability = v2.Capability
 	// ExecutionContract is the immutable, least-privilege authority for an attempt.
-	ExecutionContract = v1.ExecutionContract
+	ExecutionContract = v2.ExecutionContract
 	// Budget bounds an attempt or workflow.
-	Budget = v1.Budget
+	Budget = v2.Budget
 )
 
 // ToolID identifies a registered tool, plugin, or MCP server.
@@ -33,18 +33,18 @@ type ToolID string
 
 // Capability vocabulary, mirrored from the execution-contract contract.
 const (
-	CapReadProject         = v1.CapReadProject
-	CapWriteWorkspace      = v1.CapWriteWorkspace
-	CapExecuteCommand      = v1.CapExecuteCommand
-	CapRunTests            = v1.CapRunTests
-	CapNetworkAccess       = v1.CapNetworkAccess
-	CapInstallDependencies = v1.CapInstallDependencies
-	CapCallModel           = v1.CapCallModel
-	CapReadSecrets         = v1.CapReadSecrets
-	CapCreateArtifact      = v1.CapCreateArtifact
-	CapOpenPullRequest     = v1.CapOpenPullRequest
-	CapMerge               = v1.CapMerge
-	CapDeploy              = v1.CapDeploy
+	CapReadProject         = v2.CapReadProject
+	CapWriteWorkspace      = v2.CapWriteWorkspace
+	CapExecuteCommand      = v2.CapExecuteCommand
+	CapRunTests            = v2.CapRunTests
+	CapNetworkAccess       = v2.CapNetworkAccess
+	CapInstallDependencies = v2.CapInstallDependencies
+	CapCallModel           = v2.CapCallModel
+	CapReadSecrets         = v2.CapReadSecrets
+	CapCreateArtifact      = v2.CapCreateArtifact
+	CapOpenPullRequest     = v2.CapOpenPullRequest
+	CapMerge               = v2.CapMerge
+	CapDeploy              = v2.CapDeploy
 )
 
 // Tool kinds mirror the tool_manifest contract.

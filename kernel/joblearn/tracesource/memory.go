@@ -1,7 +1,7 @@
 package tracesource
 
 import (
-	v1 "github.com/greadee/aa/contracts/go/v1"
+	v1 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/repo"
 )
 

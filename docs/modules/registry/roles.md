@@ -3,7 +3,8 @@
 > Project history for the `registry/roles` submodule of [aa-registry](./README.md).
 
 **Responsibility** — Durable role definitions: the `Role` type, the known-role
-vocabulary, and the deterministic capability-to-role mapping (`RolesFor`).
+vocabulary, the deterministic capability-to-role mapping (`RolesFor`), and the
+`RoleSpec` alias for the contracts v2 `role_spec`.
 
 **Source** — [`registry/roles/`](../../../registry/roles/)
 
