@@ -12,7 +12,7 @@ owning update phase.
 
 | Update phase | Scope | Plan | Summary |
 |---|---|---|---|
-| [architecture-refactor-1](./architecture-refactor-1/plan.md) | Target boundaries, contracts v2, `registry`/`runtime`/`ui`, documentation restructure | [plan](./architecture-refactor-1/plan.md) | pending |
+| [architecture-refactor-1](./architecture-refactor-1/plan.md) | Target boundaries, contracts v2, `registry`/`runtime`/`ui`, documentation restructure | [plan](./architecture-refactor-1/plan.md) | [summary](./architecture-refactor-1/summary.md) |
 
 ## Historical module updates
 

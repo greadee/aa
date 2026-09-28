@@ -50,6 +50,8 @@
     "docs/modules/ui/README.md",
     "docs/modules/github-os/README.md",
     "docs/updates/README.md",
-    "docs/modules/runtime/inference/README.md"
+    "docs/modules/runtime/inference/README.md",
+    "docs/updates/architecture-refactor-1/plan.md",
+    "docs/updates/architecture-refactor-1/summary.md"
   ]
 }
