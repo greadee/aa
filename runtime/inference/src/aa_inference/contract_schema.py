@@ -1,7 +1,7 @@
-"""Full JSON Schema validation for the aa v1 contract objects.
+"""Full JSON Schema validation for the aa v2 contract objects.
 
 The JSON Schema files are the source of truth for the cross-module contract
-objects. This module loads the bundled v1 schemas and validates instances
+objects. This module loads the bundled v2 schemas and validates instances
 against the draft 2020-12 subset the schemas use, so the RPC boundary validates
 independently of the generated ``aa_contracts`` Python binding. A schema keyword
 outside the supported set is an error, never a silent pass.
@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA_DIR_ENV = "INFERENCE_SCHEMA_DIR"
-_BUNDLED_SCHEMA_DIR = Path(__file__).resolve().parent / "schemas" / "v1"
+_BUNDLED_SCHEMA_DIR = Path(__file__).resolve().parent / "schemas" / "v2"
 
 # kind -> (schema file, pointer into the schema document)
 KIND_SCHEMAS: dict[str, tuple[str, str]] = {

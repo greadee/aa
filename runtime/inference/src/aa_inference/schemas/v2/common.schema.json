@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/common.schema.json",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v2/common.schema.json",
   "title": "aa-common",
-  "x-contract-version": "1.0",
+  "x-contract-version": "2.0",
   "description": "Shared definitions for all aa cross-module contract objects. Objects are open by default; consumers must ignore unknown properties.",
   "$defs": {
     "contractVersion": {
@@ -38,7 +38,6 @@
         "kind": { "enum": ["human", "agent", "system", "service"] },
         "id": { "$ref": "#/$defs/identifier" },
         "role": { "type": "string", "maxLength": 64 },
-        "trade": { "type": "string", "maxLength": 64 },
         "workerId": { "$ref": "#/$defs/identifier" },
         "model": { "type": "string", "maxLength": 128 }
       },

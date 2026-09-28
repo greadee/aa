@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/greadee/aa/contracts/schemas/v1/memory-record.schema.json",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v2/memory-record.schema.json",
   "title": "aa-memory-record",
-  "x-contract-version": "1.0",
+  "x-contract-version": "2.0",
   "description": "A knowledge record in the memory hierarchy. Promotion is deterministic and evidence-based.",
   "type": "object",
   "required": ["contractVersion", "kind", "id", "level", "lifecycle", "content"],

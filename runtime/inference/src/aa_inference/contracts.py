@@ -22,7 +22,7 @@ try:  # pragma: no cover - availability depends on deployment path
     CONTRACTS_AVAILABLE = True
 except Exception:  # noqa: BLE001 - optional dependency at runtime
     _aa_contracts = None
-    _CONTRACT_VERSION = "1.0"
+    _CONTRACT_VERSION = "2.0"
     CONTRACTS_AVAILABLE = False
 
 CONTRACT_VERSION = _CONTRACT_VERSION
