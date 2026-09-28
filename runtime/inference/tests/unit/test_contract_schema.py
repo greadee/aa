@@ -1,4 +1,4 @@
-"""Full JSON Schema validation tests for the v1 contract boundary."""
+"""Full JSON Schema validation tests for the v2 contract boundary."""
 
 from __future__ import annotations
 
@@ -152,7 +152,7 @@ def test_kind_schemas_are_registered() -> None:
 
 @pytest.mark.parametrize("name", _SCHEMA_NAMES)
 def test_bundled_schema_matches_source_of_truth(name: str) -> None:
-    repo_dir = Path(__file__).resolve().parents[3] / "contracts" / "schemas" / "v1"
+    repo_dir = Path(__file__).resolve().parents[4] / "contracts" / "schemas" / "v2"
     if not repo_dir.is_dir():
         pytest.skip("contracts schemas are not present in this checkout")
 
