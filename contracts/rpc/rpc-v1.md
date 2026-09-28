@@ -16,10 +16,10 @@ Modules never import each other's internals. They call each other over an authen
   "jsonrpc": "2.0",
   "id": "rpc_01H...",
   "method": "inference.route",
-  "params": { "contractVersion": "1.0", "kind": "route_request", "id": "req_01H..." },
+  "params": { "contractVersion": "2.0", "kind": "route_request", "id": "req_01H..." },
   "aa": {
     "rpcVersion": "1.0",
-    "contractVersion": "1.0",
+    "contractVersion": "2.0",
     "caller": "kernel",
     "callerInstanceId": "inst_01H...",
     "timeoutMs": 30000
@@ -41,6 +41,12 @@ Responses are either `result` or `error`. Errors use a namespaced `code` and a `
 - `aa.rpcVersion` is `MAJOR.MINOR`. A callee rejects an unsupported major with `aa.incompatible`.
 - `aa.contractVersion` is the contract version of `params`/`result`; additive changes are minor.
 - Unknown methods return `aa.method_not_found`; unknown params fields are ignored.
+- **Service rename (migration).** The model/compute routing service was renamed
+  `sifter` → `inference` (module update `architecture-refactor-1`), so its
+  methods are now `inference.*`. The former `sifter.*` namespace is retired and
+  returns `aa.method_not_found`. This is a service rename within RPC envelope
+  version `1.0`, not an envelope change; it is recorded here because it changes
+  the method namespace. Callers must use `inference.*`.
 
 ## Error codes
 
@@ -68,7 +74,7 @@ Errors that are retryable set `data.retryable: true`.
 
 ## Methods
 
-### inference (model/compute routing)
+### inference (model/compute routing; formerly `sifter`)
 
 | Method | Params | Result |
 |---|---|---|
