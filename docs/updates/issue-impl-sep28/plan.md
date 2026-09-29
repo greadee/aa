@@ -2,6 +2,7 @@
 
 > **Type:** update phase (`issue-impl-sep28`). **Branch:** `dev`. **Sprint PR:** #21 (Draft, `dev` → `main`).
 > **Predecessor:** [architecture-refactor-1](../architecture-refactor-1/summary.md) (merged `bf8e09d`).
+> **Tracking:** umbrella [ISS-IMP](../../issues/post-refactor-implementation.md) ([#22](https://github.com/greadee/aa/issues/22)) · milestone *Issue implementation sprint (Sep 28)* · sub-issues #23–#32.
 > **Source of findings:** [PR #20](https://github.com/greadee/aa/pull/20) review (R1–R10) and repository audit (A1–A9); R1–R3 are already resolved; **R4–R9 and A4–A9 are folded into this sprint**.
 > **Diagram:** [plan.uml](./plan.uml).
 

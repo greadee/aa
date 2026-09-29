@@ -4,6 +4,7 @@
 **Status:** planned
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
+**GitHub issue:** [#26](https://github.com/greadee/aa/issues/26)
 **Parent umbrella:** [ISS-IMP](post-refactor-implementation.md)
 **Sprint plan:** [../updates/issue-impl-sep28/plan.md](../updates/issue-impl-sep28/plan.md) (Stage 1)
 

@@ -4,6 +4,8 @@
 **Status:** in progress (sprint planning complete; implementation not started)
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
+**GitHub issue:** [#22](https://github.com/greadee/aa/issues/22)
+**Milestone:** Issue implementation sprint (Sep 28)
 **Sprint plan:** [../updates/issue-impl-sep28/plan.md](../updates/issue-impl-sep28/plan.md)
 **Predecessor:** [architecture-refactor-1](../updates/architecture-refactor-1/summary.md) (merged `bf8e09d`)
 **Findings source:** [PR #20](https://github.com/greadee/aa/pull/20) review (R1–R10) and repository audit (A1–A9)
@@ -22,16 +24,16 @@ its own document and delivered on `dev`.
 
 | Id | Sub-issue | Stage | Resolves |
 |---|---|---|---|
-| [ISS-IMP-1](imp-1-canonical-architecture-and-contracts.md) | Canonical architecture & contracts | 1 | R6, R7, R8, A4, A5 (decision) |
-| [ISS-IMP-2](imp-2-deterministic-retrieval.md) | Deterministic retrieval | 2 | — |
-| [ISS-IMP-3](imp-3-context-compilation.md) | Context compilation, budgeting & assembly | 2 | A8 (context) |
-| [ISS-IMP-4](imp-4-rpc-boundary-hardening.md) | RPC / boundary / version-skew hardening | 1 | — |
-| [ISS-IMP-5](imp-5-sandbox-execution.md) | Sandbox execution | 3 | A7 |
-| [ISS-IMP-6](imp-6-computer-use-tool-execution.md) | Computer-use / tool execution | 3 | A8 (desktop→ui) |
-| [ISS-IMP-7](imp-7-allocation.md) | Role, model & compute allocation | 4 | A6, A8 (routing/budgets) |
-| [ISS-IMP-8](imp-8-scheduling-multi-agent-execution.md) | Scheduling & multi-agent execution | 3 | A5 (execution) |
-| [ISS-IMP-9](imp-9-learning-experience-feedback.md) | Learning / experience feedback | 5 | A9 (apprenticing/studying) |
-| [ISS-IMP-10](imp-10-observability-hardening-e2e.md) | Observability, hardening & end-to-end validation | 5 | A9 (identity chain) |
+| [ISS-IMP-1](imp-1-canonical-architecture-and-contracts.md) (#23) | Canonical architecture & contracts | 1 | R6, R7, R8, A4, A5 (decision) |
+| [ISS-IMP-2](imp-2-deterministic-retrieval.md) (#24) | Deterministic retrieval | 2 | — |
+| [ISS-IMP-3](imp-3-context-compilation.md) (#25) | Context compilation, budgeting & assembly | 2 | A8 (context) |
+| [ISS-IMP-4](imp-4-rpc-boundary-hardening.md) (#26) | RPC / boundary / version-skew hardening | 1 | — |
+| [ISS-IMP-5](imp-5-sandbox-execution.md) (#27) | Sandbox execution | 3 | A7 |
+| [ISS-IMP-6](imp-6-computer-use-tool-execution.md) (#28) | Computer-use / tool execution | 3 | A8 (desktop→ui) |
+| [ISS-IMP-7](imp-7-allocation.md) (#29) | Role, model & compute allocation | 4 | A6, A8 (routing/budgets) |
+| [ISS-IMP-8](imp-8-scheduling-multi-agent-execution.md) (#30) | Scheduling & multi-agent execution | 3 | A5 (execution) |
+| [ISS-IMP-9](imp-9-learning-experience-feedback.md) (#31) | Learning / experience feedback | 5 | A9 (apprenticing/studying) |
+| [ISS-IMP-10](imp-10-observability-hardening-e2e.md) (#32) | Observability, hardening & end-to-end validation | 5 | A9 (identity chain) |
 
 Also folded into the sprint staging: **R4** (contracts `v2` import aliasing) and **R5** (scheduler
 comments) in Stage 0, and **R10** (reserved-package status) as documentation.

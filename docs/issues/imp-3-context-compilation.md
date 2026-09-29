@@ -4,6 +4,7 @@
 **Status:** planned
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
+**GitHub issue:** [#25](https://github.com/greadee/aa/issues/25)
 **Parent umbrella:** [ISS-IMP](post-refactor-implementation.md)
 **Sprint plan:** [../updates/issue-impl-sep28/plan.md](../updates/issue-impl-sep28/plan.md) (Stage 2)
 **Resolves:** A8 (extract context/handoff from `runtime/inference`)
