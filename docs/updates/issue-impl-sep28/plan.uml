@@ -56,11 +56,13 @@ partition "Stage 6 — Closeout" {
 stop
 
 note right
-  Per slice: one commit; green gates
-  (gofmt/build/vet/test, archtest,
-  contracts Go/Py/TS, inference
-  pytest/ruff/mypy, docs link check).
-  Per stage/substage: stop for review;
+  Per issue/substage: one commit;
+  fold related sub-tasks in when one
+  simple message describes them.
+  Green gates: gofmt/build/vet/test,
+  archtest, contracts Go/Py/TS,
+  inference pytest/ruff/mypy, docs link
+  check. Per substage: stop for review;
   post code-review / repo-audit comments.
 end note
 
