@@ -32,7 +32,7 @@ The plan is authored at the **start** of the phase. The summary is authored at t
 | 1 | `ph1-contracts` | Contract spine (`aa-contracts`) |
 | 2 | `ph2-memory` | `aa-memory` system of record |
 | 3 | `ph3-kernel` | `aa-kernel` control plane |
-| 4 | `ph4-sifter` | `aa-sifter` model/compute router integration |
+| 4 | `ph4-sifter` | `runtime/inference` model provider/execution integration (formerly `aa-sifter`; compute moved to `kernel/allocator`) |
 | 5 | `ph5-forge` | `aa-forge` git/GitHub orchestration |
 | 6 | `ph6-sync` | `aa-sync` remote/offline/parallel completion |
 | 7 | `ph7-toolbox` | `aa-toolbox` plugins/MCP and configurable workflows |

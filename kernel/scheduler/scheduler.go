@@ -37,7 +37,7 @@ func (NopSink) Event(int, string, map[string]any) error { return nil }
 // Record implements Sink.
 func (NopSink) Record(string, string, []byte) error { return nil }
 
-// Config configures the orchestrator.
+// Config configures the scheduler.
 type Config struct {
 	Registry      *role_allocator.Registry
 	Runtime       worker.Adapter
@@ -63,7 +63,7 @@ type Scheduler struct {
 	sequence           int
 }
 
-// New validates the config and graph and returns an orchestrator.
+// New validates the config and graph and returns a scheduler.
 func New(graph *planner.Graph, cfg Config) (*Scheduler, error) {
 	if graph == nil {
 		return nil, fmt.Errorf("scheduler: graph is required")

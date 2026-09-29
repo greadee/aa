@@ -183,6 +183,21 @@ flowchart TB
 `aa-registry` holds reusable durable definitions (roles, models, teams,
 capabilities, routines, policies) and no runtime instances.
 
+**Reserved boundaries — no consumers yet (R10).** The packages below are
+deliberate placeholders introduced by the architecture refactor. They compile
+and carry documentation, but **no behavior and no callers**; they must not be
+mistaken for live code. Each is delivered by a later stage of the
+[ten-issue sprint](../updates/issue-impl-sep28/plan.md).
+
+| Reserved package | Delivered by |
+|---|---|
+| `kernel/allocator/model_allocator` | Issue 7 — model allocation |
+| `kernel/allocator/compute_allocator` | Issue 7 — compute allocation |
+| `registry/models`, `registry/teams`, `registry/routines` | Issue 7 — allocation definitions |
+| `registry/policies` | policy engine (Issue 7 and later) |
+| `runtime/lifecycle` | Issue 5/8 — worker lifecycle |
+| `runtime/sandbox` | Issue 5 — sandbox execution |
+
 ### 4.2 Layering and dependency rules
 
 ```mermaid
@@ -366,14 +381,14 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Reused assets:** `sync`, `transfer`, `transport/tcp`, `pairing`, `identity`, `filesystem`, `core`, `privatetunnel`, sync half of `desktop`/`daemon`.
 - **Remaining work:** offline queue, work-package distribution, multi-machine parallel coordination, discovery/relay decision.
 
-### 5.6 aa-runtime / inference (model provider/execution service)
+### 5.6 aa-runtime
 
-- **Purpose:** provide local and cloud model inference behind the inter-module RPC boundary.
-- **Owns:** provider abstraction (Ollama/OpenAI-compatible/DeepSeek), the model catalog, and low-level `generate`.
-- **Must not:** hold project state or orchestrate; decide allocation or scheduling.
-- **Interfaces:** RPC `inference.generate`, `inference.health`, `inference.route`, `inference.recommend`.
-- **Language:** Python; lives at `runtime/inference` (the former `aa-sifter`, renamed and reduced to provider/execution).
-- **Status:** renamed and relocated by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)). Routing, budget, verification, and context responsibilities are reserved for later issues.
+- **Purpose:** own execution mechanics for allocated work and provide local and cloud model inference behind the inter-module RPC boundary.
+- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (reserved, not implemented); the model provider/execution service boundary (`inference`) with its provider abstraction (Ollama/OpenAI-compatible/DeepSeek), model catalog, and low-level `generate`.
+- **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own project state, durable definitions (`registry`), or canonical history (`memory`).
+- **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the future sandbox; the `inference` RPC service (`inference.generate`, `inference.health`, `inference.route`, `inference.recommend`).
+- **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject at `runtime/inference` (the former `aa-sifter`).
+- **Status:** introduced by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)); `runtime/worker` carries the moved kernel runtime; `lifecycle`, `sandbox`, and `inference` routing/budget/verification/context responsibilities are reserved for later issues.
 
 ### 5.7 aa-forge
 
@@ -422,15 +437,6 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Interfaces:** definition lookups consumed by `kernel` (allocation) and `contracts` (specification schemas, contracts v2).
 - **Language:** Go.
 - **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models`, `teams`, and `routines` re-export their contracts v2 specifications (`ModelSpec`, `TeamSpec`, `RoutineSpec`); `policies` remains a reserved boundary. Consumers use contracts v2.
-
-### 5.12 aa-runtime
-
-- **Purpose:** own execution mechanics for allocated work.
-- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (reserved, not implemented); the model provider/execution service boundary (`inference`, the Python service renamed from inference).
-- **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own durable definitions (`registry`) or canonical history (`memory`).
-- **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the future sandbox; the `inference` RPC service.
-- **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject.
-- **Status:** introduced by the architecture refactor; `runtime/worker` carries the moved kernel runtime; `lifecycle`, `sandbox`, and `inference` are reserved boundaries.
 
 ---
 
