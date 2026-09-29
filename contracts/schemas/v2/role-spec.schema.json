@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/greadee/aa/contracts/schemas/v2/role-spec.schema.json",
+  "title": "aa-role-spec",
+  "x-contract-version": "2.0",
+  "description": "A durable specification of an agent role's intended function.",
+  "type": "object",
+  "required": ["contractVersion", "kind", "id", "title"],
+  "properties": {
+    "contractVersion": { "$ref": "common.schema.json#/$defs/contractVersion" },
+    "kind": { "const": "role_spec" },
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "projectId": { "$ref": "common.schema.json#/$defs/identifier" },
+    "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "revision": { "type": "integer", "minimum": 0 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "capabilities": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "maxItems": 256 },
+    "rules": { "type": "array", "items": { "type": "string", "maxLength": 512 }, "maxItems": 256 },
+    "tools": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/identifier" }, "maxItems": 256 },
+    "permissions": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "maxItems": 256 },
+    "contextExpectations": { "type": "array", "items": { "type": "string", "maxLength": 512 }, "maxItems": 256 },
+    "evalCriteria": { "type": "array", "items": { "type": "string", "maxLength": 512 }, "maxItems": 256 },
+    "observability": { "type": "array", "items": { "type": "string", "maxLength": 128 }, "maxItems": 256 },
+    "costExpectation": { "type": "string", "maxLength": 128 }
+  },
+  "additionalProperties": true
+}

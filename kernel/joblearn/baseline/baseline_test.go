@@ -29,9 +29,9 @@ func (f *fakeRecommender) Recommend(features map[string]string) (string, error) 
 
 func TestPredictUsesRecommender(t *testing.T) {
 	recommender := &fakeRecommender{name: "prod", label: "succeeded"}
-	predictor, err := NewSifterPredictor(recommender, backtest.ConstantBaseline("failed"))
+	predictor, err := NewInferencePredictor(recommender, backtest.ConstantBaseline("failed"))
 	if err != nil {
-		t.Fatalf("NewSifterPredictor: %v", err)
+		t.Fatalf("NewInferencePredictor: %v", err)
 	}
 
 	if got := predictor.Predict(backtest.Features{"role": "engineer"}); got != "succeeded" {
@@ -44,7 +44,7 @@ func TestPredictUsesRecommender(t *testing.T) {
 
 func TestPredictFallsBackOnError(t *testing.T) {
 	recommender := &fakeRecommender{name: "prod", err: errors.New("unreachable")}
-	predictor, _ := NewSifterPredictor(recommender, backtest.ConstantBaseline("fallback"))
+	predictor, _ := NewInferencePredictor(recommender, backtest.ConstantBaseline("fallback"))
 
 	if got := predictor.Predict(backtest.Features{}); got != "fallback" {
 		t.Fatalf("got %q want fallback", got)
@@ -53,7 +53,7 @@ func TestPredictFallsBackOnError(t *testing.T) {
 
 func TestPredictFallsBackOnEmptyLabel(t *testing.T) {
 	recommender := &fakeRecommender{name: "prod", label: ""}
-	predictor, _ := NewSifterPredictor(recommender, backtest.ConstantBaseline("fallback"))
+	predictor, _ := NewInferencePredictor(recommender, backtest.ConstantBaseline("fallback"))
 
 	if got := predictor.Predict(backtest.Features{}); got != "fallback" {
 		t.Fatalf("got %q want fallback", got)
@@ -61,18 +61,18 @@ func TestPredictFallsBackOnEmptyLabel(t *testing.T) {
 }
 
 func TestNameIncludesRecommender(t *testing.T) {
-	predictor, _ := NewSifterPredictor(&fakeRecommender{name: "prod"}, backtest.ConstantBaseline("x"))
+	predictor, _ := NewInferencePredictor(&fakeRecommender{name: "prod"}, backtest.ConstantBaseline("x"))
 
-	if predictor.Name() != "sifter/prod" {
+	if predictor.Name() != "inference/prod" {
 		t.Fatalf("got %q", predictor.Name())
 	}
 }
 
 func TestNewRequiresSeamAndFallback(t *testing.T) {
-	if _, err := NewSifterPredictor(nil, backtest.ConstantBaseline("x")); !errors.Is(err, joblearn.ErrInvalid) {
+	if _, err := NewInferencePredictor(nil, backtest.ConstantBaseline("x")); !errors.Is(err, joblearn.ErrInvalid) {
 		t.Fatalf("expected ErrInvalid for a missing recommender, got %v", err)
 	}
-	if _, err := NewSifterPredictor(&fakeRecommender{name: "prod"}, nil); !errors.Is(err, joblearn.ErrInvalid) {
+	if _, err := NewInferencePredictor(&fakeRecommender{name: "prod"}, nil); !errors.Is(err, joblearn.ErrInvalid) {
 		t.Fatalf("expected ErrInvalid for a missing fallback, got %v", err)
 	}
 }

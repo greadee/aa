@@ -20,7 +20,6 @@ import (
 type Request struct {
 	WorkPackageID string `json:"workPackageId,omitempty"`
 	Role          string `json:"role,omitempty"`
-	Trade         string `json:"trade,omitempty"`
 	// Fallback is the deterministic option that remains available when the
 	// learned hint is withheld.
 	Fallback string `json:"fallback"`
@@ -127,7 +126,7 @@ func (r *Router) Route(req Request, history []attribution.Result) (Hint, error) 
 
 // learnedOption returns the worker that beats the scope baseline, if any.
 func (r *Router) learnedOption(req Request, history []attribution.Result) (string, string, bool) {
-	if req.Trade == "" && req.Role == "" {
+	if req.Role == "" {
 		return "", "no routing scope", false
 	}
 	scoped := filter(history, req)
@@ -169,9 +168,6 @@ func filter(history []attribution.Result, req Request) []attribution.Result {
 	var out []attribution.Result
 	for _, res := range history {
 		a := res.Attribution
-		if req.Trade != "" && a.Trade != req.Trade {
-			continue
-		}
 		if req.Role != "" && a.Role != req.Role {
 			continue
 		}

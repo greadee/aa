@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/greadee/aa/contracts/go/v1"
+	v1 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn/attribution"
 	"github.com/greadee/aa/kernel/joblearn/distill"
 	"github.com/greadee/aa/kernel/joblearn/features"
@@ -50,7 +50,7 @@ func TestTraceStoreToPromotionEndToEnd(t *testing.T) {
 		t.Fatalf("expected three traces, got %d", len(loaded))
 	}
 
-	meta := attribution.Meta{ProjectID: "prj_1", Role: "engineer", Trade: "backend"}
+	meta := attribution.Meta{ProjectID: "prj_1", Role: "engineer"}
 	results, err := attribution.DeriveTraces(loaded, func(v1.Trace) attribution.Meta { return meta }, attribution.DefaultLimits())
 	if err != nil {
 		t.Fatalf("DeriveTraces: %v", err)

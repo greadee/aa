@@ -9,19 +9,19 @@ import (
 	"github.com/greadee/aa/kernel/joblearn/attribution"
 )
 
-func result(role, trade string, outcome joblearn.Outcome, cost, duration float64, attempt string) attribution.Result {
+func result(role string, outcome joblearn.Outcome, cost, duration float64, attempt string) attribution.Result {
 	return attribution.Result{
 		Attribution: joblearn.Attribution{
-			Role: role, Trade: trade, Outcome: outcome, AttemptID: attempt, WorkPackageID: "wp-" + attempt,
+			Role: role, Outcome: outcome, AttemptID: attempt, WorkPackageID: "wp-" + attempt,
 		},
 		Score: joblearn.Score{Version: joblearn.MetricVersion, Cost: cost, Duration: duration, Overall: 0.5},
 	}
 }
 
 func TestFeatures(t *testing.T) {
-	got := Features(result("Builder", "backend", joblearn.OutcomeSucceeded, 0.1, 0.8, "a1"))
+	got := Features(result("Builder", joblearn.OutcomeSucceeded, 0.1, 0.8, "a1"))
 	want := map[string]bool{
-		"role:Builder": true, "trade:backend": true, "outcome:succeeded": true,
+		"role:Builder": true, "outcome:succeeded": true,
 		"cost:low": true, "duration:high": true,
 	}
 	if len(got) != len(want) {
@@ -32,26 +32,26 @@ func TestFeatures(t *testing.T) {
 			t.Fatalf("unexpected feature %q in %v", f, got)
 		}
 	}
-	if len(Features(result("", "", joblearn.OutcomeSucceeded, 0.5, 0.5, "a2"))) != 3 {
+	if len(Features(result("", joblearn.OutcomeSucceeded, 0.5, 0.5, "a2"))) != 3 {
 		t.Fatal("empty identifiers should be omitted")
 	}
 }
 
 func TestSimilarity(t *testing.T) {
-	a := result("Builder", "backend", joblearn.OutcomeSucceeded, 0.1, 0.2, "a1")
+	a := result("Builder", joblearn.OutcomeSucceeded, 0.1, 0.2, "a1")
 	if got := Similarity(a, a); got != 1 {
 		t.Fatalf("self similarity = %v, want 1", got)
 	}
-	b := result("Architect", "qa", joblearn.OutcomeFailed, 0.9, 0.9, "a2")
+	b := result("Architect", joblearn.OutcomeFailed, 0.9, 0.9, "a2")
 	if got := Similarity(a, b); got != 0 {
 		t.Fatalf("disjoint similarity = %v, want 0", got)
 	}
 }
 
 func TestClusterGroups(t *testing.T) {
-	a := result("Builder", "backend", joblearn.OutcomeSucceeded, 0.1, 0.1, "a1")
-	b := result("Builder", "backend", joblearn.OutcomeSucceeded, 0.2, 0.7, "a2")
-	c := result("Builder", "qa", joblearn.OutcomeFailed, 0.9, 0.9, "a3")
+	a := result("Builder", joblearn.OutcomeSucceeded, 0.1, 0.1, "a1")
+	b := result("Builder", joblearn.OutcomeSucceeded, 0.2, 0.7, "a2")
+	c := result("Builder", joblearn.OutcomeFailed, 0.9, 0.9, "a3")
 
 	clusters, err := Cluster([]attribution.Result{a, b, c}, DefaultThreshold)
 	if err != nil {

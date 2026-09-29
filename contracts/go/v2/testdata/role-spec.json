@@ -1,0 +1,16 @@
+{
+  "contractVersion": "2.0",
+  "kind": "role_spec",
+  "id": "role_builder",
+  "projectId": "prj_1",
+  "createdAt": "2026-01-01T00:00:00Z",
+  "title": "Builder",
+  "capabilities": ["write_workspace", "run_tests"],
+  "rules": ["keep changes minimal"],
+  "tools": ["tool_editor"],
+  "permissions": ["write_workspace"],
+  "contextExpectations": ["work_package"],
+  "evalCriteria": ["tests_pass"],
+  "observability": ["role_latency"],
+  "costExpectation": "low"
+}

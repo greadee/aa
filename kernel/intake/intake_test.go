@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/greadee/aa/kernel/runtime"
+	"github.com/greadee/aa/runtime/worker"
 )
 
 func validResult() Result {
@@ -15,7 +15,7 @@ func validResult() Result {
 		WorkPackageID: "wp_1",
 		Status:        "succeeded",
 		Summary:       "done",
-		Tests:         []runtime.TestResult{{Name: "t", Outcome: "passed"}},
+		Tests:         []worker.TestResult{{Name: "t", Outcome: "passed"}},
 	}
 }
 

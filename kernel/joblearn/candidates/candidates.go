@@ -157,31 +157,31 @@ func (g *Generator) Generate(results []attribution.Result) ([]joblearn.Candidate
 	return dedupSort(out), nil
 }
 
-// routing emits a per-trade hint for the worker that beats the trade baseline.
+// routing emits a per-role hint for the worker that beats the role baseline.
 func (g *Generator) routing(results []attribution.Result) []joblearn.Candidate {
-	trades, err := attribution.GroupBy(results, attribution.ByTrade)
+	roleGroups, err := attribution.GroupBy(results, attribution.ByRole)
 	if err != nil {
 		return nil
 	}
 	var out []joblearn.Candidate
-	for _, trade := range trades {
-		if trade.Value == "" || trade.Summary.Outcomes < g.policy.MinOutcomes {
+	for _, roleGroup := range roleGroups {
+		if roleGroup.Value == "" || roleGroup.Summary.Outcomes < g.policy.MinOutcomes {
 			continue
 		}
-		cluster := grpResults(results, attribution.ByTrade, trade.Value)
+		cluster := grpResults(results, attribution.ByRole, roleGroup.Value)
 		best, ok := bestWorker(cluster)
 		if !ok || best.outcomes < g.policy.MinWorkerOutcomes {
 			continue
 		}
-		margin := best.mean - trade.Summary.MeanOverall
+		margin := best.mean - roleGroup.Summary.MeanOverall
 		if margin < g.policy.MinImprovement {
 			continue
 		}
 		out = append(out, g.build(joblearn.CandidateRouting, joblearn.LevelWorkforce,
-			scopeTrade+trade.Value, trade.Summary, best.results,
-			&joblearn.Applicability{Trades: []string{trade.Value}},
-			fmt.Sprintf("Prefer worker %s for trade %s", best.worker, trade.Value),
-			fmt.Sprintf("mean overall %.2f beat the trade baseline %.2f by %.2f", best.mean, trade.Summary.MeanOverall, margin),
+			scopeRole+roleGroup.Value, roleGroup.Summary, best.results,
+			&joblearn.Applicability{Roles: []string{roleGroup.Value}},
+			fmt.Sprintf("Prefer worker %s for role %s", best.worker, roleGroup.Value),
+			fmt.Sprintf("mean overall %.2f beat the role baseline %.2f by %.2f", best.mean, roleGroup.Summary.MeanOverall, margin),
 			clamp01(margin)))
 	}
 	return out
@@ -248,8 +248,6 @@ func dimensionValue(a joblearn.Attribution, dimension attribution.Dimension) str
 	switch dimension {
 	case attribution.ByRole:
 		return a.Role
-	case attribution.ByTrade:
-		return a.Trade
 	case attribution.ByWorker:
 		return a.Worker
 	case attribution.ByWorkPackage:
@@ -360,7 +358,6 @@ func clamp01(v float64) float64 {
 // Scope prefixes.
 const (
 	scopeRole        = "role:"
-	scopeTrade       = "trade:"
 	scopeWorkPackage = "work_package:"
 )
 

@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/greadee/aa/kernel/runtime"
+	"github.com/greadee/aa/runtime/worker"
 )
 
 // ErrConflict is returned when a result id is reused with different content.
@@ -25,9 +25,9 @@ type Result struct {
 	WorkPackageID string
 	Status        string
 	Summary       string
-	Tests         []runtime.TestResult
-	Artifacts     []runtime.Artifact
-	Failure       *runtime.Failure
+	Tests         []worker.TestResult
+	Artifacts     []worker.Artifact
+	Failure       *worker.Failure
 	Hash          string
 }
 
@@ -85,8 +85,8 @@ func hashResult(r Result) (string, error) {
 	data, err := json.Marshal(struct {
 		Status    string
 		Summary   string
-		Tests     []runtime.TestResult
-		Artifacts []runtime.Artifact
+		Tests     []worker.TestResult
+		Artifacts []worker.Artifact
 	}{r.Status, r.Summary, r.Tests, r.Artifacts})
 	if err != nil {
 		return "", err

@@ -2,49 +2,49 @@
 
 ## ADR Organization
 
-Architectural Decision Records should be grouped by phase in:
+Architectural Decision Records live in the canonical store:
 
 ```text
-docs/phases/<phase>/adr.md
+docs/adr/ADR-NNNN-<slug>.md
 ```
 
-Use stable identifiers:
+- **Global, chronological ids** (`ADR-NNNN`), one decision per file.
+- The **[ADR index](../adr/README.md)** maps the historical phase-scoped ids
+  (`ADR-P{phase}-{number}`, `ADR-P{phase}U-{number}`) to their global ids.
+- New decisions **append**; ids are never reused or renumbered.
+- Historical decisions were backfilled in
+  [architecture-refactor-1](../updates/architecture-refactor-1/plan.md) (slice 2).
 
-```text
-ADR-P{phase}-{number}
-```
-
-Examples:
+Historical ids (legacy, preserved for reference):
 
 ```text
 ADR-P2-001
 ADR-P4-003
+ADR-P4U-008
 ```
 
 ## ADR Format
 
 ```markdown
-## ADR-P4-003 — Broker credentials remain provider-owned
+# ADR-NNNN — Broker credentials remain provider-owned
 
-### Status
+| Field | Value |
+|---|---|
+| Status | Accepted |
+| Legacy id | `ADR-P4-003` (when backfilled) |
+| Source | link to the originating plan/summary |
 
-Accepted
+## Context
 
-### Context
+## Decision
 
-### Decision
+## Alternatives Considered
 
-### Alternatives Considered
+## Consequences
 
-#### Alternative A
+## Related Issues
 
-#### Alternative B
-
-### Consequences
-
-### Related Issues
-
-- [#123 ...](./issues/issue-123-name.md)
+- [#123 ...](../issues/issue-123-name.md)
 ```
 
 Statuses:
@@ -66,7 +66,7 @@ Example inside issue doc:
 ```markdown
 ## Architecture Decisions
 
-- [ADR-P4-003 — Broker credentials remain provider-owned](../adr.md#adr-p4-003--broker-credentials-remain-provider-owned)
+- [ADR-NNNN — Broker credentials remain provider-owned](../adr/ADR-NNNN-broker-credentials-remain-provider-owned.md)
 ```
 
 The ADR should link back to affected issues.

@@ -1,5 +1,5 @@
 // Package attribution links completed attempts to their work packages, roles,
-// trades, and workers, and normalizes evidence into versioned scores.
+// and workers, and normalizes evidence into versioned scores.
 //
 // Attribution and scoring are pure functions of bounded evidence (telemetry
 // and gate outcomes); the same input always yields the same result, and no
@@ -12,8 +12,9 @@ import (
 	"sort"
 
 	"github.com/greadee/aa/kernel/joblearn"
-	"github.com/greadee/aa/kernel/registry"
 	"github.com/greadee/aa/kernel/telemetry"
+	"github.com/greadee/aa/registry/roles"
+	"github.com/greadee/aa/runtime/worker"
 )
 
 // GateOutcome is one gate's result for an attempt.
@@ -28,7 +29,6 @@ type GateOutcome struct {
 type Meta struct {
 	ProjectID  string
 	Role       string
-	Trade      string
 	Worker     string
 	Retries    int
 	Sequence   int
@@ -36,17 +36,17 @@ type Meta struct {
 	References []joblearn.Reference
 }
 
-// MetaForWorker derives role, trade, and worker from a registered worker. When
+// MetaForWorker derives role and worker from a registered worker. When
 // role is empty it falls back to the worker's lexicographically smallest role.
-func MetaForWorker(w registry.Worker, role registry.Role) Meta {
+func MetaForWorker(w worker.Worker, role roles.Role) Meta {
 	if role == "" {
-		roles := append([]registry.Role(nil), w.Roles...)
+		roles := append([]roles.Role(nil), w.Roles...)
 		sort.Slice(roles, func(i, j int) bool { return roles[i] < roles[j] })
 		if len(roles) > 0 {
 			role = roles[0]
 		}
 	}
-	return Meta{Role: string(role), Trade: string(w.Trade), Worker: string(w.ID)}
+	return Meta{Role: string(role), Worker: string(w.ID)}
 }
 
 // Limits bound score normalization. A non-positive bound contributes zero.
@@ -84,8 +84,7 @@ func ParseOutcome(s string) (joblearn.Outcome, error) {
 	return o, nil
 }
 
-// Attribute links a telemetry record to its work package, role, trade, and
-// worker.
+// Attribute links a telemetry record to its work package, role, and worker.
 func Attribute(rec telemetry.Record, meta Meta) (joblearn.Attribution, error) {
 	if rec.WorkPackageID == "" {
 		return joblearn.Attribution{}, invalid("workPackageId is required")
@@ -103,7 +102,6 @@ func Attribute(rec telemetry.Record, meta Meta) (joblearn.Attribution, error) {
 		AttemptID:     rec.AttemptID,
 		AssignmentID:  rec.AssignmentID,
 		Role:          meta.Role,
-		Trade:         meta.Trade,
 		Worker:        meta.Worker,
 		Outcome:       outcome,
 		Sequence:      meta.Sequence,
@@ -214,8 +212,8 @@ func canonical(results []Result) []Result {
 func sortKey(r Result) string {
 	a := r.Attribution
 	s := r.Score
-	return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%d|%s|%s|%v|%v|%v|%v|%v|%v",
-		a.ProjectID, a.WorkPackageID, a.AttemptID, a.AssignmentID, a.Role, a.Trade, a.Worker,
+	return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%d|%s|%s|%v|%v|%v|%v|%v|%v",
+		a.ProjectID, a.WorkPackageID, a.AttemptID, a.AssignmentID, a.Role, a.Worker,
 		a.Sequence, a.Outcome, s.Version, s.Success, s.Cost, s.Duration, s.Retries, s.Quality, s.Overall)
 }
 
@@ -225,7 +223,6 @@ type Dimension string
 // Grouping dimensions.
 const (
 	ByRole        Dimension = "role"
-	ByTrade       Dimension = "trade"
 	ByWorker      Dimension = "worker"
 	ByWorkPackage Dimension = "work_package"
 )
@@ -264,8 +261,6 @@ func keyFunc(dimension Dimension) (func(joblearn.Attribution) string, error) {
 	switch dimension {
 	case ByRole:
 		return func(a joblearn.Attribution) string { return a.Role }, nil
-	case ByTrade:
-		return func(a joblearn.Attribution) string { return a.Trade }, nil
 	case ByWorker:
 		return func(a joblearn.Attribution) string { return a.Worker }, nil
 	case ByWorkPackage:

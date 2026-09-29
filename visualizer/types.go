@@ -3,20 +3,20 @@ package visualizer
 import (
 	"time"
 
-	"github.com/greadee/aa/contracts/go/v1"
+	"github.com/greadee/aa/contracts/go/v2"
 )
 
 // Event is the shared canonical event consumed by the visualizer. It is not a
 // new observation protocol; it is the contracts taxonomy behind a seam.
-type Event = v1.Event
+type Event = v2.Event
 
 type (
 	// EventType enumerates the canonical event types.
-	EventType = v1.EventType
+	EventType = v2.EventType
 	// EventAggregate identifies the entity an event applies to.
-	EventAggregate = v1.EventAggregate
+	EventAggregate = v2.EventAggregate
 	// Actor identifies who produced or performed something.
-	Actor = v1.Actor
+	Actor = v2.Actor
 )
 
 // SessionID identifies an observed session: work correlated under one id.

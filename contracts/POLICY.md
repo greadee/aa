@@ -64,7 +64,13 @@ Additive, backward-compatible changes bump `MINOR`. Breaking changes require a n
 
 ## Migration notes
 
-_No breaking changes. Breaking changes are recorded here with the major version that introduced them._
+Breaking changes are recorded here with the major version that introduced them.
+
+### Major change log
+
+| Version | Change | Migration |
+|---|---|---|
+| 2.0 | New generation `schemas/v2/` (bindings `go/v2`, `typescript/v2`, `python/aa_contracts/v2.py`). Adds durable-definition and planning objects (`role_spec`, `model_spec`, `team_spec`, `work_plan`, `execution_plan`, `routine`) and drops the `trade` field from the agent ontology (Role × Model). | `schemas/v1/` remains as the previous generation during migration. Consumers migrate to `v2` in the architecture-refactor update phase that wires them. |
 
 ### Additive change log
 

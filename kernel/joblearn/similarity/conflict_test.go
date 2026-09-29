@@ -20,7 +20,7 @@ func TestConflictsDetectsOpposingCandidates(t *testing.T) {
 	pArch := cand(joblearn.CandidatePattern, joblearn.LevelRole, "role:Architect", &joblearn.Applicability{Roles: []string{"Architect"}})
 	strategy := cand(joblearn.CandidateStrategy, joblearn.LevelTask, "work_package:wp1", nil)
 	costPit := cand(joblearn.CandidatePitfall, joblearn.LevelProject, "work_package:wp1", nil)
-	route := cand(joblearn.CandidateRouting, joblearn.LevelWorkforce, "trade:backend", &joblearn.Applicability{Trades: []string{"backend"}})
+	route := cand(joblearn.CandidateRouting, joblearn.LevelWorkforce, "trade:backend", &joblearn.Applicability{Roles: []string{"backend"}})
 
 	conflicts := Conflicts([]joblearn.Candidate{pRole, pitRole, pArch, strategy, costPit, route})
 	if len(conflicts) != 2 {

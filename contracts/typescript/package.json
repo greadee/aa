@@ -2,8 +2,8 @@
   "name": "@aa/contracts",
   "version": "0.1.0",
   "private": true,
-  "description": "TypeScript bindings for the aa contract schemas v1.",
-  "types": "v1/index.ts",
+  "description": "TypeScript bindings for the aa contract schemas v2.",
+  "types": "v2/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit"
   },

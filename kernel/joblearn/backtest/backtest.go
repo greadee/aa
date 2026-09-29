@@ -5,7 +5,7 @@
 // always produce the same report, independent of sample order. The report
 // exposes the sample count, the improvement over the baseline, and a pass
 // verdict, which is what an evidence gate consumes. The real baseline is the
-// sifter recommender reached over RPC; until then a Predictor seam and
+// inference recommender reached over RPC; until then a Predictor seam and
 // deterministic fakes stand in.
 package backtest
 

@@ -5,23 +5,23 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/greadee/aa/kernel/allocator/planner"
+	"github.com/greadee/aa/kernel/allocator/role_allocator"
 	"github.com/greadee/aa/kernel/gate"
-	"github.com/greadee/aa/kernel/orchestrator"
-	"github.com/greadee/aa/kernel/plan"
-	"github.com/greadee/aa/kernel/registry"
-	"github.com/greadee/aa/kernel/runtime"
+	"github.com/greadee/aa/kernel/scheduler"
+	"github.com/greadee/aa/runtime/worker"
 )
 
-func testOrchestrator(t *testing.T) *orchestrator.Orchestrator {
+func testOrchestrator(t *testing.T) *scheduler.Scheduler {
 	t.Helper()
-	graph := plan.NewGraph("prj_1", "gph_1")
-	_ = graph.Add(plan.WorkPackage{ID: "wp_a", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}})
-	reg := registry.New()
-	_ = reg.Add(registry.Worker{ID: "w1", Trade: "backend", Capabilities: []string{"write_workspace", "run_tests"}, Available: true})
-	fake := runtime.NewFake()
-	fake.Script("wp_a", runtime.Result{Status: "succeeded", Tests: []runtime.TestResult{{Name: "t", Outcome: "passed"}}})
+	graph := planner.NewGraph("prj_1", "gph_1")
+	_ = graph.Add(planner.WorkPackage{ID: "wp_a", Capabilities: []string{"write_workspace", "run_tests"}})
+	reg := role_allocator.New()
+	_ = reg.Add(worker.Worker{ID: "w1", Capabilities: []string{"write_workspace", "run_tests"}, Available: true})
+	fake := worker.NewFake()
+	fake.Script("wp_a", worker.Result{Status: "succeeded", Tests: []worker.TestResult{{Name: "t", Outcome: "passed"}}})
 	human := gate.NewHumanGate()
-	o, err := orchestrator.New(graph, orchestrator.Config{
+	o, err := scheduler.New(graph, scheduler.Config{
 		Registry: reg, Runtime: fake, Gates: []gate.Gate{gate.TestsGate{}, human},
 		Enabled: true, Permitted: []string{"write_workspace", "run_tests"},
 	})
@@ -38,7 +38,7 @@ func TestNewRequiresOrchestrator(t *testing.T) {
 }
 
 func TestDisabledServiceRefusesDispatch(t *testing.T) {
-	svc, err := New(Config{Orchestrator: testOrchestrator(t), Enabled: false})
+	svc, err := New(Config{Scheduler: testOrchestrator(t), Enabled: false})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestDisabledServiceRefusesDispatch(t *testing.T) {
 }
 
 func TestEnabledServiceRuns(t *testing.T) {
-	svc, err := New(Config{Orchestrator: testOrchestrator(t), Enabled: true})
+	svc, err := New(Config{Scheduler: testOrchestrator(t), Enabled: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestEnabledServiceRuns(t *testing.T) {
 		t.Fatalf("resolved = %+v err=%v", resolved, err)
 	}
 	status := svc.Status()
-	if len(status.WorkPackages) != 1 || status.WorkPackages[0].State != plan.StateCompleted {
+	if len(status.WorkPackages) != 1 || status.WorkPackages[0].State != planner.StateCompleted {
 		t.Fatalf("status = %+v", status)
 	}
 }

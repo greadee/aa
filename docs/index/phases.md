@@ -1,6 +1,12 @@
 # Phase index
 
-Phases are the top-level unit of planned work. Each phase is a GitHub milestone with a tracking issue, a phase branch, a Draft phase PR, child issues and PRs, and a phase-end audit.
+Numbered phases are reserved for **major additions**. Refactors, edits, corrections,
+and module updates are unnumbered **update phases**, documented under
+[docs/updates/](../updates/README.md), with their module-level plans and summaries
+under [docs/modules/<module>/updates/](../modules/README.md).
+
+Each phase is a GitHub milestone with a tracking issue, a phase branch, a Draft
+phase PR, child issues and PRs, and a phase-end audit.
 
 ## Documentation convention
 
@@ -12,6 +18,9 @@ Every phase creates a folder under `docs/phases/` named `ph{N}-{scope}` (for exa
 | `plan.uml` | Infrastructure/sequence/class diagrams for the planned phase |
 | `summary.md` | Phase summary: what was delivered, decisions affirmed, deviations and why |
 | `summary.uml` | Copy of `plan.uml`, edited to the as-built end state |
+
+Architecture decisions are recorded in the global [ADR store](../adr/README.md), not
+per phase.
 
 The plan is authored at the **start** of the phase. The summary is authored at the **end**, by copying and editing the plan diagrams to the finished state, affirming decisions that were correct, and recording any deviation with its reason.
 
@@ -29,7 +38,7 @@ The plan is authored at the **start** of the phase. The summary is authored at t
 | 7 | `ph7-toolbox` | `aa-toolbox` plugins/MCP and configurable workflows |
 | 8 | `ph8-visualizer` | `aa-visualizer` completion |
 | 9 | `ph9-joblearn` | Job learning and optimization loop |
-| 10 | `ph10-console` | `aa-console` unified interface |
+| 10 | `ph10-ui` | `aa-ui` unified interface |
 | 11 | `ph11-release` | Hardening, security, release, docs, audits |
 
 The full phase plan with goals, deliverables, exit criteria, and testing is in the [architecture document](../architecture/README.md#11-end-to-end-phase-plan).

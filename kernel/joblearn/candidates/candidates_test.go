@@ -11,10 +11,10 @@ import (
 	"github.com/greadee/aa/kernel/joblearn/attribution"
 )
 
-func res(role, trade, worker, wp string, outcome joblearn.Outcome, overall, cost float64, n int) attribution.Result {
+func res(role, worker, wp string, outcome joblearn.Outcome, overall, cost float64, n int) attribution.Result {
 	return attribution.Result{
 		Attribution: joblearn.Attribution{
-			Role: role, Trade: trade, Worker: worker, WorkPackageID: wp, Outcome: outcome,
+			Role: role, Worker: worker, WorkPackageID: wp, Outcome: outcome,
 			Evidence: []joblearn.Reference{{Kind: "attempt", ID: fmt.Sprintf("%s-%d", wp, n)}},
 		},
 		Score: joblearn.Score{Version: joblearn.MetricVersion, Overall: overall, Cost: cost},
@@ -24,13 +24,13 @@ func res(role, trade, worker, wp string, outcome joblearn.Outcome, overall, cost
 func dataset() []attribution.Result {
 	var out []attribution.Result
 	for i := 0; i < 5; i++ {
-		out = append(out, res("Builder", "backend", "w1", "wp1", joblearn.OutcomeSucceeded, 0.9, 0.1, i))
+		out = append(out, res("Builder", "w1", "wp1", joblearn.OutcomeSucceeded, 0.9, 0.1, i))
 	}
 	for i := 0; i < 3; i++ {
-		out = append(out, res("Architect", "backend", "w2", "wp2", joblearn.OutcomeFailed, 0.3, 0.8, i))
+		out = append(out, res("Architect", "w2", "wp2", joblearn.OutcomeFailed, 0.3, 0.8, i))
 	}
 	for i := 3; i < 5; i++ {
-		out = append(out, res("Architect", "backend", "w2", "wp2", joblearn.OutcomeSucceeded, 0.3, 0.8, i))
+		out = append(out, res("Architect", "w2", "wp2", joblearn.OutcomeSucceeded, 0.3, 0.8, i))
 	}
 	return out
 }
@@ -60,7 +60,7 @@ func find(cs []joblearn.Candidate, kind joblearn.CandidateKind, scope string) (j
 
 func TestGenerateCandidates(t *testing.T) {
 	cs := generate(t, dataset())
-	if len(cs) != 5 {
+	if len(cs) != 4 {
 		t.Fatalf("candidates = %d, want 5: %+v", len(cs), cs)
 	}
 
@@ -74,7 +74,6 @@ func TestGenerateCandidates(t *testing.T) {
 		{joblearn.CandidatePitfall, "role:Architect", joblearn.LevelRole, 0.6},
 		{joblearn.CandidateStrategy, "work_package:wp1", joblearn.LevelTask, 1.0},
 		{joblearn.CandidatePitfall, "work_package:wp2", joblearn.LevelProject, 0.8},
-		{joblearn.CandidateRouting, "trade:backend", joblearn.LevelWorkforce, 0.3},
 	}
 	for _, want := range checks {
 		c, ok := find(cs, want.kind, want.scope)
@@ -101,10 +100,6 @@ func TestGenerateCandidates(t *testing.T) {
 	pattern, _ := find(cs, joblearn.CandidatePattern, "role:Builder")
 	if pattern.Applicability == nil || !reflect.DeepEqual(pattern.Applicability.Roles, []string{"Builder"}) {
 		t.Fatalf("pattern applicability = %+v", pattern.Applicability)
-	}
-	routing, _ := find(cs, joblearn.CandidateRouting, "trade:backend")
-	if routing.Applicability == nil || !reflect.DeepEqual(routing.Applicability.Trades, []string{"backend"}) {
-		t.Fatalf("routing applicability = %+v", routing.Applicability)
 	}
 }
 
@@ -134,7 +129,7 @@ func TestGenerateDeterministicAcrossCalls(t *testing.T) {
 }
 
 func TestGenerateBelowThreshold(t *testing.T) {
-	cs := generate(t, []attribution.Result{res("Builder", "backend", "w1", "wp1", joblearn.OutcomeSucceeded, 0.9, 0.1, 0)})
+	cs := generate(t, []attribution.Result{res("Builder", "w1", "wp1", joblearn.OutcomeSucceeded, 0.9, 0.1, 0)})
 	if len(cs) != 0 {
 		t.Fatalf("candidates = %+v, want none", cs)
 	}
@@ -143,11 +138,11 @@ func TestGenerateBelowThreshold(t *testing.T) {
 func TestGenerateNoRoutingWithoutMargin(t *testing.T) {
 	var results []attribution.Result
 	for i := 0; i < 5; i++ {
-		results = append(results, res("Builder", "backend", "w1", "wp1", joblearn.OutcomeSucceeded, 0.5, 0.1, i))
-		results = append(results, res("Builder", "backend", "w2", "wp2", joblearn.OutcomeSucceeded, 0.5, 0.1, i+5))
+		results = append(results, res("Builder", "w1", "wp1", joblearn.OutcomeSucceeded, 0.5, 0.1, i))
+		results = append(results, res("Builder", "w2", "wp2", joblearn.OutcomeSucceeded, 0.5, 0.1, i+5))
 	}
 	cs := generate(t, results)
-	if _, ok := find(cs, joblearn.CandidateRouting, "trade:backend"); ok {
+	if _, ok := find(cs, joblearn.CandidateRouting, "role:Builder"); ok {
 		t.Fatalf("routing emitted without a margin: %+v", cs)
 	}
 }

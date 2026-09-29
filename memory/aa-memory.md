@@ -15,7 +15,7 @@ Be the canonical, portable, rebuildable system of record. Everything durable abo
 - The strategy repository (see [aa-strgy.md](aa-strgy.md)).
 - The memory hierarchy and deterministic promotion lifecycle.
 - Provenance and retention.
-- Deterministic query API.
+- Deterministic retrieval API.
 
 ## Must Not
 
@@ -26,7 +26,7 @@ Be the canonical, portable, rebuildable system of record. Everything durable abo
 ## Interfaces
 
 - Record read/write.
-- Query API consumed by `kernel`, `visualizer`, `console`, and `forge`.
+- Retrieval API consumed by `kernel`, `visualizer`, `ui`, and `forge`.
 - Projection rebuild.
 
 ## Rules

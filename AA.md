@@ -4,7 +4,7 @@ Primary agent directive for the **aa** repository.
 
 This repository uses the **aa GitHub OS** (see [docs/github-os/](docs/github-os/README.md)). Do not load the entire documentation tree by default. Read only the module required for the current task.
 
-Submodule directive files extend this one and live beside the module they govern, named `aa-<scope>.md` (for example `kernel/aa-kernel.md`, `console/aa-tui.md`, `obsv/aa-obsrv.md`). Read the module directive before changing that module. Aspect directives such as `aa-strgy.md` (strategy), `aa-issue.md` (issues), and `aa-joblearn.md` (job learning) live in the module that owns the aspect.
+Submodule directive files extend this one and live beside the module they govern, named `aa-<scope>.md` (for example `kernel/aa-kernel.md`, `ui/aa-ui.md`, `obsv/aa-obsrv.md`). Read the module directive before changing that module. Aspect directives such as `aa-strgy.md` (strategy), `aa-issue.md` (issues), and `aa-joblearn.md` (job learning) live in the module that owns the aspect.
 
 ## Task Router
 

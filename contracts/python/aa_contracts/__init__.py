@@ -1,6 +1,6 @@
-"""Python bindings for the aa contract schemas v1 (standard library only)."""
+"""Python bindings for the aa contract schemas v2 (standard library only)."""
 
-from .v1 import (  # noqa: F401
+from .v2 import (  # noqa: F401
     ACTOR_KINDS,
     ASSIGNMENT_STATES,
     CAPABILITIES,

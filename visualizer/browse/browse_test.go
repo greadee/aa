@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/greadee/aa/memory/projection"
-	"github.com/greadee/aa/memory/query"
+	"github.com/greadee/aa/memory/retrieval"
 	"github.com/greadee/aa/memory/store"
 	visualizer "github.com/greadee/aa/visualizer"
 	"github.com/greadee/aa/visualizer/replay"
@@ -60,7 +60,7 @@ func newBrowserWithStore(t *testing.T, events []visualizer.Event) (*Browser, *st
 			t.Fatalf("AppendEvent %d: %v", i, err)
 		}
 	}
-	b, err := New(query.New(projection.NewMem(), s))
+	b, err := New(retrieval.New(projection.NewMem(), s))
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}

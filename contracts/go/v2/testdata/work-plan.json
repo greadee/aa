@@ -1,0 +1,11 @@
+{
+  "contractVersion": "2.0",
+  "kind": "work_plan",
+  "id": "work_plan_1",
+  "sourceWorkflow": { "kind": "workflow", "id": "wf_1", "version": "1.0" },
+  "units": [
+    { "id": "u1", "title": "Implement", "outputs": ["patch"], "completion": ["tests_pass"] },
+    { "id": "u2", "title": "Verify", "dependsOn": ["u1"] }
+  ],
+  "constraints": ["single_repository"]
+}

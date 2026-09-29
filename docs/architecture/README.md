@@ -31,7 +31,7 @@ The system is built from ten independently versioned modules joined by a single 
 
 ```mermaid
 flowchart TB
-    console["aa-console<br/>TUI + local web control plane"]
+    ui["aa-ui<br/>TUI + local web control plane"]
     kernel["aa-kernel<br/>control plane"]
     sync["aa-sync<br/>remote/offline/parallel"]
     forge["aa-forge<br/>git/github orchestration"]
@@ -40,12 +40,13 @@ flowchart TB
     contracts["aa-contracts<br/>schemas · RPC · generated types"]
     obsv["aa-obsv<br/>work observation"]
     memory["aa-memory<br/>system of record"]
-    sifter["aa-sifter<br/>model/compute router"]
+    registry["aa-registry<br/>durable definitions"]
+    runtime["aa-runtime<br/>worker/lifecycle/sandbox/inference"]
 
-    console --> kernel
-    console --> visualizer
-    console --> forge
-    console --> sync
+    ui --> kernel
+    ui --> visualizer
+    ui --> forge
+    ui --> sync
     kernel --> contracts
     sync --> contracts
     forge --> contracts
@@ -53,9 +54,11 @@ flowchart TB
     toolbox --> contracts
     obsv --> contracts
     memory --> contracts
-    sifter --> contracts
+    registry --> contracts
+    runtime --> contracts
     kernel -.hosts.-> obsv
-    kernel -.RPC.-> sifter
+    kernel --> registry
+    kernel --> runtime
     kernel -.RPC.-> sync
     kernel -.RPC.-> forge
     visualizer -.subscribes.-> obsv
@@ -95,10 +98,10 @@ Seven existing work areas converge into the ten target modules. The table below 
 
 | Existing area | What it is | Destination |
 |---|---|---|
-| `file transfer app` (Go `syncgate`) | Sync MVP plus a complete but disabled kernel and half a memory system | `sync` (transfer/pairing/identity) + `kernel` (orchestration/scheduler/execution) + `memory` (records/projections) + `console`/`visualizer` (API/browser) |
+| `file transfer app` (Go `syncgate`) | Sync MVP plus a complete but disabled kernel and half a memory system | `sync` (transfer/pairing/identity) + `kernel` (orchestration/scheduler/execution) + `memory` (records/projections) + `ui`/`visualizer` (API/browser) |
 | `agent-action-visualizer` | Go + Wails + React/Three 3D time-travel app with a duplicated observation protocol | `visualizer`, stripping protocol/IPC/event-store into `obsv` |
 | `aa-obsv-module` | Product-neutral work-observation library | `obsv` |
-| `compute-sifter` | Python `sifter`: classify → gate → route → execute → verify → escalate | `sifter` |
+| `compute-sifter` | Python inference service: classify → gate → route → execute → verify → escalate | `runtime/inference` |
 | `aasync-swe-suite` | Role/organization/orchestration specification | design input to `kernel` |
 | `lightweight-github-os` + `general project md templates` | Process, documentation, and GitHub workflow methodology | this `docs/github-os/` tree (canonical) |
 | `.local-planning/*` | Mixed implemented-stage logs and aspirational workforce plans | input to `kernel`, `memory`, `sync` |
@@ -109,10 +112,10 @@ Seven existing work areas converge into the ten target modules. The table below 
 |---|---|
 | Task/DAG modeled four ways (`project`, `orchestration`, `taskspec`, `workhistory`) | One task/work-package model in `contracts` |
 | Telemetry duplicated (`telemetry`, `insights`, `desktop/lifecycle_telemetry`) | Operational telemetry in `kernel`; canonical history in `memory` |
-| `desktop` mega-package re-implements orchestration | Split across `sync`, `kernel`, `console`, `visualizer` |
+| `desktop` mega-package re-implements orchestration | Split across `sync`, `kernel`, `ui`, `visualizer` |
 | Three event vocabularies, three memory hierarchies | One event taxonomy and one memory hierarchy in `contracts` |
 | AAV and `obsv` protocol duplication with incompatible stripping | Resolved (`ISS-OBSV-2`): AAV adopts `obsv`; the visualizer defines no protocol, transport, or event-store and normalizes metadata through one explicit compatibility profile |
-| No forge, plugin/MCP, or unified interface | New `forge`, `toolbox`, `console` modules |
+| No forge, plugin/MCP, or unified interface | New `forge`, `toolbox`, `ui` modules |
 
 ### 3.2 Missing capabilities and their homes
 
@@ -123,7 +126,7 @@ Seven existing work areas converge into the ten target modules. The table below 
 | Issue repository | `memory` |
 | GitHub orchestration: projects, issues, PRs, checkpoints, releases | `forge` |
 | Optimization loop | `kernel` + `memory` |
-| Interface that ties everything together | `console` |
+| Interface that ties everything together | `ui` |
 | Tools/plugins/MCP and workflow configuration | `toolbox` |
 
 ---
@@ -135,70 +138,79 @@ Seven existing work areas converge into the ten target modules. The table below 
 ```mermaid
 flowchart TB
     subgraph UX["Interface"]
-        console["aa-console"]
+        ui["aa-ui"]
     end
     subgraph Control["Control plane"]
         kernel["aa-kernel"]
+        runtime["aa-runtime<br/>worker · lifecycle · sandbox · inference"]
         toolbox["aa-toolbox"]
     end
     subgraph World["External interactions"]
         forge["aa-forge"]
         sync["aa-sync"]
-        sifter["aa-sifter"]
     end
     subgraph Knowledge["Observation and knowledge"]
         obsv["aa-obsv"]
         memory["aa-memory"]
         visualizer["aa-visualizer"]
     end
+    registry["aa-registry — durable definitions"]
     contracts["aa-contracts — single source of truth"]
 
-    console --> kernel
-    console --> visualizer
-    console --> forge
-    console --> sync
+    ui --> kernel
+    ui --> visualizer
+    ui --> forge
+    ui --> sync
+    kernel --> registry
+    kernel --> runtime
     kernel --> toolbox
     kernel --> obsv
     kernel --> memory
-    kernel --> sifter
     kernel --> sync
     kernel --> forge
-    sifter --> memory
     forge --> memory
     sync --> memory
     obsv --> memory
     visualizer --> obsv
     visualizer --> memory
+    registry --> contracts
     Control --> contracts
     World --> contracts
     Knowledge --> contracts
     UX --> contracts
 ```
 
+`aa-registry` holds reusable durable definitions (roles, models, teams,
+capabilities, routines, policies) and no runtime instances.
+
 ### 4.2 Layering and dependency rules
 
 ```mermaid
 flowchart TD
     contracts["aa-contracts (no deps)"]
+    registry["aa-registry"]
     obsv["aa-obsv"]
     memory["aa-memory"]
-    sifter["aa-sifter (Python)"]
     sync["aa-sync"]
     toolbox["aa-toolbox"]
     forge["aa-forge"]
+    runtime["aa-runtime (worker, lifecycle, sandbox, inference)"]
     kernel["aa-kernel"]
     visualizer["aa-visualizer"]
-    console["aa-console"]
+    ui["aa-ui"]
 
+    contracts --> registry
+    contracts --> runtime
+    runtime --> kernel
     contracts --> obsv
     contracts --> memory
-    contracts --> sifter
     contracts --> sync
     contracts --> toolbox
     contracts --> forge
     contracts --> kernel
     contracts --> visualizer
-    contracts --> console
+    contracts --> ui
+    registry --> kernel
     obsv --> memory
     memory --> kernel
     toolbox --> kernel
@@ -211,10 +223,12 @@ Rules (enforced by architecture tests in each module):
 
 1. `contracts` depends on nothing and may be imported by everything.
 2. A module may import only **downward** in the diagram; no cycles.
-3. `kernel` never imports `sync`, `forge`, or `sifter` code — it calls them over RPC.
+3. `kernel` never imports `sync`, `forge`, or `inference` code — it calls them over RPC.
 4. `visualizer` never imports `kernel`.
-5. `console` imports `contracts` only and talks to modules through the control-plane API.
+5. `ui` imports `contracts` only and talks to modules through the control-plane API.
 6. Cross-module data structures exist only in `contracts`.
+7. `registry` holds durable definitions only (no runtime instances) and depends on `contracts`; `kernel` consumes it.
+8. `runtime` owns execution mechanics and depends on `contracts`; `kernel` dispatches work to it. Runtime mechanics are never imported by `memory`, `sync`, `forge`, or `toolbox`.
 
 ### 4.3 Runtime and deployment view
 
@@ -223,11 +237,11 @@ flowchart LR
     subgraph MachineA["Machine A (authority)"]
         host["aa host (kernel daemon)"]
         obsSocket["obsv local socket"]
-        sifterProc["aa-sifter service (Python)"]
+        inferenceProc["aa-inference service (Python)"]
         forgeProc["aa-forge adapters (git/gh)"]
         sqlite["memory store (records + SQLite)"]
-        web["console local web"]
-        tui["console TUI"]
+        web["ui local web"]
+        tui["ui TUI"]
     end
     subgraph MachineB["Machine B (replica / worker)"]
         syncNode["aa-sync node"]
@@ -236,7 +250,7 @@ flowchart LR
     tui --> host
     web --> host
     host --> obsSocket
-    host --> sifterProc
+    host --> inferenceProc
     host --> forgeProc
     host --> sqlite
     host <--> syncNode
@@ -244,7 +258,7 @@ flowchart LR
 ```
 
 - The **host** is the kernel daemon. It owns the store, the scheduler, the observation journal, and the control-plane API.
-- **aa-sifter** runs as a local sidecar process reached over RPC; it is the only Python module.
+- **aa-inference** runs as a local sidecar process reached over RPC; it is the only Python module.
 - **aa-sync** establishes paired, authenticated links between machines and moves work packages, artifacts, and offline changes.
 - Exactly one machine holds execution **authority** for a project in v1. Others are read-only replicas and workers.
 
@@ -252,12 +266,12 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-    participant U as User (console)
+    participant U as User (ui)
     participant K as aa-kernel
     participant M as aa-memory
-    participant S as aa-sifter
+    participant S as aa-inference
     participant F as aa-forge
-    participant Sf as aa-sifter/model
+    participant Sf as aa-inference/model
     participant O as aa-obsv
     participant G as Gates
 
@@ -271,7 +285,7 @@ sequenceDiagram
     S-->>K: route decision
     K->>K: compile context + execution contract
     K->>O: emit observation events
-    K->>Sf: execute (via sifter)
+    K->>Sf: execute (via inference)
     Sf-->>K: result envelope (untrusted)
     K->>G: verify + integrate + human gate
     G-->>K: accepted
@@ -288,7 +302,7 @@ flowchart TB
     L1["L1 Working — context bundles (kernel context compiler)"]
     L2["L2 Project — work/git/job/project history (aa-memory)"]
     L3["L3 Institutional — issues + strategies (aa-memory)"]
-    L4["L4 Workforce — role/trade learning (kernel engine, memory store)"]
+    L4["L4 Workforce — role learning (kernel engine, memory store)"]
 
     L0 --> L1 --> L2 --> L3 --> L4
     L4 -.feeds.-> L1
@@ -319,14 +333,15 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Interfaces:** `Ensure/Runtime`, `Send`, `Replay`, `Subscribe`; transport methods `hello/append/replay/subscribe`.
 - **Language:** Go (library + local service).
 - **Reused assets:** the entire `aa-obsv-module`.
-- **Remaining work:** kernel orchestrator wiring (an `obsv`-backed sink) and the host socket under `ISS-OBSV-1`. The visualizer profile keys `secondary_paths`/`access_sequence` are allowlisted and normalized by `visualizer/compat` (`ISS-OBSV-2`).
+- **Remaining work:** kernel scheduler wiring (an `obsv`-backed sink) and the host socket under `ISS-OBSV-1`. The visualizer profile keys `secondary_paths`/`access_sequence` are allowlisted and normalized by `visualizer/compat` (`ISS-OBSV-2`).
 
 ### 5.3 aa-kernel (control plane)
 
 - **Purpose:** deterministic coordination of all work.
-- **Owns:** obsv host; planning (task aggregate, DAG, readiness); role/trade/worker registry and role selection; scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; runtime contracts and adapters; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
-- **Must not:** own transfer, own canonical history, call models directly, or expose a remote shell.
-- **Interfaces:** control-plane API, RPC to `sifter`/`sync`/`forge`, `obsv` host, memory query.
+- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; `allocator/role_allocator`: deterministic worker selection; reserved `allocator/model_allocator` and `allocator/compute_allocator`); scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
+- **Must not:** own transfer, own canonical history, call models directly, own execution mechanics (use `aa-runtime`), or expose a remote shell.
+- **Interfaces:** control-plane API; the `aa-runtime` worker adapter; RPC to `inference`/`sync`/`forge`; `obsv` host; memory query.
+- **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there. Current kernel package placement is not final ownership — intended homes for `context`, `contract`, `gate`, `telemetry`, `joblearn`, `api`, and `intake` are recorded in [transitional-boundaries](../modules/kernel/transitional-boundaries.md).
 - **Language:** Go.
 - **Reused assets:** `orchestration`, `scheduler`, `taskspec`, `registry`, `contextcompiler`, `executioncontract`, `resultintake`, `integrationgate`, `workspace`, `runtimecontract`, `codexruntime`, `computenode`, `dispatchbinding`, orchestration halves of `desktop`/`api`.
 - **Remaining work:** role selection, job-learning engine, de-blur taskspec/orchestration, extract from syncgate, enforce boundaries.
@@ -334,12 +349,12 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.4 aa-memory (system of record)
 
 - **Purpose:** canonical, portable, rebuildable institutional knowledge.
-- **Owns:** canonical records and portable `.aa-project/` layout; rebuildable SQLite projections; work/git/job/project histories; **issue repository**; **strategy repository**; memory hierarchy with lifecycle and deterministic promotion; provenance; relational/event/graph indexes (vector optional); deterministic query API.
+- **Owns:** canonical records and portable `.aa-project/` layout; rebuildable SQLite projections; work/git/job/project histories; **issue repository**; **strategy repository**; memory hierarchy with lifecycle and deterministic promotion; provenance; relational/event/graph indexes (vector optional); deterministic retrieval API.
 - **Must not:** execute work or call models.
-- **Interfaces:** record read/write, query API, projection rebuild.
+- **Interfaces:** record read/write, retrieval API, projection rebuild.
 - **Language:** Go.
 - **Reused assets:** `project`, `projector`, `workhistory`, `insights`, telemetry storage, `projectmigration`, obsv work reports.
-- **Remaining work:** issue/strategy repos, promotion engine, git-history reader, query API.
+- **Remaining work:** issue/strategy repos, promotion engine, git-history reader, retrieval API.
 
 ### 5.5 aa-sync
 
@@ -351,15 +366,14 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Reused assets:** `sync`, `transfer`, `transport/tcp`, `pairing`, `identity`, `filesystem`, `core`, `privatetunnel`, sync half of `desktop`/`daemon`.
 - **Remaining work:** offline queue, work-package distribution, multi-machine parallel coordination, discovery/relay decision.
 
-### 5.6 aa-sifter
+### 5.6 aa-runtime / inference (model provider/execution service)
 
-- **Purpose:** decode a prompt and route it to the appropriate local or cloud model under budget and approval.
-- **Owns:** classification, human approval gate, preflight, policy routing, budgets, escalation, provider abstraction (Ollama/OpenAI-compatible), verification, context compression/handoff, compute orchestration across local/cloud.
-- **Must not:** hold project state or perform orchestration.
-- **Interfaces:** RPC `route(request) -> decision`, `generate(messages, tier) -> result`.
-- **Language:** Python.
-- **Reused assets:** the entire `compute-sifter`, renamed.
-- **Remaining work:** wire decomposition/executor, redact on all cloud paths, transmit token limits, budget waiver and rule grants, remove brand leakage, expose stable RPC.
+- **Purpose:** provide local and cloud model inference behind the inter-module RPC boundary.
+- **Owns:** provider abstraction (Ollama/OpenAI-compatible/DeepSeek), the model catalog, and low-level `generate`.
+- **Must not:** hold project state or orchestrate; decide allocation or scheduling.
+- **Interfaces:** RPC `inference.generate`, `inference.health`, `inference.route`, `inference.recommend`.
+- **Language:** Python; lives at `runtime/inference` (the former `aa-sifter`, renamed and reduced to provider/execution).
+- **Status:** renamed and relocated by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)). Routing, budget, verification, and context responsibilities are reserved for later issues.
 
 ### 5.7 aa-forge
 
@@ -391,7 +405,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Adopted (`ISS-OBSV-2`):** `obsv` `Replay`/`Subscribe` behind one `source` seam and one `adapter` mapping; the explicit `compat` profile normalizes `secondary_paths`/`access_sequence`; session-state projection, identity mapping, deterministic layout, replay cursor, live bridge, and retention are delivered under `ph8-visualizer`; a boundary guard enforces the single observation vocabulary.
 - **Remaining work:** the Wails + React/Three UI surface and the kernel-host socket.
 
-### 5.10 aa-console
+### 5.10 aa-ui
 
 - **Purpose:** tie the platform together for humans.
 - **Owns:** CLI/TUI and local web control plane behind pluggable **surfaces**; workflow configuration; plugin/MCP management; memory/issue/strategy/visualizer browsing; multi-machine status; approval and gate UI.
@@ -399,6 +413,24 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Interfaces:** control-plane API client, pluggable surface interface.
 - **Language:** Go (TUI + local web); a desktop surface can be added later.
 - **Remaining work:** all of it (new module, built last).
+
+### 5.11 aa-registry
+
+- **Purpose:** own aa's reusable, durable definitions.
+- **Owns:** roles, models, teams, capabilities, routines, and policies — specification and vocabulary only.
+- **Must not:** hold runtime instances (workers, crews, assignments, executions, projects, workflows), or execute/schedule/allocate; own cross-module wire schemas (that is `contracts`).
+- **Interfaces:** definition lookups consumed by `kernel` (allocation) and `contracts` (specification schemas, contracts v2).
+- **Language:** Go.
+- **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models`, `teams`, and `routines` re-export their contracts v2 specifications (`ModelSpec`, `TeamSpec`, `RoutineSpec`); `policies` remains a reserved boundary. Consumers use contracts v2.
+
+### 5.12 aa-runtime
+
+- **Purpose:** own execution mechanics for allocated work.
+- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (reserved, not implemented); the model provider/execution service boundary (`inference`, the Python service renamed from inference).
+- **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own durable definitions (`registry`) or canonical history (`memory`).
+- **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the future sandbox; the `inference` RPC service.
+- **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject.
+- **Status:** introduced by the architecture refactor; `runtime/worker` carries the moved kernel runtime; `lifecycle`, `sandbox`, and `inference` are reserved boundaries.
 
 ---
 
@@ -408,7 +440,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **RPC, not imports.** Cross-module calls use a versioned JSON-RPC protocol over an authenticated local socket (named pipe on Windows, Unix domain socket elsewhere). Messages carry schema version, request id, and identity.
 - **Versioning.** Schemas are versioned `v1`, `v2`, …; additive changes are backward compatible; breaking changes require a major bump and a migration plan. Compatibility is checked in the conformance suite.
 - **Conformance suite.** One test suite validates every generator and every module against the schemas.
-- **Control-plane API.** The console and visualizer use a versioned HTTP/JSON control-plane API (OpenAPI-documented). Write operations are idempotent and auditable.
+- **Control-plane API.** The ui and visualizer use a versioned HTTP/JSON control-plane API (OpenAPI-documented). Write operations are idempotent and auditable.
 
 ---
 
@@ -428,7 +460,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **One event taxonomy** (defined in `contracts`) with `WORK_PACKAGE_*` and `EXECUTION_*` families; no parallel `AGENT_*` state.
 - **One state registry** covering project, work package, assignment, readiness, issue, and sprint states, each with an explicit owner.
 - **Event sourcing:** state is derived from ordered, deduplicated events; ordering is resolved from record fields, not wall clock.
-- **Memory hierarchy:** `Session → Task/Workstream → Project → Role/Trade → Workforce`, with lifecycle `EPHEMERAL → CANDIDATE → VALIDATED → ACTIVE → SUPERSEDED → ARCHIVED` and deterministic promotion rules.
+- **Memory hierarchy:** `Session → Task/Workstream → Project → Role → Workforce`, with lifecycle `EPHEMERAL → CANDIDATE → VALIDATED → ACTIVE → SUPERSEDED → ARCHIVED` and deterministic promotion rules.
 - **Indexes are not truth:** relational, event, graph, and optional vector indexes are rebuildable views. Canonical records remain the source of truth.
 
 ---
@@ -459,7 +491,7 @@ Testing is continuous and layered. Every module owns its pyramid; `contracts` ow
 | Chaos/Recovery | Failure handling | crash mid-transfer, DB quarantine, lease expiry |
 | E2E | Real workflows | two/three-machine sync, supervised run, forge phase lifecycle, plugin add |
 | Live smoke | Optional, paid/network | one provider connectivity check, gated by env |
-| UI | Renderer and console | replay + console workflows via Playwright |
+| UI | Renderer and ui | replay + ui workflows via Playwright |
 
 Rules:
 
@@ -534,7 +566,7 @@ Each phase is a GitHub milestone with a tracking issue, a phase branch equal to 
 - **Exit:** each feature enables only after its evidence gate passes; backtests; deterministic fallbacks retained.
 - **Testing:** evidence gates, backtesting, golden fallbacks.
 
-### Phase 10 — `ph10-console` — Unified interface
+### Phase 10 — `ph10-ui` — Unified interface
 - **Goal:** one entry point drives the whole workflow.
 - **Deliverables:** CLI/TUI; local web control plane; workflow configuration; plugin management; memory/issue/strategy/visualizer browsing; multi-machine status; approvals/gates.
 - **Exit:** end-to-end workflow usable from one surface; UI e2e; desktop surface addable.
@@ -558,17 +590,17 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 |---|---|---|
 | D1 | **Monorepo** with independently versioned modules | Atomic contract changes, one CI, and enforceable boundaries beat polyrepo version skew at this scale |
 | D2 | **`aa-contracts` as the only schema source**, with generated bindings | Removes four task models and three event vocabularies; guarantees modules agree |
-| D3 | **Contract-first RPC over authenticated local sockets**, not cross-imports | Modules can be rewritten or scaled independently; keeps Python sifter decoupled |
-| D4 | Go for sync/kernel/memory/obsv/forge/toolbox/visualizer core; **Python for sifter**; TS/React for UI | Leverages existing investments, concurrency/performance, and ML ecosystem |
+| D3 | **Contract-first RPC over authenticated local sockets**, not cross-imports | Modules can be rewritten or scaled independently; keeps Python inference decoupled |
+| D4 | Go for sync/kernel/memory/obsv/forge/toolbox/visualizer core; **Python for inference**; TS/React for UI | Leverages existing investments, concurrency/performance, and ML ecosystem |
 | D5 | **Strict layering enforced by architecture tests** | Prevents the concern-blur that exists today from returning |
 | D6 | **Single-authority, single-node execution** in v1; read-only replicas | Avoids split-brain and multi-writer corruption; matches the proven security posture |
 | D7 | **Directory records canonical; SQLite projection rebuildable** | Portability, git-friendliness, determinism, and recoverability |
 | D8 | Separate **operational telemetry / work history / memory** | Different authority, retention, and truth semantics; removes duplication |
 | D9 | **Hierarchical memory with explicit lifecycle and deterministic promotion** | Evidence-based learning that resists knowledge poisoning |
 | D10 | Extract work observation as **`aa-obsv`**, hosted by kernel, consumed by visualizer | One observation protocol; removes AAV duplication; stays product-neutral |
-| D11 | **Role = durable responsibility; trade = capability; worker = instantiation; model = backend** | Provider/model independence and stable identity |
+| D11 | **Role = durable responsibility (versioned spec); model = inference; worker = Role × Model instance; trade retired** | Provider/model independence and stable identity |
 | D12 | **Deterministic role selection** from the registry; LLM proposes only within bounds | Reproducibility, safety, and testability |
-| D13 | **Model/compute routing only via `aa-sifter`** behind an interface | One enforcement point for budgets, approval, and redaction |
+| D13 | **Model/compute routing only via the `inference` service (`runtime/inference`)** behind an interface | One enforcement point for budgets, approval, and redaction |
 | D14 | **Execution is opt-in, capability-scoped, and separate** | Prevents sync from becoming a hidden remote shell |
 | D15 | **`aa-forge` as a first-class module** with forge abstraction and a fake | Testable without network; decouples GitHub lifecycle from kernel/memory |
 | D16 | **`aa-toolbox` as a first-class module** for tools/plugins/MCP | Extensibility without core changes; explicit capability grants |
@@ -577,7 +609,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 | D19 | **Layered testing plus evidence gates before learned features** | Correctness and safe enablement |
 | D20 | **Event-sourced, deterministic control plane; model never source of truth** | Reconstructability and auditability |
 | D21 | **Metadata-only observation; redact before cloud; OS credential store; least privilege** | Privacy and security by default |
-| D22 | **`aa-console` last and thin**, built on pluggable surfaces | Avoids coupling UX to volatile internals; a desktop surface can be added later |
+| D22 | **`aa-ui` last and thin**, built on pluggable surfaces | Avoids coupling UX to volatile internals; a desktop surface can be added later |
 
 ### 12.2 Tooling required
 
@@ -601,8 +633,8 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 2. **Contracts first.** Extract cross-module types into `contracts` before moving behavior, so modules can be cut over incrementally.
 3. **Memory and obsv before kernel.** The kernel needs a system of record and an observation host; build those first.
 4. **Kernel extraction.** Move orchestration/scheduler/execution out of syncgate, deleting the `desktop` mega-package's duplicated orchestration as boundaries are proven.
-5. **Sifter behind RPC.** Wrap `compute-sifter` as a service and route all model access through it.
-6. **Forge, then toolbox, then visualizer, then console.** External automation and extensibility before interface.
+5. **Inference behind RPC.** Wrap `compute-sifter` as a service and route all model access through it.
+6. **Forge, then toolbox, then visualizer, then ui.** External automation and extensibility before interface.
 7. **Retire:** stale `doc.go` "will own" notes, duplicate `[G]` vs `[LG]` docs (`docs/github-os/` is canonical), and overlapping phase/slice/stage numbering.
 8. **Each move is a phase slice with its own commit and validation**, not a single large refactor.
 
@@ -619,7 +651,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 | Scope creep across ten modules | `ph0` governance, strict phase exit criteria, and evidence gates |
 | Learned features could mislead | Evidence gates with deterministic fallbacks; human approval stays authoritative |
 | Multi-machine parallelization without multi-writer history | Single authority; replicas read-only; revisit with a dedicated ADR |
-| Interface built too early | `aa-console` is last; surfaces are pluggable; control-plane API is stable first |
+| Interface built too early | `aa-ui` is last; surfaces are pluggable; control-plane API is stable first |
 
 ## Glossary
 

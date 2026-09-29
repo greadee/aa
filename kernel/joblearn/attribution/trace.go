@@ -3,7 +3,7 @@ package attribution
 import (
 	"sort"
 
-	v1 "github.com/greadee/aa/contracts/go/v1"
+	v1 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 	"github.com/greadee/aa/kernel/joblearn/features"
 )
@@ -27,7 +27,7 @@ func TraceOutcome(trace v1.Trace) joblearn.Outcome {
 	}
 }
 
-// AttributeTrace links a trace to its work package, role, trade, and worker.
+// AttributeTrace links a trace to its work package, role, and worker.
 // The trace id is always recorded as evidence.
 func AttributeTrace(trace v1.Trace, meta Meta) (joblearn.Attribution, error) {
 	if trace.WorkPackageID == "" {
@@ -42,7 +42,6 @@ func AttributeTrace(trace v1.Trace, meta Meta) (joblearn.Attribution, error) {
 		AttemptID:     trace.AttemptID,
 		AssignmentID:  trace.AssignmentID,
 		Role:          meta.Role,
-		Trade:         meta.Trade,
 		Worker:        meta.Worker,
 		Outcome:       TraceOutcome(trace),
 		Sequence:      meta.Sequence,

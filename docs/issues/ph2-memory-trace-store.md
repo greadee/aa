@@ -5,8 +5,8 @@
 **Branch:** `ph2-memory`
 **Phase PR:** [#13](https://github.com/greadee/aa/pull/13)
 **Parent:** [ISS-TRACE-LOOP](trace-learning-substrate.md)
-**Module plan:** [../../memory/module-upd-plan.md](../../memory/module-upd-plan.md)
-**Module summary:** [../../memory/module-upd-summary.md](../../memory/module-upd-summary.md)
+**Module plan:** [../modules/memory/updates/trace-store/plan.md](../modules/memory/updates/trace-store/plan.md)
+**Module summary:** [../modules/memory/updates/trace-store/summary.md](../modules/memory/updates/trace-store/summary.md)
 
 ## Goal
 

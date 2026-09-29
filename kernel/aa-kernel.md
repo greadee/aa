@@ -10,11 +10,11 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 
 - The `obsv` host (journal + local socket) for current sessions.
 - Planning: task aggregate, dependency graph, readiness.
-- Role, trade, and worker registry plus deterministic role selection.
+- The allocator: planning, and role/model/compute allocation (worker instances live in `runtime/worker`).
 - The scheduler, leases, and the assignment state machine.
 - The context compiler (bounded, deterministic context bundles).
 - Execution contracts, permissions, and budgets.
-- Runtime contracts and adapters (including the supervised Codex adapter).
+- Coordination of execution, delegating execution mechanics to the top-level `runtime` module (the worker adapter lives in `runtime/worker`).
 - Workspace and Git worktree management.
 - Compute-node registry and eligibility.
 - Result intake (untrusted envelopes until accepted).
@@ -27,14 +27,14 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 
 - Perform file transfer (use `sync`).
 - Store canonical history (use `memory`).
-- Call models directly (use `sifter` over RPC).
+- Call models directly (use the `inference` service over RPC).
 - Open a remote shell or arbitrary remote execution (use a capability-scoped runtime adapter).
-- Import `sync`, `forge`, or `sifter` code; only RPC.
+- Import `sync`, `forge`, or `inference` code; only RPC.
 
 ## Interfaces
 
-- Control-plane API for `console` and `visualizer`.
-- RPC clients to `sifter`, `sync`, and `forge`.
+- Control-plane API for `ui` and `visualizer`.
+- RPC clients to `inference`, `sync`, and `forge`.
 - `obsv` host APIs.
 - `memory` query and record APIs.
 

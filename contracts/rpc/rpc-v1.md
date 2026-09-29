@@ -15,11 +15,11 @@ Modules never import each other's internals. They call each other over an authen
 {
   "jsonrpc": "2.0",
   "id": "rpc_01H...",
-  "method": "sifter.route",
-  "params": { "contractVersion": "1.0", "kind": "route_request", "id": "req_01H..." },
+  "method": "inference.route",
+  "params": { "contractVersion": "2.0", "kind": "route_request", "id": "req_01H..." },
   "aa": {
     "rpcVersion": "1.0",
-    "contractVersion": "1.0",
+    "contractVersion": "2.0",
     "caller": "kernel",
     "callerInstanceId": "inst_01H...",
     "timeoutMs": 30000
@@ -41,6 +41,12 @@ Responses are either `result` or `error`. Errors use a namespaced `code` and a `
 - `aa.rpcVersion` is `MAJOR.MINOR`. A callee rejects an unsupported major with `aa.incompatible`.
 - `aa.contractVersion` is the contract version of `params`/`result`; additive changes are minor.
 - Unknown methods return `aa.method_not_found`; unknown params fields are ignored.
+- **Service rename (migration).** The model/compute routing service was renamed
+  `sifter` → `inference` (module update `architecture-refactor-1`), so its
+  methods are now `inference.*`. The former `sifter.*` namespace is retired and
+  returns `aa.method_not_found`. This is a service rename within RPC envelope
+  version `1.0`, not an envelope change; it is recorded here because it changes
+  the method namespace. Callers must use `inference.*`.
 
 ## Error codes
 
@@ -68,13 +74,13 @@ Errors that are retryable set `data.retryable: true`.
 
 ## Methods
 
-### sifter (model/compute routing)
+### inference (model/compute routing; formerly `sifter`)
 
 | Method | Params | Result |
 |---|---|---|
-| `sifter.route` | `route_request` | `route_response` |
-| `sifter.generate` | `{tier, messages, budget, idempotencyKey}` | `{text, usage}` |
-| `sifter.health` | `{}` | `{available, providers[]}` |
+| `inference.route` | `route_request` | `route_response` |
+| `inference.generate` | `{tier, messages, budget, idempotencyKey}` | `{text, usage}` |
+| `inference.health` | `{}` | `{available, providers[]}` |
 
 ### memory (system of record)
 
@@ -123,4 +129,4 @@ The observation service uses its own protocol (`hello` / `append` / `replay` / `
 
 ## Control plane vs RPC
 
-The RPC surface is **internal** (module to module). The **external** surface for `console` and `visualizer` is the versioned HTTP/JSON control plane described in `../openapi/control-plane-v1.yaml`. The console never calls RPC methods directly.
+The RPC surface is **internal** (module to module). The **external** surface for `ui` and `visualizer` is the versioned HTTP/JSON control plane described in `../openapi/control-plane-v1.yaml`. The ui never calls RPC methods directly.

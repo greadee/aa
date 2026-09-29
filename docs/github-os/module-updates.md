@@ -30,13 +30,16 @@ reopen retained phase branch
 
 ## Module Update Plan
 
-Authored at the **start** of the update, beside the module it changes:
+Authored at the **start** of the update, in the module's project-history folder:
 
 ```text
-<module>/module-upd-plan.md
+docs/modules/<module>/updates/<slug>/plan.md
 ```
 
-For a documentation-only update, place the plan with the documentation it changes (for example `docs/github-os/module-upd-plan.md`).
+The owning unnumbered update phase (`docs/updates/<slug>/`) is the work-history
+record and links its module updates. For a documentation-only update, use the
+folder for the documentation it changes (for example
+`docs/modules/github-os/updates/<slug>/plan.md`).
 
 Content:
 
@@ -56,7 +59,7 @@ See the [module update plan template](templates/module/module-upd-plan.md).
 Authored at the **end** of the update, derived from the plan:
 
 ```text
-<module>/module-upd-summary.md
+docs/modules/<module>/updates/<slug>/summary.md
 ```
 
 Content: delivered slices and commits; what changed about the module and the app; whether this is part of a larger change and the umbrella it belongs to; validation with evidence; decisions affirmed; deviations with reasons; and follow-up.

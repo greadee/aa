@@ -6,9 +6,8 @@ Canonical vocabulary for **aa**. If a term is ambiguous across modules, this doc
 
 | Term | Meaning |
 |---|---|
-| **Role** | A durable organizational responsibility with defined authority and artifacts (e.g. Architect, Inspector). Roles outlive models and projects. |
-| **Trade** | A durable capability that can be instantiated to perform work (e.g. Backend, Test/QA, Reviewer). A trade is provider-independent. |
-| **Worker** | An instantiation of a trade with a concrete provider, runtime, tool policy, and instruction version. Workers are ephemeral per assignment. |
+| **Role** | A durable organizational responsibility with defined authority and artifacts (e.g. Architect, Inspector), held as a versioned specification in the role registry. Roles outlive models and projects. |
+| **Worker** | A runtime instance of a role and a model (Role × Model) with a concrete provider, runtime, tool policy, and instruction version. Workers are ephemeral per assignment. |
 | **Model** | An execution backend for a worker. Never an identity. |
 | **Work package** | A bounded, verifiable unit of engineering work assigned to a worker. |
 | **Assignment** | The binding of a work package to a worker under a lease and execution contract. |
@@ -35,7 +34,7 @@ Canonical vocabulary for **aa**. If a term is ambiguous across modules, this doc
 ## 3. Memory hierarchy
 
 ```
-Session  →  Task / Workstream  →  Project  →  Role / Trade  →  Workforce
+Session  →  Task / Workstream  →  Project  →  Role  →  Workforce
 ```
 
 Lifecycle for every candidate:
@@ -94,12 +93,13 @@ Used for branches, folders, and directive files.
 | Module | Scope token |
 |---|---|
 | aa-contracts | `contracts` |
+| aa-registry | `registry` |
+| aa-runtime | `runtime` |
 | aa-obsv | `obsv` |
 | aa-kernel | `kernel` |
 | aa-memory | `memory` |
 | aa-sync | `sync` |
-| aa-sifter | `sifter` |
 | aa-forge | `forge` |
 | aa-toolbox | `toolbox` |
 | aa-visualizer | `visualizer` |
-| aa-console | `console` |
+| aa-ui | `ui` |

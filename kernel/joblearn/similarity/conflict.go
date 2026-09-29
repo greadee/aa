@@ -76,7 +76,7 @@ func overlap(a, b *joblearn.Applicability) bool {
 	if a == nil || b == nil {
 		return false
 	}
-	return intersects(a.Roles, b.Roles) || intersects(a.Trades, b.Trades) || intersects(a.Languages, b.Languages)
+	return intersects(a.Roles, b.Roles) || intersects(a.Languages, b.Languages)
 }
 
 func intersects(x, y []string) bool {

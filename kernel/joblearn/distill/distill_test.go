@@ -18,7 +18,6 @@ func record(i int, outcome joblearn.Outcome, phase, errClass, role string) Recor
 				WorkPackageID: "wp_1",
 				AttemptID:     fmt.Sprintf("att_%d", i),
 				Role:          role,
-				Trade:         "backend",
 				Outcome:       outcome,
 				Evidence:      []joblearn.Reference{{Kind: "trace", ID: id}},
 			},

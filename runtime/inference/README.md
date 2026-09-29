@@ -1,0 +1,10 @@
+# aa-inference
+
+Decode a prompt and route it to the appropriate local or cloud model under budget and approval.
+
+- **Owns:** classification, human approval gate, preflight, policy routing, budgets, escalation, provider abstraction (Ollama/OpenAI-compatible), verification, context compression/handoff, compute orchestration across local/cloud.
+- **Must not:** hold project state or perform orchestration.
+- **Status:** implemented (phase 4); production RPC wiring implemented (module update).
+- **Directive:** [aa-inference.md](aa-inference.md)
+- **Architecture:** [../../docs/architecture/README.md](../../docs/architecture/README.md)
+- **Module update:** [plan.md](../../docs/modules/runtime/inference/updates/production-rpc-wiring/plan.md) · [summary.md](../../docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md)

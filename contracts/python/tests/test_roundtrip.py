@@ -6,7 +6,7 @@ import unittest
 
 from aa_contracts import decode, dumps, loads
 
-TESTDATA = pathlib.Path(__file__).resolve().parents[2] / "go" / "v1" / "testdata"
+TESTDATA = pathlib.Path(__file__).resolve().parents[2] / "go" / "v2" / "testdata"
 
 
 class RoundTripTest(unittest.TestCase):

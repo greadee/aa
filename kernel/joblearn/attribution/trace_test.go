@@ -3,7 +3,7 @@ package attribution
 import (
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v1"
+	v1 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 )
 
@@ -52,7 +52,7 @@ func TestTraceOutcomeTruncatedIsPartial(t *testing.T) {
 
 func TestAttributeTraceRecordsIdentityAndEvidence(t *testing.T) {
 	trace := traceWith(step(0, v1.TraceSucceeded))
-	meta := Meta{ProjectID: "proj_1", Role: "engineer", Trade: "backend", Worker: "w_1", Sequence: 7}
+	meta := Meta{ProjectID: "proj_1", Role: "engineer", Worker: "w_1", Sequence: 7}
 
 	attr, err := AttributeTrace(trace, meta)
 	if err != nil {

@@ -1,0 +1,16 @@
+{
+  "contractVersion": "2.0",
+  "kind": "routine",
+  "id": "routine_feature",
+  "name": "Feature Delivery",
+  "version": "1.0",
+  "description": "Deliver a feature from issue to pull request.",
+  "teams": ["Engineering"],
+  "roles": ["Builder", "Inspector"],
+  "stages": [
+    { "id": "s1", "title": "Implement", "roles": ["Builder"] },
+    { "id": "s2", "title": "Verify", "roles": ["Inspector"], "gates": ["tests"] }
+  ],
+  "inputs": ["issue"],
+  "outputs": ["pull_request"]
+}

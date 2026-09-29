@@ -17,7 +17,7 @@ docs/phases/ph0-scaffold/     branch: ph0-scaffold
 docs/phases/ph1-contracts/    branch: ph1-contracts
 docs/phases/ph5-forge/        branch: ph5-forge
 docs/phases/ph9-joblearn/     branch: ph9-joblearn
-docs/phases/ph10-console/     branch: ph10-console
+docs/phases/ph10-ui/     branch: ph10-ui
 ```
 
 Rules: no zero-padding, hyphen between number and scope, short lowercase kebab-case scope. The scope names the module or workstream the phase delivers.
@@ -93,6 +93,16 @@ Authored after the phase is implemented and verified. Contains:
 ## summary.uml — At Phase End
 
 The `plan.uml` **copied and edited** to reflect the system as actually built. It must show the as-built infrastructure, not the aspirational one. Together with `summary.md`, it is the phase's record of truth.
+
+## Numbered Phases vs Update Phases
+
+- **Numbered phases** (`ph{N}-{scope}`) are reserved for **major additions**.
+- **Update phases** (unnumbered, `docs/updates/<slug>/`) cover refactors, edits,
+  corrections, and module updates. They carry the same plan/summary discipline with
+  lightweight, change-scoped diagrams, and link the module updates they contain
+  (`docs/modules/<module>/updates/<slug>/`).
+- Architecture decisions live in the global [ADR store](../adr/README.md), not in a
+  per-phase `adr.md`.
 
 ## Relationship To Other Modules
 

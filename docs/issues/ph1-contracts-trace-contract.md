@@ -5,8 +5,8 @@
 **Branch:** `ph1-contracts`
 **Phase PR:** [#12](https://github.com/greadee/aa/pull/12)
 **Parent:** [ISS-TRACE-LOOP](trace-learning-substrate.md)
-**Module plan:** [../../contracts/module-upd-plan.md](../../contracts/module-upd-plan.md)
-**Module summary:** [../../contracts/module-upd-summary.md](../../contracts/module-upd-summary.md)
+**Module plan:** [../modules/contracts/updates/trace-contract/plan.md](../modules/contracts/updates/trace-contract/plan.md)
+**Module summary:** [../modules/contracts/updates/trace-contract/summary.md](../modules/contracts/updates/trace-contract/summary.md)
 
 ## Goal
 
