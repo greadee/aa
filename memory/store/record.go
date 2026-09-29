@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 // Revision is the initial revision of a record.
@@ -50,10 +50,10 @@ func HashBytes(data []byte) (string, error) {
 
 // NewRecord builds a validated record, canonicalizing data and computing its hash.
 func NewRecord(kind, id string, revision int, data []byte) (Record, error) {
-	if err := v1.RequireIdentifier("kind", kind); err != nil {
+	if err := v2.RequireIdentifier("kind", kind); err != nil {
 		return Record{}, err
 	}
-	if err := v1.RequireIdentifier("id", id); err != nil {
+	if err := v2.RequireIdentifier("id", id); err != nil {
 		return Record{}, err
 	}
 	if revision < 0 {
@@ -72,10 +72,10 @@ func NewRecord(kind, id string, revision int, data []byte) (Record, error) {
 
 // Validate checks the record's envelope and recomputes its hash.
 func (r Record) Validate() error {
-	if err := v1.RequireIdentifier("kind", r.Kind); err != nil {
+	if err := v2.RequireIdentifier("kind", r.Kind); err != nil {
 		return err
 	}
-	if err := v1.RequireIdentifier("id", r.ID); err != nil {
+	if err := v2.RequireIdentifier("id", r.ID); err != nil {
 		return err
 	}
 	if r.Revision < 0 {

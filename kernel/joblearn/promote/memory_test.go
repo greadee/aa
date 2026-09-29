@@ -3,7 +3,7 @@ package promote
 import (
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/repo"
@@ -40,28 +40,28 @@ func TestMemoryPromotionEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Lifecycle != v1.MemoryCandidate {
+	if got.Lifecycle != v2.MemoryCandidate {
 		t.Fatalf("lifecycle = %s, want CANDIDATE", got.Lifecycle)
 	}
 
 	if _, err := p.Propose([]joblearn.Candidate{candidate()}); err != nil {
 		t.Fatal(err)
 	}
-	candidates, err := records.ListByLifecycle(v1.MemoryCandidate)
+	candidates, err := records.ListByLifecycle(v2.MemoryCandidate)
 	if err != nil || len(candidates) != 1 {
 		t.Fatalf("candidates = %d err = %v, want 1", len(candidates), err)
 	}
 
-	if _, err := p.Promote(id, v1.MemoryActive); err == nil {
+	if _, err := p.Promote(id, v2.MemoryActive); err == nil {
 		t.Fatal("expected explicit CANDIDATE -> ACTIVE to be rejected")
 	}
-	if _, err := p.Promote(id, v1.MemoryValidated); err != nil {
+	if _, err := p.Promote(id, v2.MemoryValidated); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := p.Promote(id, v1.MemoryActive); err != nil {
+	if _, err := p.Promote(id, v2.MemoryActive); err != nil {
 		t.Fatal(err)
 	}
-	active, err := records.ListByLifecycle(v1.MemoryActive)
+	active, err := records.ListByLifecycle(v2.MemoryActive)
 	if err != nil || len(active) != 1 {
 		t.Fatalf("active = %d err = %v, want 1", len(active), err)
 	}

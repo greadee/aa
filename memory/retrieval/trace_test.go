@@ -3,7 +3,7 @@ package retrieval
 import (
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/repo"
 	"github.com/greadee/aa/memory/store"
@@ -19,9 +19,9 @@ func newTraceQuery(t *testing.T) (*Query, *repo.TraceRepository) {
 	return New(p, s), repo.NewTraceRepository(s, p)
 }
 
-func step(seq int, phase v1.TracePhase, outcome v1.TraceOutcome) v1.TraceStep {
+func step(seq int, phase v2.TracePhase, outcome v2.TraceOutcome) v2.TraceStep {
 	s := seq
-	return v1.TraceStep{Sequence: &s, Phase: phase, Outcome: outcome}
+	return v2.TraceStep{Sequence: &s, Phase: phase, Outcome: outcome}
 }
 
 func TestTraceSummariesDeriveDeterministically(t *testing.T) {
@@ -31,27 +31,27 @@ func TestTraceSummariesDeriveDeterministically(t *testing.T) {
 	tin, tout := 900, 300
 	cost := 0.02
 	redacted := true
-	failed := v1.TraceStep{
+	failed := v2.TraceStep{
 		Sequence:   intp(1),
-		Phase:      v1.TraceTest,
-		Outcome:    v1.TraceFailed,
+		Phase:      v2.TraceTest,
+		Outcome:    v2.TraceFailed,
 		DurationMS: &dur,
-		Tokens:     &v1.TokenCounts{Input: &tin, Output: &tout},
+		Tokens:     &v2.TokenCounts{Input: &tin, Output: &tout},
 		CostUSD:    &cost,
 		Redacted:   &redacted,
 	}
-	trace := v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: "1.1", ID: "trc_1", ProjectID: "prj_1"},
+	trace := v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: "1.1", ID: "trc_1", ProjectID: "prj_1"},
 		AttemptID: "att_1",
-		Steps:     []v1.TraceStep{step(0, v1.TraceObserve, v1.TraceSucceeded), failed},
+		Steps:     []v2.TraceStep{step(0, v2.TraceObserve, v2.TraceSucceeded), failed},
 	}
 	if _, _, err := traces.Ingest(trace); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := traces.Ingest(v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: "1.1", ID: "trc_0", ProjectID: "prj_1"},
+	if _, _, err := traces.Ingest(v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: "1.1", ID: "trc_0", ProjectID: "prj_1"},
 		AttemptID: "att_1",
-		Steps:     []v1.TraceStep{step(0, v1.TracePlan, v1.TraceSkipped)},
+		Steps:     []v2.TraceStep{step(0, v2.TracePlan, v2.TraceSkipped)},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -91,17 +91,17 @@ func TestTraceSummariesDeriveDeterministically(t *testing.T) {
 
 func TestTraceSummariesByAttempt(t *testing.T) {
 	q, traces := newTraceQuery(t)
-	if _, _, err := traces.Ingest(v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: "1.1", ID: "trc_1"},
+	if _, _, err := traces.Ingest(v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: "1.1", ID: "trc_1"},
 		AttemptID: "att_1",
-		Steps:     []v1.TraceStep{step(0, v1.TraceObserve, v1.TraceSucceeded)},
+		Steps:     []v2.TraceStep{step(0, v2.TraceObserve, v2.TraceSucceeded)},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := traces.Ingest(v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: "1.1", ID: "trc_2"},
+	if _, _, err := traces.Ingest(v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: "1.1", ID: "trc_2"},
 		AttemptID: "att_2",
-		Steps:     []v1.TraceStep{step(0, v1.TraceObserve, v1.TraceBlocked)},
+		Steps:     []v2.TraceStep{step(0, v2.TraceObserve, v2.TraceBlocked)},
 	}); err != nil {
 		t.Fatal(err)
 	}

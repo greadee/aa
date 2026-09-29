@@ -3,7 +3,7 @@ package memory
 import (
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 func TestOpenAndRebuildEquivalence(t *testing.T) {
@@ -14,8 +14,8 @@ func TestOpenAndRebuildEquivalence(t *testing.T) {
 	if changed, err := m.InitProject([]byte(`{"kind":"project_record","id":"prj_1","name":"aa"}`)); err != nil || !changed {
 		t.Fatalf("InitProject changed=%v err=%v", changed, err)
 	}
-	issue, err := m.Issues().Create(v1.Issue{
-		Envelope: v1.Envelope{ID: "iss_1"},
+	issue, err := m.Issues().Create(v2.Issue{
+		Envelope: v2.Envelope{ID: "iss_1"},
 		Title:    "Contract spine",
 		Type:     "feature",
 	})
@@ -54,8 +54,8 @@ func TestReopenPersistsRecords(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := m.Issues().Create(v1.Issue{
-		Envelope: v1.Envelope{ID: "iss_1"},
+	if _, err := m.Issues().Create(v2.Issue{
+		Envelope: v2.Envelope{ID: "iss_1"},
 		Title:    "x",
 		Type:     "bug",
 	}); err != nil {
@@ -77,12 +77,12 @@ func TestTraceStoreRebuildEquivalence(t *testing.T) {
 		t.Fatal(err)
 	}
 	seq0, seq1 := 0, 1
-	_, changed, err := m.Traces().Ingest(v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: "1.1", ID: "trc_1", ProjectID: "prj_1"},
+	_, changed, err := m.Traces().Ingest(v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: "1.1", ID: "trc_1", ProjectID: "prj_1"},
 		AttemptID: "att_1",
-		Steps: []v1.TraceStep{
-			{Sequence: &seq0, Phase: v1.TraceObserve, Outcome: v1.TraceSucceeded},
-			{Sequence: &seq1, Phase: v1.TraceTest, Outcome: v1.TraceFailed},
+		Steps: []v2.TraceStep{
+			{Sequence: &seq0, Phase: v2.TraceObserve, Outcome: v2.TraceSucceeded},
+			{Sequence: &seq1, Phase: v2.TraceTest, Outcome: v2.TraceFailed},
 		},
 	})
 	if err != nil || !changed {

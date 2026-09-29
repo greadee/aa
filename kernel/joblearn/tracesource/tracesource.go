@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"sort"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 )
 
@@ -19,14 +19,14 @@ import (
 // respect to the caller: they must not mutate their input and must return
 // traces in a deterministic order.
 type Source interface {
-	Traces() ([]v1.Trace, error)
+	Traces() ([]v2.Trace, error)
 }
 
 // SourceFunc adapts a function to a Source.
-type SourceFunc func() ([]v1.Trace, error)
+type SourceFunc func() ([]v2.Trace, error)
 
 // Traces implements Source.
-func (f SourceFunc) Traces() ([]v1.Trace, error) { return f() }
+func (f SourceFunc) Traces() ([]v2.Trace, error) { return f() }
 
 // Bounds limit how much evidence is consumed in one load. A non-positive bound
 // is unlimited.
@@ -51,52 +51,52 @@ func (b Bounds) Validate() error {
 // Static is a deterministic in-memory Source. It sorts by trace id on
 // construction so the order never depends on how it was built.
 type Static struct {
-	traces []v1.Trace
+	traces []v2.Trace
 }
 
 // NewStatic returns a Source over a copy of traces, sorted by id.
-func NewStatic(traces []v1.Trace) *Static {
-	ordered := append([]v1.Trace(nil), traces...)
+func NewStatic(traces []v2.Trace) *Static {
+	ordered := append([]v2.Trace(nil), traces...)
 	sort.SliceStable(ordered, func(i, j int) bool { return ordered[i].ID < ordered[j].ID })
 	return &Static{traces: ordered}
 }
 
 // Traces returns a copy of the traces in stable order.
-func (s *Static) Traces() ([]v1.Trace, error) {
-	return append([]v1.Trace(nil), s.traces...), nil
+func (s *Static) Traces() ([]v2.Trace, error) {
+	return append([]v2.Trace(nil), s.traces...), nil
 }
 
 // Fake is a scripted Source for tests. It returns a fixed set of traces or a
 // fixed error, and records how many times it was read.
 type Fake struct {
-	Traces_  []v1.Trace
+	Traces_  []v2.Trace
 	Err      error
 	Reads    int
 	Validate bool
 }
 
 // NewFake returns a fake Source over traces.
-func NewFake(traces ...v1.Trace) *Fake {
-	return &Fake{Traces_: append([]v1.Trace(nil), traces...)}
+func NewFake(traces ...v2.Trace) *Fake {
+	return &Fake{Traces_: append([]v2.Trace(nil), traces...)}
 }
 
 // Traces implements Source.
-func (f *Fake) Traces() ([]v1.Trace, error) {
+func (f *Fake) Traces() ([]v2.Trace, error) {
 	f.Reads++
 	if f.Err != nil {
 		return nil, f.Err
 	}
-	return append([]v1.Trace(nil), f.Traces_...), nil
+	return append([]v2.Trace(nil), f.Traces_...), nil
 }
 
 // Bound returns a bounded copy of traces. It preserves the given order and
 // stops adding whole traces once the trace or step bound would be exceeded, so
 // a truncated result never contains half a trace.
-func Bound(traces []v1.Trace, b Bounds) ([]v1.Trace, error) {
+func Bound(traces []v2.Trace, b Bounds) ([]v2.Trace, error) {
 	if err := b.Validate(); err != nil {
 		return nil, err
 	}
-	out := make([]v1.Trace, 0, len(traces))
+	out := make([]v2.Trace, 0, len(traces))
 	steps := 0
 	for _, trace := range traces {
 		if b.MaxTraces > 0 && len(out) >= b.MaxTraces {
@@ -113,7 +113,7 @@ func Bound(traces []v1.Trace, b Bounds) ([]v1.Trace, error) {
 
 // Load reads from a Source under bounds and validates every trace before it is
 // returned. Both the source and the bound are required.
-func Load(src Source, b Bounds) ([]v1.Trace, error) {
+func Load(src Source, b Bounds) ([]v2.Trace, error) {
 	if src == nil {
 		return nil, invalid("source is required")
 	}

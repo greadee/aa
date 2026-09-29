@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/obsv/protocol"
 	"github.com/greadee/aa/obsv/transport"
 	visualizer "github.com/greadee/aa/visualizer"
@@ -69,7 +69,7 @@ func TestReplayReadsOBsvAndMaps(t *testing.T) {
 		if e.Sequence != i {
 			t.Fatalf("events[%d].Sequence = %d, want %d", i, e.Sequence, i)
 		}
-		if e.Type != v1.EventTelemetryRecorded {
+		if e.Type != v2.EventTelemetryRecorded {
 			t.Fatalf("events[%d].Type = %q", i, e.Type)
 		}
 		if err := e.Validate(); err != nil {
@@ -163,7 +163,7 @@ func TestSubscribeReceivesAppended(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		select {
 		case got := <-sub.Events():
-			if got.Sequence != i || got.Type != v1.EventTelemetryRecorded {
+			if got.Sequence != i || got.Type != v2.EventTelemetryRecorded {
 				t.Fatalf("event[%d] = %+v", i, got)
 			}
 		case <-time.After(time.Second):

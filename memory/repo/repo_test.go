@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/store"
 )
@@ -21,28 +21,28 @@ func newRepos(t *testing.T) (*store.Store, *projection.MemProjection, *IssueRepo
 
 func TestIssueRepositoryLifecycle(t *testing.T) {
 	s, p, issues, _ := newRepos(t)
-	issue, err := issues.Create(v1.Issue{Title: "Add contract spine", Type: "feature"})
+	issue, err := issues.Create(v2.Issue{Title: "Add contract spine", Type: "feature"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if issue.ID == "" || issue.Status != v1.IssueOpen {
+	if issue.ID == "" || issue.Status != v2.IssueOpen {
 		t.Fatalf("unexpected issue: %+v", issue)
 	}
 	if _, ok := p.Get("issue", issue.ID); !ok {
 		t.Fatal("projection not updated")
 	}
-	updated, err := issues.SetStatus(issue.ID, v1.IssueInProgress)
+	updated, err := issues.SetStatus(issue.ID, v2.IssueInProgress)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if updated.Status != v1.IssueInProgress {
+	if updated.Status != v2.IssueInProgress {
 		t.Fatalf("status = %s", updated.Status)
 	}
 	list, err := issues.List()
 	if err != nil || len(list) != 1 {
 		t.Fatalf("list = %v err = %v", list, err)
 	}
-	if _, err := issues.SetStatus(issue.ID, v1.IssueState("bogus")); err == nil {
+	if _, err := issues.SetStatus(issue.ID, v2.IssueState("bogus")); err == nil {
 		t.Fatal("expected invalid status error")
 	}
 	if _, err := issues.Get("missing"); !errors.Is(err, store.ErrNotFound) {
@@ -53,20 +53,20 @@ func TestIssueRepositoryLifecycle(t *testing.T) {
 
 func TestStrategyPromotion(t *testing.T) {
 	_, _, _, strategies := newRepos(t)
-	strategy, err := strategies.Propose(v1.Strategy{Title: "Contracts before behavior", Guidance: "Do it."})
+	strategy, err := strategies.Propose(v2.Strategy{Title: "Contracts before behavior", Guidance: "Do it."})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strategy.Lifecycle != v1.MemoryCandidate {
+	if strategy.Lifecycle != v2.MemoryCandidate {
 		t.Fatalf("lifecycle = %s", strategy.Lifecycle)
 	}
-	if _, err := strategies.Transition(strategy.ID, v1.MemoryActive); err == nil {
+	if _, err := strategies.Transition(strategy.ID, v2.MemoryActive); err == nil {
 		t.Fatal("expected illegal CANDIDATE -> ACTIVE transition")
 	}
-	if _, err := strategies.Transition(strategy.ID, v1.MemoryValidated); err != nil {
+	if _, err := strategies.Transition(strategy.ID, v2.MemoryValidated); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := strategies.Transition(strategy.ID, v1.MemoryActive); err != nil {
+	if _, err := strategies.Transition(strategy.ID, v2.MemoryActive); err != nil {
 		t.Fatal(err)
 	}
 	active, err := strategies.ListActive()
@@ -77,8 +77,8 @@ func TestStrategyPromotion(t *testing.T) {
 
 func TestProposeRejectsNonCandidate(t *testing.T) {
 	_, _, _, strategies := newRepos(t)
-	if _, err := strategies.Propose(v1.Strategy{
-		Title: "x", Guidance: "y", Lifecycle: v1.MemoryActive,
+	if _, err := strategies.Propose(v2.Strategy{
+		Title: "x", Guidance: "y", Lifecycle: v2.MemoryActive,
 	}); err == nil {
 		t.Fatal("expected propose to require CANDIDATE")
 	}
@@ -86,17 +86,17 @@ func TestProposeRejectsNonCandidate(t *testing.T) {
 
 func TestSupersede(t *testing.T) {
 	_, _, _, strategies := newRepos(t)
-	old, err := strategies.Propose(v1.Strategy{Title: "old", Guidance: "g"})
+	old, err := strategies.Propose(v2.Strategy{Title: "old", Guidance: "g"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := strategies.Transition(old.ID, v1.MemoryValidated); err != nil {
+	if _, err := strategies.Transition(old.ID, v2.MemoryValidated); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := strategies.Transition(old.ID, v1.MemoryActive); err != nil {
+	if _, err := strategies.Transition(old.ID, v2.MemoryActive); err != nil {
 		t.Fatal(err)
 	}
-	next, err := strategies.Propose(v1.Strategy{Title: "new", Guidance: "g2"})
+	next, err := strategies.Propose(v2.Strategy{Title: "new", Guidance: "g2"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestSupersede(t *testing.T) {
 		t.Fatal(err)
 	}
 	gotOld, err := strategies.Get(old.ID)
-	if err != nil || gotOld.Lifecycle != v1.MemorySuperseded {
+	if err != nil || gotOld.Lifecycle != v2.MemorySuperseded {
 		t.Fatalf("old = %+v err = %v", gotOld, err)
 	}
 	gotNext, err := strategies.Get(next.ID)
@@ -114,10 +114,10 @@ func TestSupersede(t *testing.T) {
 }
 
 func TestCanTransition(t *testing.T) {
-	if !CanTransition(v1.MemoryEphemeral, v1.MemoryCandidate) {
+	if !CanTransition(v2.MemoryEphemeral, v2.MemoryCandidate) {
 		t.Error("EPHEMERAL -> CANDIDATE should be allowed")
 	}
-	if CanTransition(v1.MemoryArchived, v1.MemoryActive) {
+	if CanTransition(v2.MemoryArchived, v2.MemoryActive) {
 		t.Error("ARCHIVED -> ACTIVE should be denied")
 	}
 }

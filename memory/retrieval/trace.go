@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 // TraceSummary is a deterministic, derived view of one trace for learning and
@@ -30,7 +30,7 @@ func (q *Query) TraceSummaries() ([]TraceSummary, error) {
 	entries := q.proj.List("trace")
 	out := make([]TraceSummary, 0, len(entries))
 	for _, e := range entries {
-		var trace v1.Trace
+		var trace v2.Trace
 		if err := json.Unmarshal(e.Data, &trace); err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func (q *Query) TraceSummaries() ([]TraceSummary, error) {
 
 // TraceSummariesByAttempt returns summaries for one attempt, sorted by id.
 func (q *Query) TraceSummariesByAttempt(attemptID string) ([]TraceSummary, error) {
-	if err := v1.RequireIdentifier("attemptId", attemptID); err != nil {
+	if err := v2.RequireIdentifier("attemptId", attemptID); err != nil {
 		return nil, err
 	}
 	all, err := q.TraceSummaries()
@@ -61,7 +61,7 @@ func (q *Query) TraceSummariesByAttempt(attemptID string) ([]TraceSummary, error
 // Summarize derives a deterministic trace summary. The outcome is failed when
 // any step failed, blocked when any step blocked, skipped when every step was
 // skipped, and succeeded otherwise.
-func Summarize(trace v1.Trace) TraceSummary {
+func Summarize(trace v2.Trace) TraceSummary {
 	s := TraceSummary{
 		TraceID:   trace.ID,
 		AttemptID: trace.AttemptID,
@@ -74,12 +74,12 @@ func Summarize(trace v1.Trace) TraceSummary {
 	allSkipped := len(trace.Steps) > 0
 	for _, step := range trace.Steps {
 		switch step.Outcome {
-		case v1.TraceFailed:
+		case v2.TraceFailed:
 			s.FailedSteps++
-		case v1.TraceBlocked:
+		case v2.TraceBlocked:
 			s.BlockedSteps++
 		}
-		if step.Outcome != v1.TraceSkipped {
+		if step.Outcome != v2.TraceSkipped {
 			allSkipped = false
 		}
 		if step.DurationMS != nil {

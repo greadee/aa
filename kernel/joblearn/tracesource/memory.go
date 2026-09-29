@@ -1,7 +1,7 @@
 package tracesource
 
 import (
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/repo"
 )
 
@@ -21,6 +21,6 @@ func NewMemorySource(traces *repo.TraceRepository) (*MemorySource, error) {
 }
 
 // Traces returns every canonical trace in the repository's stable order.
-func (s *MemorySource) Traces() ([]v1.Trace, error) {
+func (s *MemorySource) Traces() ([]v2.Trace, error) {
 	return s.traces.List()
 }
