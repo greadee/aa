@@ -19,7 +19,6 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 - Coordination of execution, delegating execution mechanics to the top-level `runtime` module (`runtime/worker`).
 - Workspace and Git worktree management.
 - Compute-node registry and eligibility.
-- Result intake (untrusted envelopes until accepted).
 - Integration and human gates.
 - Operational telemetry.
 - The job-learning engine (see [aa-joblearn.md](../../../kernel/aa-joblearn.md)).
@@ -54,7 +53,6 @@ the constraints on transitional packages, are recorded in
 | [`context`](./context.md) | Package context compiles deterministic, bounded context bundles. |
 | [`contract`](./contract.md) | Package contract builds immutable, least-privilege execution contracts. |
 | [`gate`](./gate.md) | Package gate evaluates deterministic and human gates before work is accepted. |
-| [`intake`](./intake.md) | Package intake validates untrusted result envelopes and deduplicates them. |
 | [`joblearn`](./joblearn.md) | Package joblearn turns completed work into evidence and evidence into learning candidates. |
 | [`joblearn/attribution`](./joblearn-attribution.md) | Package attribution links completed attempts to their work packages, roles, and workers, and normalizes evidence into versioned scores. |
 | [`joblearn/backtest`](./joblearn-backtest.md) | Package backtest compares a learned policy against a deterministic baseline over a bounded set of labeled historical samples. |

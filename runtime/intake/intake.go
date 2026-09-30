@@ -1,6 +1,9 @@
 // Package intake validates untrusted result envelopes and deduplicates them.
-// A result is data until the authority accepts it; intake never grants
-// authority, it only normalizes, validates, and detects conflicts.
+//
+// It lives in the runtime module because result intake is execution mechanics:
+// it normalizes and validates the output of a worker attempt, and detects
+// conflicts, without granting authority. The kernel scheduler consumes it
+// across the module boundary.
 package intake
 
 import (

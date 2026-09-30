@@ -1,7 +1,7 @@
 # ISS-IMP-8 — kernel/scheduler + runtime: scheduling & multi-agent execution
 
 **Type:** feature
-**Status:** in progress (scheduler hardening done; the `intake` → `runtime` move is the next commit)
+**Status:** complete
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#30](https://github.com/greadee/aa/issues/30)
@@ -33,7 +33,7 @@ are not hardened. `kernel/intake` is a transitional package intended to move to 
 - [x] Scheduler dispatches and aggregates deterministically (`RunReport`).
 - [x] Concurrency, cancellation, retries, and partial failures handled; attempt ids are unique per package.
 - [x] Policy boundaries respected (allocation vs scheduling vs runtime).
-- [ ] `intake` moved to `runtime`; boundaries updated. *(next commit — A5)*
+- [x] `intake` moved to `runtime`; boundaries updated.
 - [x] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, and docs link check pass.
 - [x] tests added or updated
 - [x] documentation updated where required
@@ -51,7 +51,13 @@ parallel. The scheduler consumes capabilities/contracts and never re-decides
 allocation.
 
 Decision record: [ADR-0149](../adr/ADR-0149-scheduler-concurrency-retries-and-aggregation.md).
-The `intake` → `runtime` move (A5) is the next commit and closes this issue.
+
+**A5 execution.** `kernel/intake` **moved** to `runtime/intake` (execution
+mechanics: validating and deduplicating untrusted result envelopes), per
+[ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md). The
+scheduler now imports `runtime/intake`; the kernel no longer owns intake.
+Architecture §5.3/§5.6, the module docs, `runtime/doc.go`, and the kernel
+transitional-boundaries table were updated. This closes Issue 8.
 
 ## Dependencies
 

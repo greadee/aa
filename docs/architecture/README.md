@@ -142,7 +142,7 @@ flowchart TB
     end
     subgraph Control["Control plane"]
         kernel["aa-kernel"]
-        runtime["aa-runtime<br/>worker · lifecycle · sandbox · inference"]
+        runtime["aa-runtime<br/>worker · lifecycle · sandbox · intake · inference"]
         toolbox["aa-toolbox"]
     end
     subgraph World["External interactions"]
@@ -208,7 +208,7 @@ flowchart TD
     sync["aa-sync"]
     toolbox["aa-toolbox"]
     forge["aa-forge"]
-    runtime["aa-runtime (worker, lifecycle, sandbox, inference)"]
+    runtime["aa-runtime (worker, lifecycle, sandbox, intake, inference)"]
     kernel["aa-kernel"]
     visualizer["aa-visualizer"]
     ui["aa-ui"]
@@ -336,7 +336,7 @@ enforce the cross-module ones.
 | Retrieval | `memory/retrieval` | deterministic, read-only over canonical records; executes nothing |
 | Allocation | `kernel/allocator/{planner,role,model,compute}_allocator` | produces a plan (worker, model, worker count); executes nothing |
 | Scheduling | `kernel/scheduler` | owns the control cycle; reaches execution only through the worker adapter |
-| Runtime | `runtime` (`worker`, `lifecycle`, `sandbox`, `inference`) | execution mechanics only; decides no allocation/scheduling and owns no durable definitions or history |
+| Runtime | `runtime` (`worker`, `lifecycle`, `sandbox`, `intake`, `inference`) | execution mechanics only; decides no allocation/scheduling and owns no durable definitions or history |
 | Definitions | `registry` | durable specifications only; holds no runtime instances |
 | Tools | `toolbox` | capability-scoped invocation; grants no capability implicitly |
 | Observation | `obsv` | product-neutral events; calls no model and owns no graph state or history |
@@ -379,10 +379,10 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.3 aa-kernel (control plane)
 
 - **Purpose:** deterministic coordination of all work.
-- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; `allocator/role_allocator`: deterministic worker selection; reserved `allocator/model_allocator` and `allocator/compute_allocator`); scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
+- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; `allocator/role_allocator`: deterministic worker selection; reserved `allocator/model_allocator` and `allocator/compute_allocator`); scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; integration and human gates; operational telemetry; job-learning engine; control-plane API.
 - **Must not:** own transfer, own canonical history, call models directly, own execution mechanics (use `aa-runtime`), or expose a remote shell.
 - **Interfaces:** control-plane API; the `aa-runtime` worker adapter; RPC to `inference`/`sync`/`forge`; `obsv` host; memory query.
-- **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there. Current kernel package placement is not final ownership — intended homes for `context`, `contract`, `gate`, `telemetry`, `joblearn`, `api`, and `intake` are recorded in [transitional-boundaries](../modules/kernel/transitional-boundaries.md).
+- **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there. Current kernel package placement is not final ownership — intended homes for `context`, `contract`, `gate`, `telemetry`, `joblearn`, and `api` are recorded in [transitional-boundaries](../modules/kernel/transitional-boundaries.md).
 - **Language:** Go.
 - **Reused assets:** `orchestration`, `scheduler`, `taskspec`, `registry`, `contextcompiler`, `executioncontract`, `resultintake`, `integrationgate`, `workspace`, `runtimecontract`, `codexruntime`, `computenode`, `dispatchbinding`, orchestration halves of `desktop`/`api`.
 - **Remaining work:** role selection, job-learning engine, de-blur taskspec/orchestration, extract from syncgate, enforce boundaries.
@@ -410,11 +410,11 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.6 aa-runtime
 
 - **Purpose:** own execution mechanics for allocated work and provide local and cloud model inference behind the inter-module RPC boundary.
-- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (reserved, not implemented); the model provider/execution service boundary (`inference`) with its provider abstraction (Ollama/OpenAI-compatible/DeepSeek), model catalog, and low-level `generate`.
+- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (`sandbox`); result intake (`intake`, validating and deduplicating untrusted result envelopes); the model provider/execution service boundary (`inference`) with its provider abstraction (Ollama/OpenAI-compatible/DeepSeek), model catalog, and low-level `generate`.
 - **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own project state, durable definitions (`registry`), or canonical history (`memory`).
-- **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the future sandbox; the `inference` RPC service (`inference.generate`, `inference.health`, `inference.route`, `inference.recommend`).
+- **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the `sandbox`; the `intake` service; the `inference` RPC service (`inference.generate`, `inference.health`, `inference.route`, `inference.recommend`).
 - **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject at `runtime/inference` (the former `aa-sifter`).
-- **Status:** introduced by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)); `runtime/worker` carries the moved kernel runtime; `lifecycle`, `sandbox`, and `inference` routing/budget/verification/context responsibilities are reserved for later issues.
+- **Status:** introduced by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)); `runtime/worker` carries the moved kernel runtime; `runtime/sandbox` implements execution isolation ([ADR-0147](../adr/ADR-0147-runtime-sandbox-isolation.md)); `runtime/intake` validates result envelopes ([ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md)); `lifecycle` and the `inference` routing/budget/verification/context responsibilities remain for later issues.
 
 ### 5.7 aa-forge
 

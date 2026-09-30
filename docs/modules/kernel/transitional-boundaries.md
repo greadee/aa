@@ -12,8 +12,9 @@ now**; their intended ownership may differ and is recorded here.
 
 For `intake` and `contract` the intent is now a **decision**
 ([ADR-0143](../../adr/ADR-0143-decide-intake-and-contract-ownership.md)):
-`intake` moves to `runtime` (executed in ISS-IMP-8, stage 3.4), and `contract`
-is finalized as a shared kernel package.
+`intake` **moved** to `runtime` (ISS-IMP-8, stage 3.4; see
+[runtime/intake](../runtime/intake.md)), and `contract` is finalized as a shared
+kernel package.
 
 | Package | Current | Intended | Status | Constraint |
 |---|---|---|---|---|
@@ -23,13 +24,12 @@ is finalized as a shared kernel package.
 | `telemetry` | `kernel/telemetry` | `kernel/telemetry` — operational telemetry (decision D8) | stays | leaf |
 | `joblearn` | `kernel/joblearn` | `kernel/joblearn` — the learning engine; apprenticing/studying vocabulary and attribution dimensions reserved | stays | reaches `memory` only through seams (`promote`, `tracesource`) |
 | `api` | `kernel/api` | `kernel/api` — the control-plane surface; transport (HTTP/socket) lands with `ui` | stays | depends only on `scheduler` |
-| `intake` | `kernel/intake` | **`runtime`** — result intake is execution mechanics (ADR-0143; move executed in stage 3.4) | **decided → move** | must not accrue new kernel dependents; today only `scheduler` uses it, keep it a seam |
 
 ## Rules
 
 1. Do not treat the current placement of a **transitional** package as final.
-2. Do not add dependencies that would entrench a transitional placement (no new
-   package may import `intake` except the scheduler; `contract` stays a leaf).
+2. Do not add dependencies that would entrench a transitional placement
+   (`contract` stays a leaf).
 3. Prefer the narrowest seam when a transitional package is consumed, so it can
    move without touching callers.
 4. Document the intended home before moving anything.

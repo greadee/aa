@@ -6,6 +6,7 @@
 | **Source** | [issue-impl-sep28 Issue 1](../issues/imp-1-canonical-architecture-and-contracts.md) (A5) |
 | **Scope** | update phase · issue-impl-sep28 (Stage 1) |
 | **Supersedes** | [ADR-0136](./ADR-0136-kernel-transitional-package-placement.md) for `intake` and `contract` only |
+| **Executed** | [issue-impl-sep28 Issue 8](../issues/imp-8-scheduling-multi-agent-execution.md) (stage 3.4): `kernel/intake` → `runtime/intake` |
 
 ## Context
 

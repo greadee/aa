@@ -19,8 +19,8 @@ import (
 	kcontext "github.com/greadee/aa/kernel/context"
 	"github.com/greadee/aa/kernel/contract"
 	"github.com/greadee/aa/kernel/gate"
-	"github.com/greadee/aa/kernel/intake"
 	"github.com/greadee/aa/kernel/telemetry"
+	"github.com/greadee/aa/runtime/intake"
 	"github.com/greadee/aa/runtime/worker"
 )
 
