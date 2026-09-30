@@ -1,7 +1,7 @@
 # ISS-IMP-3 — kernel: context compilation, budgeting & assembly
 
 **Type:** feature
-**Status:** planned
+**Status:** complete
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#25](https://github.com/greadee/aa/issues/25)
@@ -34,13 +34,36 @@ context/handoff compression (A8), which belongs here.
 
 ## Acceptance Criteria
 
-- [ ] Needs discovery, selection, budgeting, compression, provenance, and assembly implemented.
-- [ ] Deterministic given identical inputs; overflow fails closed with a typed error.
-- [ ] Context consumes the ISS-IMP-2 retrieval interface; the boundary is tested.
-- [ ] Context handling removed from `runtime/inference`.
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, and `tools/archtest` pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] Needs discovery, selection, budgeting, compression, provenance, and assembly implemented.
+- [x] Deterministic given identical inputs; overflow fails closed with a typed error (`ErrBudgetExceeded`).
+- [x] Context consumes the ISS-IMP-2 retrieval interface; the boundary is tested.
+- [x] Control-plane context handling is owned by `kernel/context`, not `runtime/inference` (residual execution-local fitting/redaction retained by design — see Solution and [ADR-0146](../adr/ADR-0146-context-compilation-and-a8-extraction.md)).
+- [x] `go build`, `go vet`, `go test`, `gofmt`, and `tools/archtest` pass.
+- [x] tests added or updated
+- [x] documentation updated where required
+
+## Solution
+
+`kernel/context` now owns control-plane context:
+
+- `DeriveNeeds(objective, workPackageID)` — pure needs discovery (default kinds;
+  distinct lowercased terms length ≥ 3, plus the work-package id; sorted).
+- `Compiler.CompileFromRetrieval(ctx, retriever, projectID, workPackageID, needs)`
+  — selects through the ISS-IMP-2 `memory/retrieval.Retriever`, maps candidates
+  to inputs with provenance, and assembles a bounded, digest-stable `Bundle`.
+- Budgeting/compression remain in the pure `Compiler`; `Section` now carries
+  `retrieval.Provenance` and the digest covers it.
+- Overflow fails closed: a partial `Truncated` bundle is returned with
+  `ErrBudgetExceeded`.
+
+**A8 scope.** The A8 audit listed "context → `kernel/context`". Control-plane
+context ownership moved as above. The Python `runtime/inference/context` package
+is retained as **execution-local** — provider-message fitting and the outbound
+redaction chokepoint plus escalation formatting — because it runs where the
+provider call and cloud egress happen ([ADR-0050](../adr/ADR-0050-one-outbound-redaction-chokepoint-in-call-tier-for-every-expert.md));
+a literal cross-language relocation is neither possible nor desirable
+([ADR-0146](../adr/ADR-0146-context-compilation-and-a8-extraction.md)). Module
+docs record the boundary.
 
 ## Dependencies
 

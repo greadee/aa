@@ -14,7 +14,7 @@ Given a prompt and context, decide which model tier and provider should handle i
 - The human approval gate for major and critical decisions.
 - Preflight assessment and policy routing (`local_only`, `cloud_only`, `local_first`, `expert_first`, `adaptive`, `budget_constrained`).
 - Budgets, escalation, and provider abstraction (Ollama, OpenAI-compatible, DeepSeek).
-- Verification and context compression/handoff.
+- Verification and execution-local message fitting / handoff (control-plane context lives in `kernel/context`).
 - Compute orchestration across local and cloud models.
 
 ## Must not
@@ -37,7 +37,7 @@ Given a prompt and context, decide which model tier and provider should handle i
 | [`catalog (python)`](./catalog.md) | Advisory bundled metadata about known local/cloud models (never a whitelist). |
 | [`cli (python)`](./cli.md) | ``aa-inference serve``: host the RPC service over the per-user local socket. |
 | [`config (python)`](./config.md) | Shipped reference profile built on the shared model defaults. |
-| [`context (python)`](./context.md) | Deterministic context compaction/fitting, secret redaction, local-task handoff, and escalation packet. |
+| [`context (python)`](./context.md) | Execution-local provider-message fitting, secret redaction, local-task handoff, and escalation packet (control-plane context moved to `kernel/context`). |
 | [`decisions (python)`](./decisions.md) | Decision-significance classification, the human approval gate, approval providers, and standing-rule policy. |
 | [`desktop (python)`](./desktop.md) | Local HTTP control-plane server, process launcher, task service, and path handling. |
 | [`history (python)`](./history.md) | Durable run/approval/event/standing-rule persistence (SQLite). |
