@@ -150,6 +150,8 @@ Each issue/substage below is **one commit**; closely-related sub-tasks are folde
 
 Anything discovered during the sprint that is out of scope is raised as a new issue and listed here (and in the final summary). Known seeds: AI-driven role/strategy optimisation beyond Issue 7/9, multi-writer history, cloud-cost governance, and the Wails/React UI surface.
 
+**A8 routing/budget residual (follow-up).** Routing/budget *policy* now lives in `kernel/allocator/routing` (ADR-0151); the Python `runtime/inference/routing` package remains the execution surface. Wiring the execution path to pass the allocator's decision into inference and retiring the duplicate Python policy is a follow-up (not in this sprint).
+
 **A8 `desktop → ui/surfaces` (deferred to `ph10-ui`).** Relocating the inference service's desktop surface under `ui/surfaces` is UI work; it is out of sprint scope (see Out-of-scope) and belongs to the UI phase. Issue 6 does not touch `ui`.
 
 Contracts generation v1 was removed from the active path in commit 1.2 (Issue 1 / A4); the deleted files are retained only in Git history, so the earlier "v1 deletion" seed is closed.

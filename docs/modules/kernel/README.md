@@ -70,5 +70,6 @@ the constraints on transitional packages, are recorded in
 | [`allocator/role_allocator`](./role-allocator.md) | Deterministic worker selection by role and capability, with rejection reasons. |
 | [`allocator/model_allocator`](./model-allocator.md) | Deterministic model selection from `registry/models`, with an escalation target. |
 | [`allocator/compute_allocator`](./compute-allocator.md) | Worker count/parallelism/placement, justified and bounded. |
+| [`allocator/routing`](./routing.md) | Model-locality/tier routing policy and the budget gate. |
 | [`telemetry`](./telemetry.md) | Package telemetry records bounded execution evidence and derives deterministic learning candidates. |
 

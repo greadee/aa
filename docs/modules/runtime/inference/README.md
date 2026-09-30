@@ -44,7 +44,7 @@ Given a prompt and context, decide which model tier and provider should handle i
 | [`metrics (python)`](./metrics.md) | Structured trace/event logging and token/cost usage accounting. |
 | [`models (python)`](./models.md) | Provider abstraction, provider registry/factory, runtime model config, and Ollama/OpenAI-compatible/DeepSeek clients. |
 | [`recommend (python)`](./recommend.md) | Deterministic hardware/goal-based profile and context recommendation. |
-| [`routing (python)`](./routing.md) | Deterministic routing policies, preflight assessment, cloud budgets, and escalation evaluation. |
+| [`routing (python)`](./routing.md) | Inference execution routing surface (preflight/budgets); routing policy is owned by `kernel/allocator/routing`. |
 | [`rpc (python)`](./rpc.md) | aa-inference RPC service (inter-module JSON-RPC v1). |
 | [`schemas (python)`](./schemas.md) | Bundled JSON Schemas used to validate the RPC boundary. |
 | [`system (python)`](./system.md) | Best-effort hardware detection (CPU/GPU/VRAM/RAM). |

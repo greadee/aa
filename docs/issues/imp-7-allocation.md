@@ -1,7 +1,7 @@
 # ISS-IMP-7 — kernel/allocator + registry: role, model & compute allocation
 
 **Type:** feature
-**Status:** in progress (allocation + registry done; routing/budget extraction is the next commit)
+**Status:** complete
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#29](https://github.com/greadee/aa/issues/29)
@@ -40,7 +40,7 @@ three dimensions must remain independently testable even when combined into one 
 - [x] Role, model, and compute allocation implemented and independently testable.
 - [x] Model registry populated; model identity selection and escalation represented.
 - [x] Parallelism justified and bounded; no auto-spawn.
-- [ ] Routing/budget policy lives in the allocator/contract; inference is provider/execution only. *(next commit — A8)*
+- [x] Routing/budget policy lives in the allocator/contract; inference is provider/execution only.
 - [x] An `ExecutionPlan` is produced (validated contracts v2); the scheduler consumes its concurrency/budget fields (`Config.MaxConcurrency`, contract budget).
 - [x] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, `runtime/inference` checks, and docs link check pass.
 - [x] tests added or updated
@@ -58,8 +58,16 @@ three dimensions must remain independently testable even when combined into one 
 - **Execution plan:** `allocator.Allocate` combines the three into a contracts v2
   `ExecutionPlan` (validated) for the scheduler.
 
-Decision record: [ADR-0150](../adr/ADR-0150-role-model-compute-allocation-separation.md).
-The routing/budget extraction (A8) is the next commit and closes this issue.
+- **Routing/budget (A8):** `kernel/allocator/routing.Decide` owns the
+  model-locality/tier policy and the budget gate (fail-closed on disabled cloud
+  or exceeded budget). `runtime/inference` keeps provider/execution plus
+  verification; its Python routing package is the execution surface, and the
+  follow-up to pass the allocator's decision into it is recorded in the sprint
+  Future register.
+
+Decision records: [ADR-0150](../adr/ADR-0150-role-model-compute-allocation-separation.md),
+[ADR-0151](../adr/ADR-0151-routing-and-budget-policy-in-the-allocator.md). This
+closes Issue 7.
 
 ## Dependencies
 
