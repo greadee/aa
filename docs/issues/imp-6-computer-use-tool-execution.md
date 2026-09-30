@@ -7,7 +7,7 @@
 **GitHub issue:** [#28](https://github.com/greadee/aa/issues/28)
 **Parent umbrella:** [ISS-IMP](post-refactor-implementation.md)
 **Sprint plan:** [../updates/issue-impl-sep28/plan.md](../updates/issue-impl-sep28/plan.md) (Stage 3)
-**Resolves:** A8 (relocate the inference desktop surface under `ui`)
+**Resolves:** — (the A8 `desktop → ui/surfaces` relocation is deferred to `ph10-ui`; not in this sprint)
 
 ## Goal
 
@@ -18,7 +18,10 @@ runtime and the sandbox.
 
 `toolbox` owns tool/plugin/MCP manifests, policy, and workflows, but there is no computer-use
 capability, and the execution boundary between runtime, a tool capability, and a computer-use
-implementation is unspecified. The inference service's desktop surface belongs under `ui` (A8).
+implementation is unspecified.
+
+The inference service's desktop surface (A8 `desktop → ui/surfaces`) belongs with the UI phase and
+is **out of scope here** (see the sprint Out-of-scope); it is tracked for `ph10-ui`.
 
 ## Requirements
 
@@ -27,8 +30,6 @@ implementation is unspecified. The inference service's desktop surface belongs u
   `kernel scheduler → runtime → tool capability → computer-use implementation`.
 - Cancellation, failures, sandbox interaction, result/artifact handling, and audit/observability events.
 - No orchestration policy embedded in the computer-use implementation.
-- Relocate the inference desktop surface into `ui/surfaces` (reserved), leaving inference a
-  provider/execution service.
 
 ## Acceptance Criteria
 
@@ -36,7 +37,7 @@ implementation is unspecified. The inference service's desktop surface belongs u
 - [ ] Execution flows through runtime and (where appropriate) the sandbox.
 - [ ] Cancellation, failures, artifacts, and observability events handled.
 - [ ] No orchestration policy in the capability.
-- [ ] Inference desktop surface relocated (or explicitly reserved) under `ui`.
+- [ ] N/A — the inference desktop surface relocation (A8) is deferred to `ph10-ui`.
 - [ ] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, `runtime/inference` checks, and docs link check pass.
 - [ ] tests added or updated
 - [ ] documentation updated where required

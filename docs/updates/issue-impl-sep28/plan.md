@@ -52,7 +52,7 @@ project/work/issue history.
 | 3 Context compilation/budgeting/assembly | Stage 2 | `kernel/context`; + A8(context) |
 | 4 RPC/boundary/version-skew hardening | Stage 1 | contracts/rpc; + A5 decision |
 | 5 Sandbox execution | Stage 3 | `runtime/sandbox` (A7) |
-| 6 Computer-use/tool execution | Stage 3 | `toolbox` + runtime; + A8(desktop→ui) |
+| 6 Computer-use/tool execution | Stage 3 | `toolbox` + runtime |
 | 7 Role/capability/model/compute allocation | Stage 4 | `kernel/allocator`, `registry`; + A6, A8(routing/budgets) |
 | 8 Scheduling & multi-agent execution | Stage 3 | `kernel/scheduler` + runtime; + A5 execution |
 | 9 Learning/experience feedback | Stage 5 | `kernel/joblearn` + memory; + A9(apprenticing/studying) |
@@ -81,7 +81,7 @@ Each issue/substage below is **one commit**; closely-related sub-tasks are folde
 ### Stage 3 — Execution path (Issues 5, 6, 8)
 
 - **3.1 — Issue 5 + A7: sandbox.** `runtime/sandbox`: isolation, filesystem/env, limits, timeout/termination, cleanup, error propagation, observability; tool permissions + failure/escape tests; runtime executes through the sandbox without roles knowing; close Issue 5. **Commit** `implement runtime sandbox execution`.
-- **3.2 — Issue 6 + A8(desktop→ui).** `toolbox/computer-use` capability + permission/capability declarations; runtime↔tool execution lifecycle, cancellation, results/artifacts, audit events; reserve `ui/surfaces` for the inference desktop surface; close Issue 6. **Commit** `add toolbox computer use and wire it through runtime`.
+- **3.2 — Issue 6.** `toolbox/computer-use` capability + permission/capability declarations; runtime↔tool execution lifecycle, cancellation, results/artifacts, audit events; close Issue 6. **Commit** `add toolbox computer use and wire it through runtime`.
 - **3.3 — Issue 8: scheduling & multi-agent execution.** DAG/dependencies, dispatch, concurrency limits, synchronization, aggregation; cancellation, retries, partial failures, worker lifecycle, serial vs parallel; close Issue 8. **Commit** `harden scheduler dispatch, concurrency and cancellation`.
 - **3.4 — A5: move intake to runtime.** Move `kernel/intake` → `runtime` per the 1.1 decision; update archtest/docs. **Commit** `move result intake to runtime`.
 
@@ -114,7 +114,7 @@ Each issue/substage below is **one commit**; closely-related sub-tasks are folde
 | A5 intake/contract | 1.1 + 3.4 | decide + execute |
 | A6 model/compute | 4.1 | implement |
 | A7 sandbox | 3.1 | implement |
-| A8 inference extraction | 2.2 (context), 3.2 (desktop), 4.2 (routing/budgets) | extract |
+| A8 inference extraction | 2.2 (context), 4.2 (routing/budgets) | extract; `desktop → ui/surfaces` deferred to `ph10-ui` |
 | A9 apprenticing/identity | 5.1/5.2 | implement |
 
 ## Directives (apply throughout)
@@ -149,6 +149,8 @@ Each issue/substage below is **one commit**; closely-related sub-tasks are folde
 ## Future register
 
 Anything discovered during the sprint that is out of scope is raised as a new issue and listed here (and in the final summary). Known seeds: AI-driven role/strategy optimisation beyond Issue 7/9, multi-writer history, cloud-cost governance, and the Wails/React UI surface.
+
+**A8 `desktop → ui/surfaces` (deferred to `ph10-ui`).** Relocating the inference service's desktop surface under `ui/surfaces` is UI work; it is out of sprint scope (see Out-of-scope) and belongs to the UI phase. Issue 6 does not touch `ui`.
 
 Contracts generation v1 was removed from the active path in commit 1.2 (Issue 1 / A4); the deleted files are retained only in Git history, so the earlier "v1 deletion" seed is closed.
 

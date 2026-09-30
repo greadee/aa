@@ -29,7 +29,7 @@ its own document and delivered on `dev`.
 | [ISS-IMP-3](imp-3-context-compilation.md) (#25) | Context compilation, budgeting & assembly | 2 | A8 (context) |
 | [ISS-IMP-4](imp-4-rpc-boundary-hardening.md) (#26) | RPC / boundary / version-skew hardening | 1 | — |
 | [ISS-IMP-5](imp-5-sandbox-execution.md) (#27) | Sandbox execution | 3 | A7 |
-| [ISS-IMP-6](imp-6-computer-use-tool-execution.md) (#28) | Computer-use / tool execution | 3 | A8 (desktop→ui) |
+| [ISS-IMP-6](imp-6-computer-use-tool-execution.md) (#28) | Computer-use / tool execution | 3 | — (A8 desktop→ui deferred to `ph10-ui`) |
 | [ISS-IMP-7](imp-7-allocation.md) (#29) | Role, model & compute allocation | 4 | A6, A8 (routing/budgets) |
 | [ISS-IMP-8](imp-8-scheduling-multi-agent-execution.md) (#30) | Scheduling & multi-agent execution | 3 | A5 (execution) |
 | [ISS-IMP-9](imp-9-learning-experience-feedback.md) (#31) | Learning / experience feedback | 5 | A9 (apprenticing/studying) |
