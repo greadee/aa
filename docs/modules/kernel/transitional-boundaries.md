@@ -10,15 +10,20 @@ The architecture refactor moved planning, allocation, and scheduling into
 worker instances to `aa-runtime`. The packages below **stay in the kernel for
 now**; their intended ownership may differ and is recorded here.
 
+For `intake` and `contract` the intent is now a **decision**
+([ADR-0143](../../adr/ADR-0143-decide-intake-and-contract-ownership.md)):
+`intake` moves to `runtime` (executed in ISS-IMP-8, stage 3.4), and `contract`
+is finalized as a shared kernel package.
+
 | Package | Current | Intended | Status | Constraint |
 |---|---|---|---|---|
 | `context` | `kernel/context` | `kernel/context` — internal split into needs / selection / budgeting / compression / assembly / provenance reserved | stays | must not depend on `scheduler` or `runtime`; must not select roles, models, or compute |
-| `contract` | `kernel/contract` | shared authority/budget builder consumed by the allocator (budget) and runtime (authority); may move under `allocator` or become a shared kernel package | transitional | must remain a leaf and must not import `scheduler` or `runtime` |
+| `contract` | `kernel/contract` | shared authority/budget builder consumed by the allocator (budget) and scheduler (authority); **final** — stays a shared kernel package (ADR-0143) | **stays (final)** | must remain a leaf and must not import `scheduler` or `runtime` |
 | `gate` | `kernel/gate` | `kernel/gate` — acceptance is control-plane policy | stays | leaf |
 | `telemetry` | `kernel/telemetry` | `kernel/telemetry` — operational telemetry (decision D8) | stays | leaf |
 | `joblearn` | `kernel/joblearn` | `kernel/joblearn` — the learning engine; apprenticing/studying vocabulary and attribution dimensions reserved | stays | reaches `memory` only through seams (`promote`, `tracesource`) |
 | `api` | `kernel/api` | `kernel/api` — the control-plane surface; transport (HTTP/socket) lands with `ui` | stays | depends only on `scheduler` |
-| `intake` | `kernel/intake` | **`runtime`** — result intake is execution mechanics | transitional | must not accrue new kernel dependents; today only `scheduler` uses it, keep it a seam |
+| `intake` | `kernel/intake` | **`runtime`** — result intake is execution mechanics (ADR-0143; move executed in stage 3.4) | **decided → move** | must not accrue new kernel dependents; today only `scheduler` uses it, keep it a seam |
 
 ## Rules
 

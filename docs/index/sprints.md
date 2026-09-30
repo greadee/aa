@@ -12,4 +12,10 @@ A phase executes through one or more sprints. A sprint is **6–12 slices** prod
 
 ## Sprints
 
-_No sprints are active. The first sprint begins with phase 1._
+| Sprint | Type | Branch | PR | Status |
+|---|---|---|---|---|
+| [issue-impl-sep28](../updates/issue-impl-sep28/plan.md) | update phase | `dev` | #21 | In Progress |
+
+This sprint carries its own cadence: **one commit per issue/substage**, folding
+closely-related sub-tasks, instead of one commit per slice (plan SD-7, scoped to
+this sprint only).

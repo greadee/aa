@@ -325,6 +325,33 @@ flowchart TB
 
 Each layer has a different authority, retention, and promotion rule. Only `aa-memory` is canonical and permanent.
 
+### 4.6 Boundaries and integration points
+
+The ten-issue sprint depends on these boundaries. Each area owns one concern and
+must not reach past its seam; the dependency rules in §4.2 and `tools/archtest`
+enforce the cross-module ones.
+
+| Area | Owner | Boundary it must not cross |
+|---|---|---|
+| Context | `kernel/context` | pure and bounded; selects no roles, models, or compute; reads retrieval, never `scheduler`/`runtime` |
+| Retrieval | `memory/retrieval` | deterministic, read-only over canonical records; executes nothing |
+| Allocation | `kernel/allocator/{planner,role,model,compute}_allocator` | produces a plan (worker, model, worker count); executes nothing |
+| Scheduling | `kernel/scheduler` | owns the control cycle; reaches execution only through the worker adapter |
+| Runtime | `runtime` (`worker`, `lifecycle`, `sandbox`, `inference`) | execution mechanics only; decides no allocation/scheduling and owns no durable definitions or history |
+| Definitions | `registry` | durable specifications only; holds no runtime instances |
+| Tools | `toolbox` | capability-scoped invocation; grants no capability implicitly |
+| Observation | `obsv` | product-neutral events; calls no model and owns no graph state or history |
+
+**Integration points.** Retrieval feeds context; context, plan, and allocation
+feed the scheduler; the scheduler dispatches through the `runtime/worker`
+adapter; observation events flow from the control plane into `obsv`. The
+**sandbox integration point** is behind the worker adapter: the scheduler names
+no sandbox, so a role and its work package carry no isolation knowledge, and a
+run is observed as the same adapter call whether or not
+[`runtime/sandbox`](../modules/runtime/sandbox.md) (reserved, delivered by Issue 5)
+is active. Isolation is a runtime policy, never a role or a work-package
+property.
+
 ---
 
 ## 5. Module specifications
@@ -447,6 +474,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Versioning.** Schemas are versioned `v1`, `v2`, …; additive changes are backward compatible; breaking changes require a major bump and a migration plan. Compatibility is checked in the conformance suite.
 - **Conformance suite.** One test suite validates every generator and every module against the schemas.
 - **Control-plane API.** The ui and visualizer use a versioned HTTP/JSON control-plane API (OpenAPI-documented). Write operations are idempotent and auditable.
+- **Contracts for the upcoming issues.** Generation **v2** already defines what the ten issues rest on — `RoleSpec`, `ModelSpec`, `TeamSpec`, `Routine`, `WorkPlan`, `ExecutionPlan`, `trace`, `telemetry`, and the event vocabulary. Issue 1 introduces **no speculative contract**; an issue extends `contracts` only when its behavior needs a new object or field, adding the schema, the Go/TypeScript/Python binding, and a conformance fixture together.
 
 ---
 

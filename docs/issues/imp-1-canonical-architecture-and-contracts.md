@@ -1,7 +1,7 @@
 # ISS-IMP-1 — contracts/kernel/runtime/registry/obsv: canonical architecture & contracts
 
 **Type:** documentation / contracts
-**Status:** planned
+**Status:** in progress (all criteria met except the v1 sunset, tracked to commit 1.2)
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#23](https://github.com/greadee/aa/issues/23)
@@ -41,16 +41,23 @@ intake/contract ownership decision is recorded but unexecuted (A5).
 
 ## Acceptance Criteria
 
-- [ ] Architecture README and terminology reflect the as-built boundaries; §5.6/§5.12 consolidated.
-- [ ] `role ≠ capability ≠ parallelism` documented.
-- [ ] Required contracts defined/updated; indexes, `MANIFEST.json`, and the phase index current;
-      OpenAPI references `ui`.
-- [ ] Contracts v1 deprecated and removed from the active path; no live consumer.
-- [ ] Intake/contract ownership decision recorded.
-- [ ] Reserved-package status recorded in the Future register.
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, and docs link check pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] Architecture README and terminology reflect the as-built boundaries; §5.6/§5.12 consolidated.
+- [x] `role ≠ capability ≠ parallelism` documented (terminology §1.1).
+- [x] Required contracts audited; no speculative contract added; indexes, `MANIFEST.json`, and the
+      phase index current; OpenAPI references `ui`.
+- [ ] Contracts v1 deprecated and removed from the active path; no live consumer. *(commit 1.2 / A4)*
+- [x] Intake/contract ownership decision recorded ([ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md)).
+- [x] Reserved-package status recorded in the Future register and architecture §4.1.
+- [x] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, and docs link check pass.
+- [x] tests added or updated — no code change in this slice; existing suites unaffected and green.
+- [x] documentation updated where required
+
+## Progress
+
+| Commit | Scope | Notes |
+|---|---|---|
+| `ed1991e` | R5–R8, R10 reconciliation | scheduler comments, §5.6/§5.12, phase-4 label, OpenAPI, reserved-boundary table (Stage 0.2) |
+| `reconcile canonical architecture, boundaries and required contracts` | Issue 1: boundaries (§4.6), terminology §1.1, ADR-0143, indexes/Future register | v1 sunset deferred to commit 1.2 (A4) |
 
 ## Dependencies
 

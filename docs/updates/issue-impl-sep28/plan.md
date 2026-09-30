@@ -150,6 +150,8 @@ Each issue/substage below is **one commit**; closely-related sub-tasks are folde
 
 Anything discovered during the sprint that is out of scope is raised as a new issue and listed here (and in the final summary). Known seeds: AI-driven role/strategy optimisation beyond Issue 7/9, multi-writer history, cloud-cost governance, the Wails/React UI surface, and v1 deletion from the repository (not just the active path).
 
+**Reserved packages with no consumers yet (R10).** `kernel/allocator/{model,compute}_allocator`, `registry/{models,teams,routines,policies}`, and `runtime/{lifecycle,sandbox}` are documented placeholders — no behavior, no callers. They must not be mistaken for live code; they are delivered by Issues 5 and 7 (recorded in [architecture §4.1](../../architecture/README.md#41-module-map)).
+
 ## Ten-issue translation table (as-built names)
 
 | Handoff name | As-built |

@@ -4,7 +4,7 @@ Canonical ADR store. Decisions use a single global, chronological sequence `ADR-
 
 Statuses: `Proposed`, `Accepted`, `Superseded`, `Deprecated`, `Rejected`. See [adrs-and-pitfalls.md](../github-os/adrs-and-pitfalls.md) for the format and process.
 
-The core platform decisions **D1–D22** remain in [docs/architecture/README.md](../architecture/README.md) (§12.1) and are reconciled during the ten-issue phase (Issue 1).
+The core platform decisions **D1–D22** remain in [docs/architecture/README.md](../architecture/README.md) (§12.1); they were reconciled with the refactored topology in the ten-issue phase (Issue 1).
 
 **Backfilled historical decisions:** 130. **Post-refactor decisions:** ADR-0131+ (architecture refactor).
 
@@ -154,3 +154,4 @@ The core platform decisions **D1–D22** remain in [docs/architecture/README.md]
 | [ADR-0140](./ADR-0140-rename-sifter-to-inference-under-runtime.md) | — | Rename the Python sifter service to inference under runtime | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
 | [ADR-0141](./ADR-0141-rename-memory-query-to-retrieval.md) | — | Rename `memory/query` to `memory/retrieval` | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
 | [ADR-0142](./ADR-0142-canonical-documentation-reconciled.md) | — | Canonical documentation reconciled to the refactored topology | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
+| [ADR-0143](./ADR-0143-decide-intake-and-contract-ownership.md) | — | Decide kernel `intake` and `contract` ownership (`intake` → `runtime`; `contract` stays a shared kernel package) | Accepted | issue-impl-sep28 | `docs/issues/imp-1-canonical-architecture-and-contracts.md` |

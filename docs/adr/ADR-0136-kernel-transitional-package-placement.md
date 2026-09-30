@@ -6,6 +6,10 @@
 | **Source** | [architecture-refactor-1 plan](../updates/architecture-refactor-1/plan.md) (D-15) |
 | **Scope** | update phase · architecture-refactor-1 |
 
+> **Partially superseded.** For `intake` and `contract`, [ADR-0143](./ADR-0143-decide-intake-and-contract-ownership.md)
+> decides the intended homes (`intake` → `runtime`; `contract` stays a shared
+> kernel package). This ADR remains in force for the other packages.
+
 ## Context
 
 The architecture refactor moved planning, allocation, and scheduling into
