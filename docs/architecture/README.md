@@ -191,11 +191,12 @@ mistaken for live code. Each is delivered by a later stage of the
 
 | Reserved package | Delivered by |
 |---|---|
-| `kernel/allocator/model_allocator` | Issue 7 — model allocation |
-| `kernel/allocator/compute_allocator` | Issue 7 — compute allocation |
-| `registry/models`, `registry/teams`, `registry/routines` | Issue 7 — allocation definitions |
-| `registry/policies` | policy engine (Issue 7 and later) |
-| `runtime/lifecycle` | Issue 8 — worker lifecycle |
+| `registry/teams`, `registry/routines` | allocation/learning definitions (later) |
+| `registry/policies` | policy engine (later) |
+| `runtime/lifecycle` | worker lifecycle (later) |
+
+Issue 7 delivered `kernel/allocator/{model,compute}_allocator` and populated
+`registry/models`; they are live and no longer reserved.
 
 ### 4.2 Layering and dependency rules
 
@@ -379,7 +380,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.3 aa-kernel (control plane)
 
 - **Purpose:** deterministic coordination of all work.
-- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; `allocator/role_allocator`: deterministic worker selection; reserved `allocator/model_allocator` and `allocator/compute_allocator`); scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; integration and human gates; operational telemetry; job-learning engine; control-plane API.
+- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; `allocator/role_allocator`: deterministic worker selection; `allocator/model_allocator`: deterministic model selection; `allocator/compute_allocator`: justified worker count/parallelism); scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; integration and human gates; operational telemetry; job-learning engine; control-plane API.
 - **Must not:** own transfer, own canonical history, call models directly, own execution mechanics (use `aa-runtime`), or expose a remote shell.
 - **Interfaces:** control-plane API; the `aa-runtime` worker adapter; RPC to `inference`/`sync`/`forge`; `obsv` host; memory query.
 - **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there. Current kernel package placement is not final ownership — intended homes for `context`, `contract`, `gate`, `telemetry`, `joblearn`, and `api` are recorded in [transitional-boundaries](../modules/kernel/transitional-boundaries.md).
@@ -462,7 +463,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Must not:** hold runtime instances (workers, crews, assignments, executions, projects, workflows), or execute/schedule/allocate; own cross-module wire schemas (that is `contracts`).
 - **Interfaces:** definition lookups consumed by `kernel` (allocation) and `contracts` (specification schemas, contracts v2).
 - **Language:** Go.
-- **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models`, `teams`, and `routines` re-export their contracts v2 specifications (`ModelSpec`, `TeamSpec`, `RoutineSpec`); `policies` remains a reserved boundary. Consumers use contracts v2.
+- **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models` is a populated registry (contracts v2 `ModelSpec`, mirrored default catalog); `teams`, `routines`, and `policies` remain reserved boundaries. Consumers use contracts v2.
 
 ---
 

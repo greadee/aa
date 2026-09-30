@@ -68,7 +68,7 @@ the constraints on transitional packages, are recorded in
 | [`scheduler`](./scheduler.md) | Runs the supervised control cycle, and owns the assignment state machine, dispatch readiness, concurrency policy, and leases. |
 | [`allocator/planner`](./allocator-planner.md) | The allocator's planning stage: work packages, dependency graph, and deterministic dispatch readiness. |
 | [`allocator/role_allocator`](./role-allocator.md) | Deterministic worker selection by role and capability, with rejection reasons. |
-| [`allocator/model_allocator`](./model-allocator.md) | Reserved: model allocation (no behavior yet). |
-| [`allocator/compute_allocator`](./compute-allocator.md) | Reserved: compute allocation (no behavior yet). |
+| [`allocator/model_allocator`](./model-allocator.md) | Deterministic model selection from `registry/models`, with an escalation target. |
+| [`allocator/compute_allocator`](./compute-allocator.md) | Worker count/parallelism/placement, justified and bounded. |
 | [`telemetry`](./telemetry.md) | Package telemetry records bounded execution evidence and derives deterministic learning candidates. |
 

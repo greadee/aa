@@ -1,7 +1,7 @@
 # ISS-IMP-7 — kernel/allocator + registry: role, model & compute allocation
 
 **Type:** feature
-**Status:** planned
+**Status:** in progress (allocation + registry done; routing/budget extraction is the next commit)
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#29](https://github.com/greadee/aa/issues/29)
@@ -37,14 +37,29 @@ three dimensions must remain independently testable even when combined into one 
 
 ## Acceptance Criteria
 
-- [ ] Role, model, and compute allocation implemented and independently testable.
-- [ ] Model registry populated; model identity selection and escalation represented.
-- [ ] Parallelism justified and bounded by cost/compute awareness; no auto-spawn.
-- [ ] Routing/budget policy lives in the allocator/contract; inference is provider/execution only.
-- [ ] An `ExecutionPlan` is produced and consumed by the scheduler (ISS-IMP-8).
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, `runtime/inference` checks, and docs link check pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] Role, model, and compute allocation implemented and independently testable.
+- [x] Model registry populated; model identity selection and escalation represented.
+- [x] Parallelism justified and bounded; no auto-spawn.
+- [ ] Routing/budget policy lives in the allocator/contract; inference is provider/execution only. *(next commit — A8)*
+- [x] An `ExecutionPlan` is produced (validated contracts v2); the scheduler consumes its concurrency/budget fields (`Config.MaxConcurrency`, contract budget).
+- [x] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, `runtime/inference` checks, and docs link check pass.
+- [x] tests added or updated
+- [x] documentation updated where required
+
+## Solution
+
+- **Role:** `registry/roles.RolesFor` maps capabilities to roles deterministically;
+  `Allocate` assigns the primary role per unit.
+- **Model:** `registry/models` is populated (`NewDefaultRegistry` from
+  `DefaultCatalog`, mirrored from the inference catalog); `model_allocator.Allocate`
+  selects by locality/capability/cost and returns a reasoning escalation target.
+- **Compute:** `compute_allocator.Plan` requires an explicit justification for
+  parallelism and bounds workers by independent units and concurrency.
+- **Execution plan:** `allocator.Allocate` combines the three into a contracts v2
+  `ExecutionPlan` (validated) for the scheduler.
+
+Decision record: [ADR-0150](../adr/ADR-0150-role-model-compute-allocation-separation.md).
+The routing/budget extraction (A8) is the next commit and closes this issue.
 
 ## Dependencies
 
