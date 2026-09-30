@@ -1,7 +1,7 @@
 # ISS-IMP-8 — kernel/scheduler + runtime: scheduling & multi-agent execution
 
 **Type:** feature
-**Status:** planned
+**Status:** in progress (scheduler hardening done; the `intake` → `runtime` move is the next commit)
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#30](https://github.com/greadee/aa/issues/30)
@@ -30,13 +30,28 @@ are not hardened. `kernel/intake` is a transitional package intended to move to 
 
 ## Acceptance Criteria
 
-- [ ] Scheduler consumes the execution plan, dispatches, and aggregates deterministically.
-- [ ] Concurrency, cancellation, retries, and partial failures handled; worker lifecycle managed.
-- [ ] Policy boundaries respected (allocation vs scheduling vs runtime).
-- [ ] `intake` moved to `runtime`; boundaries updated.
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, and docs link check pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] Scheduler dispatches and aggregates deterministically (`RunReport`).
+- [x] Concurrency, cancellation, retries, and partial failures handled; attempt ids are unique per package.
+- [x] Policy boundaries respected (allocation vs scheduling vs runtime).
+- [ ] `intake` moved to `runtime`; boundaries updated. *(next commit — A5)*
+- [x] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, and docs link check pass.
+- [x] tests added or updated
+- [x] documentation updated where required
+
+## Solution
+
+`kernel/scheduler` gained a concurrency-safe `dispatchOne` shared by `Dispatch`
+(one supervised step) and `Run` (drain the graph). `Run` dispatches the ready
+set in sorted order, bounded by `Config.MaxConcurrency`, retries failed packages
+up to `Config.MaxAttempts` (returning them to `READY`, with unique attempt ids
+so intake stays idempotent), propagates cancellation, tolerates partial failure,
+and returns a deterministic `RunReport`. Shared state is mutated only under a
+mutex; the runtime call runs outside the lock so batch dispatches are genuinely
+parallel. The scheduler consumes capabilities/contracts and never re-decides
+allocation.
+
+Decision record: [ADR-0149](../adr/ADR-0149-scheduler-concurrency-retries-and-aggregation.md).
+The `intake` → `runtime` move (A5) is the next commit and closes this issue.
 
 ## Dependencies
 
