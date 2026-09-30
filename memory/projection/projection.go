@@ -31,6 +31,8 @@ type Projection interface {
 	Get(kind, id string) (Entry, bool)
 	// List returns all entries of a kind, sorted by id.
 	List(kind string) []Entry
+	// Kinds returns the distinct kinds present, sorted.
+	Kinds() []string
 	// Len returns the number of entries.
 	Len() int
 	// Reset discards all entries.
@@ -96,6 +98,22 @@ func (p *MemProjection) List(kind string) []Entry {
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+// Kinds returns the distinct kinds present, sorted.
+func (p *MemProjection) Kinds() []string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	seen := make(map[string]struct{})
+	for _, e := range p.entries {
+		seen[e.Kind] = struct{}{}
+	}
+	out := make([]string, 0, len(seen))
+	for k := range seen {
+		out = append(out, k)
+	}
+	sort.Strings(out)
 	return out
 }
 

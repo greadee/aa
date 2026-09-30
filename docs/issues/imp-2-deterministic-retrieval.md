@@ -1,7 +1,7 @@
 # ISS-IMP-2 — memory: deterministic retrieval
 
 **Type:** feature
-**Status:** planned
+**Status:** complete
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#24](https://github.com/greadee/aa/issues/24)
@@ -31,13 +31,28 @@ there is no defined ranking/tie-break, provenance shape, filtering/limit contrac
 
 ## Acceptance Criteria
 
-- [ ] Retrieval is deterministic and order-independent, with stable ranking/tie-break.
-- [ ] Results carry provenance; filters and limits are honored.
-- [ ] Errors are typed; no panics on malformed input.
-- [ ] A stable interface is consumed by `kernel/context` (ISS-IMP-3).
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, and `tools/archtest` pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] Retrieval is deterministic and order-independent, with stable ranking/tie-break.
+- [x] Results carry provenance; filters and limits are honored.
+- [x] Errors are typed; no panics on malformed input.
+- [x] A stable interface is defined for `kernel/context` (consumed in ISS-IMP-3).
+- [x] `go build`, `go vet`, `go test`, `gofmt`, and `tools/archtest` pass.
+- [x] tests added or updated
+- [x] documentation updated where required
+
+## Solution
+
+`memory/retrieval` now exposes a stable `Retriever` interface:
+`Retrieve(ctx, Request) ([]Result, error)`, implemented by `*Query`.
+`Request` carries `Kinds` (empty = all projected kinds), `Terms` (case-insensitive
+substrings), an optional `Filter`, and `Limit` (0 = `DefaultLimit` 100; max
+`MaxLimit` 10000). Every `Result` carries a `Candidate` with mandatory
+`Provenance{source,kind,id,revision,hash}`, a deterministic `Score`, and a 1-based
+`Rank`. Ranking is by descending score then ascending `(Kind, ID)`, independent of
+input order and wall clock. Invalid requests return `ErrInvalidRequest`
+(`errors.Is`); malformed record data yields empty text and never panics.
+`Projection` gained `Kinds()` to support searching all kinds.
+
+Decision record: [ADR-0145](../adr/ADR-0145-deterministic-retrieval-ranking-and-provenance.md).
 
 ## Dependencies
 
