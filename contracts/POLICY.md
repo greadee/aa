@@ -13,7 +13,7 @@
 
 Contracts are versioned with `MAJOR.MINOR`:
 
-- `MAJOR` is encoded in the path (`schemas/v1/`). A new major is a new directory; both directories may coexist during migration.
+- `MAJOR` is encoded in the path (`schemas/v2/`). A new major is a new directory; generations may coexist only during a migration, and the previous generation is removed from the active path once consumers have moved (see [Migration notes](#migration-notes)).
 - `MINOR` is encoded in each document's `$id` and `x-contract-version` (for example `1.0`, `1.1`).
 
 ### Compatibility rules
@@ -70,7 +70,7 @@ Breaking changes are recorded here with the major version that introduced them.
 
 | Version | Change | Migration |
 |---|---|---|
-| 2.0 | New generation `schemas/v2/` (bindings `go/v2`, `typescript/v2`, `python/aa_contracts/v2.py`). Adds durable-definition and planning objects (`role_spec`, `model_spec`, `team_spec`, `work_plan`, `execution_plan`, `routine`) and drops the `trade` field from the agent ontology (Role × Model). | `schemas/v1/` remains as the previous generation during migration. Consumers migrate to `v2` in the architecture-refactor update phase that wires them. |
+| 2.0 | New generation `schemas/v2/` (bindings `go/v2`, `typescript/v2`, `python/aa_contracts/v2.py`). Adds durable-definition and planning objects (`role_spec`, `model_spec`, `team_spec`, `work_plan`, `execution_plan`, `routine`) and drops the `trade` field from the agent ontology (Role × Model). | Consumers migrated to `v2` in the architecture refactor. Generation `v1` (schemas `schemas/v1/`, bindings `go/v1`, `typescript/v1`, `python/aa_contracts/v1.py`) was **removed from the active path** in the ten-issue sprint (Issue 1 / A4); it is retained only in Git history. `v2` is the sole active generation. |
 
 ### Additive change log
 

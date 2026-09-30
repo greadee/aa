@@ -45,5 +45,6 @@ Every document declares `x-contract-version` `2.0`.
 
 ## Evolution
 
-See [../../POLICY.md](../../POLICY.md). `schemas/v1/` remains as the previous
-generation; consumers migrate to v2 in the update phase that wires them.
+See [../../POLICY.md](../../POLICY.md). Generation **v1** was removed from the
+active path in the ten-issue sprint (Issue 1 / A4) and is retained only in Git
+history; **v2** is the sole active generation.

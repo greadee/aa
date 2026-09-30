@@ -1,7 +1,7 @@
 # ISS-IMP-1 — contracts/kernel/runtime/registry/obsv: canonical architecture & contracts
 
 **Type:** documentation / contracts
-**Status:** in progress (all criteria met except the v1 sunset, tracked to commit 1.2)
+**Status:** complete
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#23](https://github.com/greadee/aa/issues/23)
@@ -45,7 +45,7 @@ intake/contract ownership decision is recorded but unexecuted (A5).
 - [x] `role ≠ capability ≠ parallelism` documented (terminology §1.1).
 - [x] Required contracts audited; no speculative contract added; indexes, `MANIFEST.json`, and the
       phase index current; OpenAPI references `ui`.
-- [ ] Contracts v1 deprecated and removed from the active path; no live consumer. *(commit 1.2 / A4)*
+- [x] Contracts v1 deprecated and removed from the active path; no live consumer (commit 1.2 / A4).
 - [x] Intake/contract ownership decision recorded ([ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md)).
 - [x] Reserved-package status recorded in the Future register and architecture §4.1.
 - [x] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, and docs link check pass.
@@ -57,7 +57,10 @@ intake/contract ownership decision is recorded but unexecuted (A5).
 | Commit | Scope | Notes |
 |---|---|---|
 | `ed1991e` | R5–R8, R10 reconciliation | scheduler comments, §5.6/§5.12, phase-4 label, OpenAPI, reserved-boundary table (Stage 0.2) |
-| `reconcile canonical architecture, boundaries and required contracts` | Issue 1: boundaries (§4.6), terminology §1.1, ADR-0143, indexes/Future register | v1 sunset deferred to commit 1.2 (A4) |
+| `reconcile canonical architecture, boundaries and required contracts` | Issue 1: boundaries (§4.6), terminology §1.1, ADR-0143, indexes/Future register | commit 1.1 |
+| `sunset contracts v1` | A4: generation v1 removed from the active path (schemas/bindings/CI/docs → v2) | commit 1.2; closes Issue 1 |
+
+Closes [#23](https://github.com/greadee/aa/issues/23).
 
 ## Dependencies
 

@@ -1,6 +1,6 @@
-// Package v1 contains the Go bindings for the aa contract schemas v1.
+// Package v2 contains the Go bindings for the aa contract schemas v2.
 //
-// The JSON Schema files under contracts/schemas/v1 are the source of truth;
+// The JSON Schema files under contracts/schemas/v2 are the source of truth;
 // these types mirror them. The conformance suite guards against drift.
 package v2
 

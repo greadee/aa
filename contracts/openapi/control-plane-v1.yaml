@@ -5,7 +5,7 @@ info:
   description: >
     External, local-only HTTP/JSON control plane used by aa-ui and
     aa-visualizer. The ui never calls inter-module RPC directly.
-    Contract objects referenced here are defined in ../schemas/v1/.
+    Contract objects referenced here are defined in ../schemas/v2/.
 servers:
   - url: http://127.0.0.1:7100/api/v1
     description: Local host (loopback only)

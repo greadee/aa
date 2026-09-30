@@ -148,7 +148,9 @@ Each issue/substage below is **one commit**; closely-related sub-tasks are folde
 
 ## Future register
 
-Anything discovered during the sprint that is out of scope is raised as a new issue and listed here (and in the final summary). Known seeds: AI-driven role/strategy optimisation beyond Issue 7/9, multi-writer history, cloud-cost governance, the Wails/React UI surface, and v1 deletion from the repository (not just the active path).
+Anything discovered during the sprint that is out of scope is raised as a new issue and listed here (and in the final summary). Known seeds: AI-driven role/strategy optimisation beyond Issue 7/9, multi-writer history, cloud-cost governance, and the Wails/React UI surface.
+
+Contracts generation v1 was removed from the active path in commit 1.2 (Issue 1 / A4); the deleted files are retained only in Git history, so the earlier "v1 deletion" seed is closed.
 
 **Reserved packages with no consumers yet (R10).** `kernel/allocator/{model,compute}_allocator`, `registry/{models,teams,routines,policies}`, and `runtime/{lifecycle,sandbox}` are documented placeholders — no behavior, no callers. They must not be mistaken for live code; they are delivered by Issues 5 and 7 (recorded in [architecture §4.1](../../architecture/README.md#41-module-map)).
 
