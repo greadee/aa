@@ -1,7 +1,7 @@
 # ISS-IMP-6 — toolbox: computer-use / tool execution integration
 
 **Type:** feature
-**Status:** planned
+**Status:** complete
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#28](https://github.com/greadee/aa/issues/28)
@@ -33,14 +33,35 @@ is **out of scope here** (see the sprint Out-of-scope); it is tracked for `ph10-
 
 ## Acceptance Criteria
 
-- [ ] Computer-use capability declared with explicit permissions/capabilities.
-- [ ] Execution flows through runtime and (where appropriate) the sandbox.
-- [ ] Cancellation, failures, artifacts, and observability events handled.
-- [ ] No orchestration policy in the capability.
-- [ ] N/A — the inference desktop surface relocation (A8) is deferred to `ph10-ui`.
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, `runtime/inference` checks, and docs link check pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] Computer-use capability declared with explicit permissions/capabilities.
+- [x] Execution flows through runtime and (where appropriate) the sandbox (via the policy `SandboxEnforcer` seam + worker adapter; kernel composes).
+- [x] Cancellation, failures, artifacts, and observability events handled.
+- [x] No orchestration policy in the capability.
+- [x] N/A — the inference desktop surface relocation (A8) is deferred to `ph10-ui`.
+- [x] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, `runtime/inference` checks, and docs link check pass.
+- [x] tests added or updated
+- [x] documentation updated where required
+
+## Solution
+
+`toolbox/computeruse` provides the computer-use capability:
+
+- `Manifest(id)` — a validated `builtin` tool manifest: capabilities
+  `read_project`/`create_artifact`, permissions `screen_capture`/
+  `input_injection`, and a **required** `process` sandbox.
+- `Provider` (`registry.Provider`) — validates the action, denies any action
+  whose permission the manifest does not declare (`ErrDenied`), propagates
+  cancellation, wraps driver failures (`ErrFailed`), and returns output plus
+  artifact references. No orchestration policy.
+- `Driver` seam + deterministic `Fake` (records calls, honors cancellation).
+
+Runtime wiring: `runtime/sandbox.Enforcer` implements the toolbox policy
+engine's `SandboxEnforcer` seam, so the computer-use manifest's required process
+sandbox is allowed only when the runtime sandbox can enforce it; the kernel
+composes `toolbox` and `runtime` (neither imports the other). An integration test
+in `kernel` proves the flow and the fail-closed path without an enforcer.
+
+Decision record: [ADR-0148](../adr/ADR-0148-computer-use-capability-and-runtime-wiring.md).
 
 ## Dependencies
 
