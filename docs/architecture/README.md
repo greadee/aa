@@ -195,8 +195,7 @@ mistaken for live code. Each is delivered by a later stage of the
 | `kernel/allocator/compute_allocator` | Issue 7 — compute allocation |
 | `registry/models`, `registry/teams`, `registry/routines` | Issue 7 — allocation definitions |
 | `registry/policies` | policy engine (Issue 7 and later) |
-| `runtime/lifecycle` | Issue 5/8 — worker lifecycle |
-| `runtime/sandbox` | Issue 5 — sandbox execution |
+| `runtime/lifecycle` | Issue 8 — worker lifecycle |
 
 ### 4.2 Layering and dependency rules
 
@@ -348,7 +347,7 @@ adapter; observation events flow from the control plane into `obsv`. The
 **sandbox integration point** is behind the worker adapter: the scheduler names
 no sandbox, so a role and its work package carry no isolation knowledge, and a
 run is observed as the same adapter call whether or not
-[`runtime/sandbox`](../modules/runtime/sandbox.md) (reserved, delivered by Issue 5)
+[`runtime/sandbox`](../modules/runtime/sandbox.md) (delivered by Issue 5)
 is active. Isolation is a runtime policy, never a role or a work-package
 property.
 

@@ -152,7 +152,7 @@ Anything discovered during the sprint that is out of scope is raised as a new is
 
 Contracts generation v1 was removed from the active path in commit 1.2 (Issue 1 / A4); the deleted files are retained only in Git history, so the earlier "v1 deletion" seed is closed.
 
-**Reserved packages with no consumers yet (R10).** `kernel/allocator/{model,compute}_allocator`, `registry/{models,teams,routines,policies}`, and `runtime/{lifecycle,sandbox}` are documented placeholders — no behavior, no callers. They must not be mistaken for live code; they are delivered by Issues 5 and 7 (recorded in [architecture §4.1](../../architecture/README.md#41-module-map)).
+**Reserved packages with no consumers yet (R10).** `kernel/allocator/{model,compute}_allocator`, `registry/{models,teams,routines,policies}`, and `runtime/lifecycle` are documented placeholders — no behavior, no callers. They must not be mistaken for live code; they are delivered by Issues 7 (allocation) and 8 (lifecycle) (recorded in [architecture §4.1](../../architecture/README.md#41-module-map)). `runtime/sandbox` was delivered by Issue 5 and is no longer reserved.
 
 ## Ten-issue translation table (as-built names)
 
