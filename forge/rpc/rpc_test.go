@@ -96,3 +96,31 @@ func TestErrors(t *testing.T) {
 		t.Fatalf("expected invalid params, got %+v", invalid.Error)
 	}
 }
+
+func TestVersionCompatibility(t *testing.T) {
+	service, _ := testService(t)
+	ctx := context.Background()
+
+	// Minor differences in either version are compatible.
+	minor := service.Handle(ctx, Request{JSONRPC: "2.0", ID: 1, Method: MethodCreateIssue, AA: &AA{RPCVersion: "1.7", ContractVersion: "2.3"}})
+	if minor.Error != nil && minor.Error.Code == CodeIncompatible {
+		t.Fatalf("minor versions must be compatible: %+v", minor.Error)
+	}
+
+	// An unsupported contract major fails closed and is not retryable.
+	contract := service.Handle(ctx, Request{JSONRPC: "2.0", ID: 2, Method: MethodCreateIssue, AA: &AA{ContractVersion: "1.0"}})
+	if contract.Error == nil || contract.Error.Code != CodeIncompatible {
+		t.Fatalf("expected aa.incompatible, got %+v", contract.Error)
+	}
+	if contract.Error.Data["retryable"] != false {
+		t.Fatalf("incompatible must be non-retryable: %+v", contract.Error.Data)
+	}
+}
+
+func TestCapabilities(t *testing.T) {
+	service, _ := testService(t)
+	caps := service.Capabilities()
+	if caps.RPCVersion != RPCVersion || caps.ContractVersion != "2.0" || len(caps.Methods) != 4 {
+		t.Fatalf("capabilities = %+v", caps)
+	}
+}

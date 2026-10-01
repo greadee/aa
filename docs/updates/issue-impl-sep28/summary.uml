@@ -1,0 +1,77 @@
+@startuml
+title Issue implementation sprint (Sep 28) — as built
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+package "aa-contracts (v2 only; v1 removed from the active path)" as contracts #DDEEFF {
+  [schemas/v2 + go/v2 + typescript/v2 + python/v2]
+  [rpc/rpc-v1 (hardened: frozen envelope, contract-major gate)]
+  note bottom of [schemas/v2 + go/v2 + typescript/v2 + python/v2]
+    v1 sunset: A4 (f51b0bb)
+  end note
+}
+
+package "aa-registry" as registry #FFF3E0 {
+  [roles + capabilities]
+  [models (populated catalog)]
+  [teams / routines / policies (reserved)]
+}
+
+package "aa-runtime" as runtime #E8F5E9 {
+  [worker]
+  [sandbox (isolation)]
+  [intake]
+  [lifecycle (reserved)]
+  [inference (Python: provider/execution + verification)]
+}
+
+package "aa-kernel (control plane)" as kernel #E3F2FD {
+  [allocator/planner]
+  [allocator/role_allocator]
+  [allocator/model_allocator]
+  [allocator/compute_allocator]
+  [allocator/routing (policy + budget gate)]
+  [context (needs/selection/budget/assembly)]
+  [scheduler (dispatch/concurrency/retries/aggregation)]
+  [joblearn/experience (lessons, learning states)]
+  [observability (seams, identity chain, accounting)]
+}
+
+package "aa-toolbox" as toolbox #F3E5F5 {
+  [computeruse (screen/input, required sandbox)]
+  [host / policy / registry / workflow]
+}
+
+package "aa-memory" as memory #FFF8E1 {
+  [store / repo / retention]
+  [retrieval (Retriever: deterministic ranking, provenance)]
+  [projection]
+}
+
+registry --> kernel
+memory --> kernel
+toolbox --> kernel
+runtime --> kernel
+
+kernel --> contracts
+registry --> contracts
+runtime --> contracts
+toolbox --> contracts
+memory --> contracts
+
+note right of kernel
+  Identity chain:
+  organization -> project -> subtask
+  -> crew -> worker
+  -> {role -> team, model}
+  (observability, c8b1506)
+end note
+
+note bottom
+  Issues #23-#32 implemented; R4-R9 + A4-A9 resolved.
+  Deferred: A8 routing residual wiring; desktop -> ui (ph10-ui);
+  reserved registry/{teams,routines,policies}, runtime/lifecycle.
+end note
+
+@enduml

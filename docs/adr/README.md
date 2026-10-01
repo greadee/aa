@@ -4,7 +4,7 @@ Canonical ADR store. Decisions use a single global, chronological sequence `ADR-
 
 Statuses: `Proposed`, `Accepted`, `Superseded`, `Deprecated`, `Rejected`. See [adrs-and-pitfalls.md](../github-os/adrs-and-pitfalls.md) for the format and process.
 
-The core platform decisions **D1–D22** remain in [docs/architecture/README.md](../architecture/README.md) (§12.1) and are reconciled during the ten-issue phase (Issue 1).
+The core platform decisions **D1–D22** remain in [docs/architecture/README.md](../architecture/README.md) (§12.1); they were reconciled with the refactored topology in the ten-issue phase (Issue 1).
 
 **Backfilled historical decisions:** 130. **Post-refactor decisions:** ADR-0131+ (architecture refactor).
 
@@ -154,3 +154,14 @@ The core platform decisions **D1–D22** remain in [docs/architecture/README.md]
 | [ADR-0140](./ADR-0140-rename-sifter-to-inference-under-runtime.md) | — | Rename the Python sifter service to inference under runtime | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
 | [ADR-0141](./ADR-0141-rename-memory-query-to-retrieval.md) | — | Rename `memory/query` to `memory/retrieval` | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
 | [ADR-0142](./ADR-0142-canonical-documentation-reconciled.md) | — | Canonical documentation reconciled to the refactored topology | Accepted | architecture-refactor-1 | `docs/updates/architecture-refactor-1/plan.md` |
+| [ADR-0143](./ADR-0143-decide-intake-and-contract-ownership.md) | — | Decide kernel `intake` and `contract` ownership (`intake` → `runtime`; `contract` stays a shared kernel package) | Accepted | issue-impl-sep28 | `docs/issues/imp-1-canonical-architecture-and-contracts.md` |
+| [ADR-0144](./ADR-0144-rpc-v1-boundary-hardening.md) | — | RPC v1 boundary hardening: frozen envelope, contract-major gate, capability negotiation, fail-closed deadlines, conditional idempotent retries | Accepted | issue-impl-sep28 | `docs/issues/imp-4-rpc-boundary-hardening.md` |
+| [ADR-0145](./ADR-0145-deterministic-retrieval-ranking-and-provenance.md) | — | Deterministic retrieval ranking, provenance, bounded limits, and typed errors behind a stable `Retriever` interface | Accepted | issue-impl-sep28 | `docs/issues/imp-2-deterministic-retrieval.md` |
+| [ADR-0146](./ADR-0146-context-compilation-and-a8-extraction.md) | — | `kernel/context` owns control-plane context (needs/selection/budget/compression/provenance/assembly); inference `context` stays execution-local (A8) | Accepted | issue-impl-sep28 | `docs/issues/imp-3-context-compilation.md` |
+| [ADR-0147](./ADR-0147-runtime-sandbox-isolation.md) | — | Runtime sandbox isolation behind the worker adapter (path/env boundaries, limits, capabilities via a policy seam, typed errors, cleanup) | Accepted | issue-impl-sep28 | `docs/issues/imp-5-sandbox-execution.md` |
+| [ADR-0148](./ADR-0148-computer-use-capability-and-runtime-wiring.md) | — | Computer-use toolbox capability (declared permissions, required sandbox) wired through the runtime sandbox gate by the kernel | Accepted | issue-impl-sep28 | `docs/issues/imp-6-computer-use-tool-execution.md` |
+| [ADR-0149](./ADR-0149-scheduler-concurrency-retries-and-aggregation.md) | — | Scheduler bounded deterministic concurrency, retries with unique attempt ids, cancellation, partial failure, and aggregation | Accepted | issue-impl-sep28 | `docs/issues/imp-8-scheduling-multi-agent-execution.md` |
+| [ADR-0150](./ADR-0150-role-model-compute-allocation-separation.md) | — | Role, model, and compute allocation are independent; model registry populated; `ExecutionPlan` produced | Accepted | issue-impl-sep28 | `docs/issues/imp-7-allocation.md` |
+| [ADR-0151](./ADR-0151-routing-and-budget-policy-in-the-allocator.md) | — | Model-locality/tier routing and budget policy live in `kernel/allocator/routing`; inference is provider/execution | Accepted | issue-impl-sep28 | `docs/issues/imp-7-allocation.md` |
+| [ADR-0152](./ADR-0152-experience-feedback-and-learning-states.md) | — | Experience feedback loop with apprenticing/studying learning states, selective mentorship, and contamination control | Accepted | issue-impl-sep28 | `docs/issues/imp-9-learning-experience-feedback.md` |
+| [ADR-0153](./ADR-0153-observability-identity-chain-and-accounting.md) | — | Structured seam events, the end-to-end identity chain, and cost/token/compute accounting | Accepted | issue-impl-sep28 | `docs/issues/imp-10-observability-hardening-e2e.md` |

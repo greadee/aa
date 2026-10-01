@@ -8,8 +8,10 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/greadee/aa/kernel/allocator/planner"
@@ -17,8 +19,8 @@ import (
 	kcontext "github.com/greadee/aa/kernel/context"
 	"github.com/greadee/aa/kernel/contract"
 	"github.com/greadee/aa/kernel/gate"
-	"github.com/greadee/aa/kernel/intake"
 	"github.com/greadee/aa/kernel/telemetry"
+	"github.com/greadee/aa/runtime/intake"
 	"github.com/greadee/aa/runtime/worker"
 )
 
@@ -37,7 +39,7 @@ func (NopSink) Event(int, string, map[string]any) error { return nil }
 // Record implements Sink.
 func (NopSink) Record(string, string, []byte) error { return nil }
 
-// Config configures the orchestrator.
+// Config configures the scheduler.
 type Config struct {
 	Registry      *role_allocator.Registry
 	Runtime       worker.Adapter
@@ -49,21 +51,31 @@ type Config struct {
 	LeaseTTL      time.Duration
 	ContextInputs func(workPackageID string) []kcontext.Input
 	Now           func() time.Time
+	// MaxConcurrency bounds how many ready work packages run at once. Zero or
+	// one means serial (deterministic order).
+	MaxConcurrency int
+	// MaxAttempts is the total attempts per work package (including the first).
+	// Zero or one means no retry.
+	MaxAttempts int
 }
 
 // Scheduler runs the control cycle over one project graph.
 type Scheduler struct {
-	graph              *planner.Graph
-	cfg                Config
+	projectID string
+	graph     *planner.Graph
+	cfg       Config
+
+	mu                 sync.Mutex
 	intake             *intake.Service
 	assignments        map[string]*Assignment
+	attempts           map[string]int
 	results            map[string]worker.Result
 	telemetryRecords   []telemetry.Record
 	learningCandidates []telemetry.Candidate
 	sequence           int
 }
 
-// New validates the config and graph and returns an orchestrator.
+// New validates the config and graph and returns a scheduler.
 func New(graph *planner.Graph, cfg Config) (*Scheduler, error) {
 	if graph == nil {
 		return nil, fmt.Errorf("scheduler: graph is required")
@@ -90,10 +102,12 @@ func New(graph *planner.Graph, cfg Config) (*Scheduler, error) {
 		cfg.Runtime = worker.Disabled{}
 	}
 	return &Scheduler{
+		projectID:   graph.ProjectID,
 		graph:       graph,
 		cfg:         cfg,
 		intake:      intake.New(),
 		assignments: make(map[string]*Assignment),
+		attempts:    make(map[string]int),
 		results:     make(map[string]worker.Result),
 	}, nil
 }
@@ -111,24 +125,41 @@ type DispatchReport struct {
 // Dispatch runs the next ready work package if one exists. The boolean reports
 // whether work was dispatched.
 func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) {
+	o.mu.Lock()
 	ready := o.graph.Ready()
 	if len(ready) == 0 {
+		o.mu.Unlock()
 		return DispatchReport{}, false, nil
 	}
 	workPackageID := ready[0]
-	wp, _ := o.graph.Get(workPackageID)
+	o.mu.Unlock()
 
-	selected, ok := o.cfg.Registry.SelectOne(role_allocator.Requirement{
-		Capabilities: wp.Capabilities,
-	})
+	report, err := o.dispatchOne(ctx, workPackageID)
+	return report, true, err
+}
+
+// dispatchOne runs the full control cycle for one work package. Shared state is
+// mutated only while holding o.mu; the runtime call runs outside the lock so a
+// caller (Run) can dispatch several work packages concurrently.
+func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (DispatchReport, error) {
+	o.mu.Lock()
+	wp, ok := o.graph.Get(workPackageID)
 	if !ok {
-		return DispatchReport{}, false, fmt.Errorf("scheduler: no eligible worker for %s", workPackageID)
+		o.mu.Unlock()
+		return DispatchReport{}, fmt.Errorf("scheduler: unknown work package %s", workPackageID)
+	}
+	selected, ok := o.cfg.Registry.SelectOne(role_allocator.Requirement{Capabilities: wp.Capabilities})
+	if !ok {
+		o.mu.Unlock()
+		return DispatchReport{}, fmt.Errorf("scheduler: no eligible worker for %s", workPackageID)
 	}
 
-	assignmentID := "asg_" + workPackageID
+	o.attempts[workPackageID]++
+	attempt := o.attempts[workPackageID]
+	assignmentID := fmt.Sprintf("asg_%s_%d", workPackageID, attempt)
 	executionContract, err := contract.Build(contract.Request{
 		ID:            "ec_" + assignmentID,
-		ProjectID:     o.graph.ProjectID,
+		ProjectID:     o.projectID,
 		WorkPackageID: workPackageID,
 		AssignmentID:  assignmentID,
 		Requested:     wp.Capabilities,
@@ -137,19 +168,22 @@ func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) 
 		Gates:         gateNames(o.cfg.Gates),
 	})
 	if err != nil {
-		return DispatchReport{}, false, err
+		o.mu.Unlock()
+		return DispatchReport{}, err
 	}
 
 	var inputs []kcontext.Input
 	if o.cfg.ContextInputs != nil {
 		inputs = o.cfg.ContextInputs(workPackageID)
 	}
-	bundle := o.cfg.Compiler.Compile(o.graph.ProjectID, workPackageID, inputs)
+	bundle := o.cfg.Compiler.Compile(o.projectID, workPackageID, inputs)
 
-	assignment := NewAssignment(assignmentID, o.graph.ProjectID, workPackageID, string(selected.ID))
+	assignment := NewAssignment(assignmentID, o.projectID, workPackageID, string(selected.ID))
+	assignment.Attempt = attempt
 	for _, state := range []State{StateLeased, StatePreparing, StateRunning} {
 		if err := assignment.Transition(state); err != nil {
-			return DispatchReport{}, false, err
+			o.mu.Unlock()
+			return DispatchReport{}, err
 		}
 	}
 	assignment.LeaseFor(string(selected.ID), o.cfg.Now(), o.cfg.LeaseTTL)
@@ -157,6 +191,7 @@ func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) 
 	o.emit("EXECUTION_STARTED", map[string]any{
 		"workPackageId": workPackageID, "assignmentId": assignmentID, "workerId": string(selected.ID),
 	})
+	o.mu.Unlock()
 
 	result, err := o.cfg.Runtime.Run(ctx, worker.Request{
 		AssignmentID:   assignmentID,
@@ -167,15 +202,27 @@ func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) 
 		Capabilities:   executionContract.Capabilities,
 	})
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			o.mu.Lock()
+			_ = assignment.Transition(StateCanceled)
+			o.assignments[workPackageID] = assignment
+			o.mu.Unlock()
+			return DispatchReport{}, err
+		}
+		o.mu.Lock()
 		_ = assignment.Transition(StateFailed)
 		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
 		o.assignments[workPackageID] = assignment
-		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed"}, true, nil
-	}
-	if err := assignment.Transition(StateCollecting); err != nil {
-		return DispatchReport{}, false, err
+		o.mu.Unlock()
+		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed"}, nil
 	}
 
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	if err := assignment.Transition(StateCollecting); err != nil {
+		return DispatchReport{}, err
+	}
 	accepted, err := o.intake.Submit(intake.Result{
 		ID:            "res_" + assignmentID,
 		AttemptID:     "att_" + assignmentID,
@@ -188,7 +235,7 @@ func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) 
 		Failure:       result.Failure,
 	})
 	if err != nil {
-		return DispatchReport{}, false, err
+		return DispatchReport{}, err
 	}
 
 	o.assignments[workPackageID] = assignment
@@ -200,14 +247,14 @@ func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) 
 	if result.Status != "succeeded" && result.Status != "partial" {
 		_ = assignment.Transition(StateFailed)
 		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
-		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed", Gates: report, IntakeAccepted: accepted}, true, nil
+		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed", Gates: report, IntakeAccepted: accepted}, nil
 	}
 
 	if err := assignment.Transition(StateAwaitingGates); err != nil {
-		return DispatchReport{}, false, err
+		return DispatchReport{}, err
 	}
 	if report.Passed {
-		return o.accept(assignment, report, accepted), true, nil
+		return o.accept(assignment, report, accepted), nil
 	}
 	status := "pending"
 	if !report.Pending {
@@ -215,11 +262,13 @@ func (o *Scheduler) Dispatch(ctx context.Context) (DispatchReport, bool, error) 
 		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
 		status = "failed"
 	}
-	return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: status, Gates: report, IntakeAccepted: accepted}, true, nil
+	return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: status, Gates: report, IntakeAccepted: accepted}, nil
 }
 
 // Resolve re-evaluates gates for a work package that is awaiting gates.
 func (o *Scheduler) Resolve(workPackageID string) (DispatchReport, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	assignment, ok := o.assignments[workPackageID]
 	if !ok {
 		return DispatchReport{}, fmt.Errorf("scheduler: unknown assignment for %s", workPackageID)
@@ -251,6 +300,8 @@ func (o *Scheduler) Approve(workPackageID string) {
 
 // Telemetry returns recorded telemetry in order.
 func (o *Scheduler) Telemetry() []telemetry.Record {
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	out := make([]telemetry.Record, len(o.telemetryRecords))
 	copy(out, o.telemetryRecords)
 	return out
@@ -258,6 +309,8 @@ func (o *Scheduler) Telemetry() []telemetry.Record {
 
 // Candidates returns derived learning candidates in order.
 func (o *Scheduler) Candidates() []telemetry.Candidate {
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	out := make([]telemetry.Candidate, len(o.learningCandidates))
 	copy(out, o.learningCandidates)
 	return out
@@ -282,6 +335,8 @@ type ProjectStatus struct {
 
 // Status returns the current project status.
 func (o *Scheduler) Status() ProjectStatus {
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	status := ProjectStatus{ProjectID: o.graph.ProjectID, GraphID: o.graph.ID, WorkPackages: o.graph.List()}
 	for _, id := range sortedKeys(o.assignments) {
 		a := o.assignments[id]
@@ -316,6 +371,7 @@ func (o *Scheduler) subject(workPackageID string, result worker.Result) gate.Sub
 	return gate.Subject{WorkPackageID: workPackageID, Status: result.Status, Tests: tests}
 }
 
+// recordTelemetry appends execution evidence. Callers must hold o.mu.
 func (o *Scheduler) recordTelemetry(assignment *Assignment, result worker.Result) {
 	record := telemetry.Record{
 		AttemptID:     "att_" + assignment.ID,
@@ -333,6 +389,7 @@ func (o *Scheduler) recordTelemetry(assignment *Assignment, result worker.Result
 	o.learningCandidates = append(o.learningCandidates, telemetry.Derive(record, failed)...)
 }
 
+// emit records one ordered event. Callers must hold o.mu.
 func (o *Scheduler) emit(eventType string, payload map[string]any) {
 	o.sequence++
 	_ = o.cfg.Sink.Event(o.sequence, eventType, payload)

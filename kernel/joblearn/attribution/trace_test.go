@@ -3,35 +3,35 @@ package attribution
 import (
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 )
 
 func intPtr(v int) *int { return &v }
 
-func traceWith(steps ...v1.TraceStep) v1.Trace {
-	return v1.Trace{
-		Envelope:      v1.Envelope{ContractVersion: v1.Version, Kind: "trace", ID: "trc_1"},
+func traceWith(steps ...v2.TraceStep) v2.Trace {
+	return v2.Trace{
+		Envelope:      v2.Envelope{ContractVersion: v2.Version, Kind: "trace", ID: "trc_1"},
 		AttemptID:     "att_1",
 		WorkPackageID: "wp_1",
 		Steps:         steps,
 	}
 }
 
-func step(seq int, outcome v1.TraceOutcome) v1.TraceStep {
-	return v1.TraceStep{Sequence: intPtr(seq), Phase: v1.TraceTest, Outcome: outcome}
+func step(seq int, outcome v2.TraceOutcome) v2.TraceStep {
+	return v2.TraceStep{Sequence: intPtr(seq), Phase: v2.TraceTest, Outcome: outcome}
 }
 
 func TestTraceOutcomePrecedence(t *testing.T) {
 	cases := []struct {
 		name  string
-		trace v1.Trace
+		trace v2.Trace
 		want  joblearn.Outcome
 	}{
-		{"succeeded", traceWith(step(0, v1.TraceSucceeded)), joblearn.OutcomeSucceeded},
-		{"failed dominates blocked", traceWith(step(0, v1.TraceBlocked), step(1, v1.TraceFailed)), joblearn.OutcomeFailed},
-		{"blocked", traceWith(step(0, v1.TraceSucceeded), step(1, v1.TraceBlocked)), joblearn.OutcomeBlocked},
-		{"all skipped is unknown", traceWith(step(0, v1.TraceSkipped)), joblearn.OutcomeUnknown},
+		{"succeeded", traceWith(step(0, v2.TraceSucceeded)), joblearn.OutcomeSucceeded},
+		{"failed dominates blocked", traceWith(step(0, v2.TraceBlocked), step(1, v2.TraceFailed)), joblearn.OutcomeFailed},
+		{"blocked", traceWith(step(0, v2.TraceSucceeded), step(1, v2.TraceBlocked)), joblearn.OutcomeBlocked},
+		{"all skipped is unknown", traceWith(step(0, v2.TraceSkipped)), joblearn.OutcomeUnknown},
 	}
 	for _, tc := range cases {
 		if got := TraceOutcome(tc.trace); got != tc.want {
@@ -41,7 +41,7 @@ func TestTraceOutcomePrecedence(t *testing.T) {
 }
 
 func TestTraceOutcomeTruncatedIsPartial(t *testing.T) {
-	trace := traceWith(step(0, v1.TraceSucceeded))
+	trace := traceWith(step(0, v2.TraceSucceeded))
 	truncated := true
 	trace.Truncated = &truncated
 
@@ -51,7 +51,7 @@ func TestTraceOutcomeTruncatedIsPartial(t *testing.T) {
 }
 
 func TestAttributeTraceRecordsIdentityAndEvidence(t *testing.T) {
-	trace := traceWith(step(0, v1.TraceSucceeded))
+	trace := traceWith(step(0, v2.TraceSucceeded))
 	meta := Meta{ProjectID: "proj_1", Role: "engineer", Worker: "w_1", Sequence: 7}
 
 	attr, err := AttributeTrace(trace, meta)
@@ -76,7 +76,7 @@ func TestAttributeTraceRecordsIdentityAndEvidence(t *testing.T) {
 }
 
 func TestAttributeTraceRequiresScope(t *testing.T) {
-	trace := traceWith(step(0, v1.TraceSucceeded))
+	trace := traceWith(step(0, v2.TraceSucceeded))
 	trace.WorkPackageID = ""
 
 	if _, err := AttributeTrace(trace, Meta{}); err == nil {
@@ -85,7 +85,7 @@ func TestAttributeTraceRequiresScope(t *testing.T) {
 }
 
 func TestScoreTraceIsBoundedAndDeterministic(t *testing.T) {
-	trace := traceWith(step(0, v1.TraceFailed))
+	trace := traceWith(step(0, v2.TraceFailed))
 	trace.Steps[0].DurationMS = intPtr(500)
 	cost := 0.5
 	trace.Steps[0].CostUSD = &cost
@@ -105,12 +105,12 @@ func TestScoreTraceIsBoundedAndDeterministic(t *testing.T) {
 }
 
 func TestDeriveTracesPreservesOrder(t *testing.T) {
-	first := traceWith(step(0, v1.TraceSucceeded))
-	second := traceWith(step(0, v1.TraceFailed))
+	first := traceWith(step(0, v2.TraceSucceeded))
+	second := traceWith(step(0, v2.TraceFailed))
 	second.ID = "trc_2"
 	second.AttemptID = "att_2"
 
-	results, err := DeriveTraces([]v1.Trace{first, second}, func(v1.Trace) Meta { return Meta{} }, DefaultLimits())
+	results, err := DeriveTraces([]v2.Trace{first, second}, func(v2.Trace) Meta { return Meta{} }, DefaultLimits())
 	if err != nil {
 		t.Fatalf("DeriveTraces: %v", err)
 	}

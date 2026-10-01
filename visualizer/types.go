@@ -3,7 +3,7 @@ package visualizer
 import (
 	"time"
 
-	"github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 // Event is the shared canonical event consumed by the visualizer. It is not a

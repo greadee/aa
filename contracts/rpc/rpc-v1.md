@@ -29,6 +29,24 @@ Modules never import each other's internals. They call each other over an authen
 
 Responses are either `result` or `error`. Errors use a namespaced `code` and a `data` object that may carry a contract error object.
 
+## Boundary audit
+
+Inter-module communication is RPC only where a process, machine, or language
+boundary actually exists. Logical separation alone does **not** create a network
+boundary.
+
+| Boundary | Kind | Versioned on the wire | Enforced at |
+|---|---|---|---|
+| `inference` (Python) | Distributed (local socket) | `aa.rpcVersion`, `aa.contractVersion` | `runtime/inference/rpc` (server, deadline, idempotency, identity, framing) |
+| `obsv` host | Distributed (local socket) | protocol v1 (`hello`) | `obsv/transport` |
+| `sync` | Distributed (machine to machine) | RPC envelope + work-package contract | `sync/rpc` |
+| Control-plane API | External (HTTP/JSON) | OpenAPI `1.0.0` | `contracts/openapi/control-plane-v1.yaml` |
+| `forge`, `toolbox`, `kernel`, `memory` | In-process, transport-agnostic | RPC envelope when hosted | the module's `rpc` package, hosted by the kernel |
+
+In-process adapters expose the same envelope and error set, so adding a socket
+host later is a transport change, not a contract change. No socket is created for
+a module that does not need one.
+
 ## Security
 
 1. The socket is owner-only (current user). Services verify the peer's user where the OS allows it (Windows pipe server SID, Unix `SO_PEERCRED` / directory ownership).
@@ -36,17 +54,28 @@ Responses are either `result` or `error`. Errors use a namespaced `code` and a `
 3. Requests never carry credentials in the body; identity is established by the transport and the `aa.caller`/`aa.callerInstanceId` fields.
 4. Capability checks happen at the callee using the caller's execution contract, not by trusting the caller.
 
-## Versioning
+## Versioning and compatibility
 
-- `aa.rpcVersion` is `MAJOR.MINOR`. A callee rejects an unsupported major with `aa.incompatible`.
-- `aa.contractVersion` is the contract version of `params`/`result`; additive changes are minor.
+- `aa.rpcVersion` and `aa.contractVersion` are `MAJOR.MINOR`.
+- The RPC envelope is **frozen at major `1`**. A callee rejects a different RPC major with `aa.incompatible`.
+- A callee rejects a different **contract** major (currently `2`) with `aa.incompatible`. An absent version is treated as compatible.
+- **Minor differences are compatible in both directions.** A `1.7`/`2.3` caller is served by a `1.0`/`2.0` callee and vice versa; consumers ignore unknown fields and unknown enum members they do not act on.
 - Unknown methods return `aa.method_not_found`; unknown params fields are ignored.
+- Unsupported-version behavior **fails closed**: the request is rejected before any handler runs and leaves no partial state.
+- **Contracts generation.** `v1` was sunset (ten-issue sprint, Issue 1 / A4); `v2` is the only active generation, so an unsupported contract major is always `aa.incompatible`.
 - **Service rename (migration).** The model/compute routing service was renamed
   `sifter` → `inference` (module update `architecture-refactor-1`), so its
   methods are now `inference.*`. The former `sifter.*` namespace is retired and
   returns `aa.method_not_found`. This is a service rename within RPC envelope
   version `1.0`, not an envelope change; it is recorded here because it changes
   the method namespace. Callers must use `inference.*`.
+
+## Capability negotiation
+
+- A service advertises the versions and methods it supports. A distributed service returns them from a handshake (`inference.health` returns `rpcVersion`, `contractVersion`, and `capabilities[]`); an in-process adapter exposes the equivalent `Capabilities()`.
+- A caller negotiates before calling: it uses the highest common major/minor and calls **only advertised methods**.
+- Calling an unadvertised method returns `aa.method_not_found`; calling an advertised method without the required capability returns `aa.unauthorized`.
+- Capability checks happen at the callee using the caller's execution contract, never by trusting the caller's metadata.
 
 ## Error codes
 
@@ -65,12 +94,14 @@ Responses are either `result` or `error`. Errors use a namespaced `code` and a `
 | `aa.unavailable` | Service or runtime unavailable |
 | `aa.conflict` | Optimistic-concurrency or duplicate conflict |
 
-Errors that are retryable set `data.retryable: true`.
+Every governed error carries `data.retryable` (`true` or `false`). A caller must not retry unless it is `true`; JSON-RPC numeric codes (parse/invalid request/params, method not found, internal) are never retryable unchanged.
 
-## Idempotency
+## Deadlines, retries, and idempotency
 
-- Every mutating method takes an `idempotencyKey` derived from the request contract `id`. Repeated calls with the same key return the original result.
-- The callee records applied keys for at least the retention window of the affected aggregate.
+- Every request carries `aa.timeoutMs`. The server **enforces** it: a request that exceeds the deadline is cancelled, fails closed with `aa.unavailable` and `data.retryable: true`, and leaves no partial state.
+- A caller retries **only** when `error.data.retryable` is `true`, with bounded backoff. Non-retryable errors (`aa.incompatible`, `aa.unauthorized`, `aa.budget_exceeded`, `aa.approval_required`, `aa.conflict`, invalid params) must not be retried unchanged.
+- Every mutating method takes an `idempotencyKey` derived from the request contract `id`. A retry reuses the same key; the callee returns the original result.
+- The callee records applied keys for at least the retention window of the affected aggregate. Reusing a key with a **different** request is `aa.conflict`.
 
 ## Methods
 

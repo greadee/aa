@@ -1,7 +1,7 @@
 package promote
 
 import (
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/repo"
 )
 
@@ -21,11 +21,11 @@ func NewMemorySink(records *repo.MemoryRecordRepository) (*MemorySink, error) {
 }
 
 // Propose stores a candidate record.
-func (s *MemorySink) Propose(record v1.MemoryRecord) (v1.MemoryRecord, error) {
+func (s *MemorySink) Propose(record v2.MemoryRecord) (v2.MemoryRecord, error) {
 	return s.records.Propose(record)
 }
 
 // Transition applies a validated lifecycle transition.
-func (s *MemorySink) Transition(id string, to v1.MemoryLifecycle) (v1.MemoryRecord, error) {
+func (s *MemorySink) Transition(id string, to v2.MemoryLifecycle) (v2.MemoryRecord, error) {
 	return s.records.Transition(id, to)
 }

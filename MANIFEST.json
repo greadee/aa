@@ -52,6 +52,8 @@
     "docs/updates/README.md",
     "docs/modules/runtime/inference/README.md",
     "docs/updates/architecture-refactor-1/plan.md",
-    "docs/updates/architecture-refactor-1/summary.md"
+    "docs/updates/architecture-refactor-1/summary.md",
+    "docs/updates/issue-impl-sep28/plan.md",
+    "docs/updates/issue-impl-sep28/summary.md"
   ]
 }

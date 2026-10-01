@@ -8,14 +8,15 @@
 
 Own execution mechanics for allocated work: instantiate and run workers
 (Role × Model + bindings), expose the provider-neutral execution adapter, and
-integrate execution isolation (reserved) and the inference service. It does not
+integrate execution isolation (`sandbox`) and the inference service. It does not
 decide allocation or scheduling.
 
 ## Owns
 
 - Worker execution mechanics (the `worker` adapter seam).
 - Worker lifecycle (reserved).
-- The execution-isolation boundary (reserved; sandboxing is not implemented).
+- The execution-isolation boundary (`sandbox`, behind the worker adapter).
+- Result intake (`intake`): validate and deduplicate untrusted result envelopes.
 - The model provider/execution service boundary (the nested Python `inference` subproject).
 
 ## Must not
@@ -29,5 +30,6 @@ decide allocation or scheduling.
 |---|---|
 | [`worker`](./worker.md) | Provider-neutral execution adapter and deterministic fake |
 | [`lifecycle`](./lifecycle.md) | Reserved: worker lifecycle |
-| [`sandbox`](./sandbox.md) | Reserved: execution isolation (not implemented) |
+| [`sandbox`](./sandbox.md) | Execution isolation behind the worker adapter: path/env boundaries, limits, capabilities, cleanup, observability |
+| [`intake`](./intake.md) | Validate and deduplicate untrusted result envelopes |
 | [`inference`](./inference/README.md) | Model provider/execution service (the former `aa-sifter`, renamed; nested Python subproject) |

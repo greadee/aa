@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["v1/**/*.ts", "v2/**/*.ts"]
+  "include": ["v2/**/*.ts"]
 }

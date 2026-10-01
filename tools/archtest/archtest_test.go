@@ -11,7 +11,7 @@ func TestModuleFromImport(t *testing.T) {
 		name   string
 		wantOK bool
 	}{
-		{"github.com/greadee/aa/contracts/go/v1", "contracts", true},
+		{"github.com/greadee/aa/contracts/go/v2", "contracts", true},
 		{"github.com/greadee/aa/kernel", "kernel", true},
 		{"github.com/greadee/aa/", "", false},
 		{"fmt", "", false},
@@ -28,7 +28,7 @@ func TestModuleFromImport(t *testing.T) {
 func TestCheckDetectsViolation(t *testing.T) {
 	allowed := map[string]bool{"contracts": true}
 	deps := []string{
-		"github.com/greadee/aa/contracts/go/v1",
+		"github.com/greadee/aa/contracts/go/v2",
 		"github.com/greadee/aa/sync",
 		"fmt",
 		"github.com/greadee/aa/obsv", // self
@@ -45,7 +45,7 @@ func TestCheckDetectsViolation(t *testing.T) {
 func TestCheckAllowsPermitted(t *testing.T) {
 	allowed := map[string]bool{"contracts": true, "obsv": true}
 	deps := []string{
-		"github.com/greadee/aa/contracts/go/v1",
+		"github.com/greadee/aa/contracts/go/v2",
 		"github.com/greadee/aa/obsv/journal",
 		"strings",
 	}

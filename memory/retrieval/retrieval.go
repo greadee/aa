@@ -1,4 +1,4 @@
-// Package query provides deterministic read access to aa-memory's projection
+// Package retrieval provides deterministic read access to aa-memory's projection
 // and derives work, project, and job histories from the event log.
 package retrieval
 

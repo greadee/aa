@@ -4,30 +4,30 @@ import (
 	"errors"
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 )
 
 func intPtr(v int) *int { return &v }
 
-func trace(id, attempt string, steps int) v1.Trace {
-	built := make([]v1.TraceStep, 0, steps)
+func trace(id, attempt string, steps int) v2.Trace {
+	built := make([]v2.TraceStep, 0, steps)
 	for i := 0; i < steps; i++ {
-		built = append(built, v1.TraceStep{
+		built = append(built, v2.TraceStep{
 			Sequence: intPtr(i),
-			Phase:    v1.TracePlan,
-			Outcome:  v1.TraceSucceeded,
+			Phase:    v2.TracePlan,
+			Outcome:  v2.TraceSucceeded,
 		})
 	}
-	return v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: v1.Version, Kind: "trace", ID: id},
+	return v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: v2.Version, Kind: "trace", ID: id},
 		AttemptID: attempt,
 		Steps:     built,
 	}
 }
 
 func TestStaticSortsDeterministically(t *testing.T) {
-	src := NewStatic([]v1.Trace{
+	src := NewStatic([]v2.Trace{
 		trace("trc_c", "att_c", 1),
 		trace("trc_a", "att_a", 1),
 		trace("trc_b", "att_b", 1),
@@ -43,7 +43,7 @@ func TestStaticSortsDeterministically(t *testing.T) {
 }
 
 func TestStaticDoesNotMutateOrAliasInput(t *testing.T) {
-	input := []v1.Trace{trace("trc_b", "att_b", 1), trace("trc_a", "att_a", 1)}
+	input := []v2.Trace{trace("trc_b", "att_b", 1), trace("trc_a", "att_a", 1)}
 	src := NewStatic(input)
 
 	got, _ := src.Traces()
@@ -59,7 +59,7 @@ func TestStaticDoesNotMutateOrAliasInput(t *testing.T) {
 }
 
 func TestBoundLimitsTraces(t *testing.T) {
-	traces := []v1.Trace{trace("trc_a", "att_a", 1), trace("trc_b", "att_b", 1)}
+	traces := []v2.Trace{trace("trc_a", "att_a", 1), trace("trc_b", "att_b", 1)}
 
 	got, err := Bound(traces, Bounds{MaxTraces: 1})
 	if err != nil {
@@ -71,7 +71,7 @@ func TestBoundLimitsTraces(t *testing.T) {
 }
 
 func TestBoundLimitsStepsByWholeTraces(t *testing.T) {
-	traces := []v1.Trace{trace("trc_a", "att_a", 3), trace("trc_b", "att_b", 3)}
+	traces := []v2.Trace{trace("trc_a", "att_a", 3), trace("trc_b", "att_b", 3)}
 
 	got, err := Bound(traces, Bounds{MaxSteps: 4})
 	if err != nil {
@@ -83,7 +83,7 @@ func TestBoundLimitsStepsByWholeTraces(t *testing.T) {
 }
 
 func TestBoundUnlimitedKeepsAll(t *testing.T) {
-	traces := []v1.Trace{trace("trc_a", "att_a", 1), trace("trc_b", "att_b", 1)}
+	traces := []v2.Trace{trace("trc_a", "att_a", 1), trace("trc_b", "att_b", 1)}
 
 	got, err := Bound(traces, DefaultBounds())
 	if err != nil {
@@ -133,7 +133,7 @@ func TestFakeRecordsReads(t *testing.T) {
 	}
 }
 
-func ids(traces []v1.Trace) []string {
+func ids(traces []v2.Trace) []string {
 	out := make([]string, len(traces))
 	for i, tr := range traces {
 		out[i] = tr.ID

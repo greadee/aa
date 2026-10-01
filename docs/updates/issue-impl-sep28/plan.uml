@@ -1,0 +1,69 @@
+@startuml
+title Issue Implementation Sprint (Sep 28) — staged plan
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:Objective 0 — issue spine
+(plan; ten issue docs; GitHub issues + milestone);
+
+partition "Stage 0 — Cleanup (R4, R5-R8, R10)" {
+  :0.1 alias contracts v2 imports (R4);
+  :0.2 comments + current-state docs (R5-R8, R10; R9 no-op);
+}
+
+partition "Stage 1 — Canonical: contracts & boundaries (Issues 1, 4)" {
+  :1.1 Issue 1 canonical architecture & contracts;
+  :1.2 A4 sunset contracts v1;
+  :1.3 Issue 4 RPC/boundary hardening;
+  :1.4 A5 decide intake/contract ownership;
+}
+
+partition "Stage 2 — Knowledge (Issues 2, 3)" {
+  :2.1 Issue 2 deterministic retrieval;
+  :2.2 Issue 3 context compilation & assembly;
+  :2.3 A8 extract context from inference;
+}
+
+partition "Stage 3 — Execution (Issues 5, 6, 8)" {
+  :3.1 Issue 5 sandbox (A7);
+  :3.2 Issue 6 computer-use/tools;
+  :3.3 Issue 8 scheduling & multi-agent;
+  :3.4 A5 move intake to runtime;
+}
+
+partition "Stage 4 — Allocation (Issue 7)" {
+  :4.1 role/capability allocation;
+  :4.2 model allocation + registry/models (A6);
+  :4.3 compute allocation (A6);
+  :4.4 A8 extract routing/budgets from inference;
+}
+
+partition "Stage 5 — Learning & observability (Issues 9, 10)" {
+  :5.1 Issue 9 learning/experience feedback;
+  :5.2 A9 apprenticing/studying;
+  :5.3 Issue 10 observability + identity chain;
+  :5.4 Issue 10 e2e validation & hardening;
+}
+
+partition "Stage 6 — Closeout" {
+  :6.1 sprint summary + close issues;
+  :6.2 link sprint PR;
+}
+
+stop
+
+note right
+  Per issue/substage: one commit;
+  fold related sub-tasks in when one
+  simple message describes them.
+  Green gates: gofmt/build/vet/test,
+  archtest, contracts Go/Py/TS,
+  inference pytest/ruff/mypy, docs link
+  check. Per substage: stop for review;
+  post code-review / repo-audit comments.
+end note
+
+@enduml

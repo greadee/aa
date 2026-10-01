@@ -12,18 +12,18 @@ package joblearn
 import (
 	"fmt"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 // Cross-module data structures live only in contracts; joblearn re-exports the
 // ones it uses so callers can stay within one package boundary.
 type (
 	// Reference points at another contract object.
-	Reference = v1.Reference
+	Reference = v2.Reference
 	// Provenance records where a record came from.
-	Provenance = v1.Provenance
+	Provenance = v2.Provenance
 	// Applicability scopes a record to roles or languages.
-	Applicability = v1.Applicability
+	Applicability = v2.Applicability
 )
 
 // MetricVersion is the current scoring version. Scores are only comparable

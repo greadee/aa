@@ -111,3 +111,23 @@ func TestInvalidParams(t *testing.T) {
 		t.Fatalf("error = %+v", resp.Error)
 	}
 }
+
+func TestVersionCompatibilityAndCapabilities(t *testing.T) {
+	ctx := context.Background()
+	svc, _, _ := newService()
+
+	minor := svc.Handle(ctx, Request{JSONRPC: "2.0", ID: 1, Method: MethodStatus, AA: &AA{RPCVersion: "1.7", ContractVersion: "2.3"}})
+	if minor.Error != nil {
+		t.Fatalf("minor versions must be compatible: %+v", minor.Error)
+	}
+
+	contract := svc.Handle(ctx, Request{JSONRPC: "2.0", ID: 2, Method: MethodStatus, AA: &AA{ContractVersion: "1.0"}})
+	if contract.Error == nil || contract.Error.Code != CodeIncompatible {
+		t.Fatalf("expected aa.incompatible, got %+v", contract.Error)
+	}
+
+	caps := svc.Capabilities()
+	if caps.ContractVersion != "2.0" || len(caps.Methods) != 3 {
+		t.Fatalf("capabilities = %+v", caps)
+	}
+}

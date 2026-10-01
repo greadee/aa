@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn/attribution"
 	"github.com/greadee/aa/kernel/joblearn/distill"
 	"github.com/greadee/aa/kernel/joblearn/features"
@@ -14,14 +14,14 @@ import (
 	"github.com/greadee/aa/memory/store"
 )
 
-func fixture(id, attempt string) v1.Trace {
-	return v1.Trace{
-		Envelope:      v1.Envelope{ContractVersion: v1.Version, Kind: "trace", ID: id},
+func fixture(id, attempt string) v2.Trace {
+	return v2.Trace{
+		Envelope:      v2.Envelope{ContractVersion: v2.Version, Kind: "trace", ID: id},
 		AttemptID:     attempt,
 		WorkPackageID: "wp_1",
-		Steps: []v1.TraceStep{
-			{Sequence: intPtr(0), Phase: v1.TracePlan, Outcome: v1.TraceSucceeded},
-			{Sequence: intPtr(1), Phase: v1.TraceTest, Outcome: v1.TraceSucceeded},
+		Steps: []v2.TraceStep{
+			{Sequence: intPtr(0), Phase: v2.TracePlan, Outcome: v2.TraceSucceeded},
+			{Sequence: intPtr(1), Phase: v2.TraceTest, Outcome: v2.TraceSucceeded},
 		},
 	}
 }
@@ -32,7 +32,7 @@ func TestTraceStoreToPromotionEndToEnd(t *testing.T) {
 		t.Fatal(err)
 	}
 	traces := repo.NewTraceRepository(memoryStore, projection.NewMem())
-	for _, trace := range []v1.Trace{fixture("trc_1", "att_1"), fixture("trc_2", "att_2"), fixture("trc_3", "att_3")} {
+	for _, trace := range []v2.Trace{fixture("trc_1", "att_1"), fixture("trc_2", "att_2"), fixture("trc_3", "att_3")} {
 		if _, _, err := traces.Ingest(trace); err != nil {
 			t.Fatalf("Ingest: %v", err)
 		}
@@ -51,7 +51,7 @@ func TestTraceStoreToPromotionEndToEnd(t *testing.T) {
 	}
 
 	meta := attribution.Meta{ProjectID: "prj_1", Role: "engineer"}
-	results, err := attribution.DeriveTraces(loaded, func(v1.Trace) attribution.Meta { return meta }, attribution.DefaultLimits())
+	results, err := attribution.DeriveTraces(loaded, func(v2.Trace) attribution.Meta { return meta }, attribution.DefaultLimits())
 	if err != nil {
 		t.Fatalf("DeriveTraces: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestTraceStoreToPromotionEndToEnd(t *testing.T) {
 		t.Fatalf("Propose: %v", err)
 	}
 
-	stored, err := memoryRecords.ListByLifecycle(v1.MemoryCandidate)
+	stored, err := memoryRecords.ListByLifecycle(v2.MemoryCandidate)
 	if err != nil {
 		t.Fatalf("ListByLifecycle: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestTraceStoreToPromotionEndToEnd(t *testing.T) {
 		t.Fatal("expected candidate-only records in memory")
 	}
 	for _, record := range stored {
-		if record.Lifecycle != v1.MemoryCandidate {
+		if record.Lifecycle != v2.MemoryCandidate {
 			t.Fatalf("record %s is %s, want CANDIDATE", record.ID, record.Lifecycle)
 		}
 	}
@@ -105,7 +105,7 @@ func TestTraceStoreToPromotionEndToEnd(t *testing.T) {
 	if _, err := promoter.Propose(candidates); err != nil {
 		t.Fatalf("re-Propose: %v", err)
 	}
-	again, _ := memoryRecords.ListByLifecycle(v1.MemoryCandidate)
+	again, _ := memoryRecords.ListByLifecycle(v2.MemoryCandidate)
 	if len(again) != len(stored) {
 		t.Fatalf("re-proposing changed the record count: %d vs %d", len(again), len(stored))
 	}

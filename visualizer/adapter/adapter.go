@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/obsv/protocol"
 	visualizer "github.com/greadee/aa/visualizer"
 )
@@ -28,7 +28,7 @@ const contractKind = "event"
 const zeroTimestamp = "1970-01-01T00:00:00Z"
 
 // ToContract maps one aa-obsv observation event to the visualizer event type
-// (the contracts v1.Event taxonomy).
+// (the contracts v2.Event taxonomy).
 //
 // Every observation is recorded as a TELEMETRY_RECORDED event. The aggregate is
 // derived from the observation's work identity, preferring a work package, then
@@ -66,12 +66,12 @@ func ToContract(ev protocol.Event) (visualizer.Event, error) {
 	}
 
 	out := visualizer.Event{}
-	out.ContractVersion = v1.Version
+	out.ContractVersion = v2.Version
 	out.Kind = contractKind
 	out.ID = observationID(ev)
 	out.Sequence = ev.Sequence
 	out.OccurredAt = occurredAt(ev)
-	out.Type = v1.EventTelemetryRecorded
+	out.Type = v2.EventTelemetryRecorded
 	out.Aggregate = visualizer.EventAggregate{Kind: aggregateKind, ID: aggregateID}
 	out.Actor = actor(ev)
 	out.Payload = payload
@@ -178,4 +178,4 @@ func isLeadingRune(r rune) bool {
 }
 
 // ContractVersion returns the contract version the adapter emits.
-func ContractVersion() string { return v1.Version }
+func ContractVersion() string { return v2.Version }

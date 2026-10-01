@@ -16,3 +16,14 @@ Durable issue documentation. GitHub issues are the execution record; these docum
 | [trace-learning-substrate.md](trace-learning-substrate.md) | ISS-TRACE-LOOP | Umbrella: the observation → trace → learning substrate is under-delivered | `ph1-contracts`, `ph2-memory`, `ph3-kernel`, `ph4-sifter`, `ph9-joblearn` |
 | [ph1-contracts-trace-contract.md](ph1-contracts-trace-contract.md) | ISS-TRACE-1 | `contracts`: bounded per-step trace object | `ph1-contracts` |
 | [ph2-memory-trace-store.md](ph2-memory-trace-store.md) | ISS-TRACE-2 | `memory`: canonical trace store, summaries, retention | `ph2-memory` |
+| [post-refactor-implementation.md](post-refactor-implementation.md) | ISS-IMP (#22) | Umbrella: implement the ten post-refactor issues; resolve R4–R9/A4–A9 | `dev` |
+| [imp-1-canonical-architecture-and-contracts.md](imp-1-canonical-architecture-and-contracts.md) | ISS-IMP-1 (#23) | Canonical architecture & contracts | `dev` |
+| [imp-2-deterministic-retrieval.md](imp-2-deterministic-retrieval.md) | ISS-IMP-2 (#24) | `memory`: deterministic retrieval | `dev` |
+| [imp-3-context-compilation.md](imp-3-context-compilation.md) | ISS-IMP-3 (#25) | `kernel`: context compilation, budgeting & assembly | `dev` |
+| [imp-4-rpc-boundary-hardening.md](imp-4-rpc-boundary-hardening.md) | ISS-IMP-4 (#26) | `contracts`/RPC boundary & version-skew hardening | `dev` |
+| [imp-5-sandbox-execution.md](imp-5-sandbox-execution.md) | ISS-IMP-5 (#27) | `runtime`: sandbox execution | `dev` |
+| [imp-6-computer-use-tool-execution.md](imp-6-computer-use-tool-execution.md) | ISS-IMP-6 (#28) | `toolbox`: computer-use / tool execution | `dev` |
+| [imp-7-allocation.md](imp-7-allocation.md) | ISS-IMP-7 (#29) | `kernel/allocator`, `registry`: role/model/compute allocation | `dev` |
+| [imp-8-scheduling-multi-agent-execution.md](imp-8-scheduling-multi-agent-execution.md) | ISS-IMP-8 (#30) | `kernel/scheduler`, `runtime`: scheduling & multi-agent execution | `dev` |
+| [imp-9-learning-experience-feedback.md](imp-9-learning-experience-feedback.md) | ISS-IMP-9 (#31) | `kernel/joblearn`, `memory`: learning / experience feedback | `dev` |
+| [imp-10-observability-hardening-e2e.md](imp-10-observability-hardening-e2e.md) | ISS-IMP-10 (#32) | `obsv` + all: observability, hardening & e2e validation | `dev` |

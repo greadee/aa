@@ -3,9 +3,9 @@ info:
   title: aa control plane
   version: "1.0.0"
   description: >
-    External, local-only HTTP/JSON control plane used by aa-console and
-    aa-visualizer. The console never calls inter-module RPC directly.
-    Contract objects referenced here are defined in ../schemas/v1/.
+    External, local-only HTTP/JSON control plane used by aa-ui and
+    aa-visualizer. The ui never calls inter-module RPC directly.
+    Contract objects referenced here are defined in ../schemas/v2/.
 servers:
   - url: http://127.0.0.1:7100/api/v1
     description: Local host (loopback only)

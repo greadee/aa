@@ -9,7 +9,7 @@ package retention
 import (
 	"sort"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 // Policy bounds a projected trace view.
@@ -27,8 +27,8 @@ func DefaultPolicy() Policy { return Policy{} }
 
 // Trim returns a new, id-sorted trace slice with the policy applied. The input
 // and the traces it points at are never modified.
-func Trim(traces []v1.Trace, p Policy) []v1.Trace {
-	out := make([]v1.Trace, 0, len(traces))
+func Trim(traces []v2.Trace, p Policy) []v2.Trace {
+	out := make([]v2.Trace, 0, len(traces))
 	for _, t := range traces {
 		t.Steps = trimSteps(t.Steps, p.MaxStepsPerTrace)
 		out = append(out, t)
@@ -40,11 +40,11 @@ func Trim(traces []v1.Trace, p Policy) []v1.Trace {
 	return out
 }
 
-func trimSteps(steps []v1.TraceStep, limit int) []v1.TraceStep {
+func trimSteps(steps []v2.TraceStep, limit int) []v2.TraceStep {
 	if len(steps) == 0 {
 		return steps
 	}
-	kept := make([]v1.TraceStep, len(steps))
+	kept := make([]v2.TraceStep, len(steps))
 	copy(kept, steps)
 	sort.SliceStable(kept, func(i, j int) bool { return sequenceOf(kept[i]) < sequenceOf(kept[j]) })
 	if limit > 0 && len(kept) > limit {
@@ -53,8 +53,8 @@ func trimSteps(steps []v1.TraceStep, limit int) []v1.TraceStep {
 	return kept
 }
 
-func limitPerAttempt(traces []v1.Trace, limit int) []v1.Trace {
-	byAttempt := make(map[string][]v1.Trace)
+func limitPerAttempt(traces []v2.Trace, limit int) []v2.Trace {
+	byAttempt := make(map[string][]v2.Trace)
 	order := make([]string, 0)
 	for _, t := range traces {
 		if _, ok := byAttempt[t.AttemptID]; !ok {
@@ -63,7 +63,7 @@ func limitPerAttempt(traces []v1.Trace, limit int) []v1.Trace {
 		byAttempt[t.AttemptID] = append(byAttempt[t.AttemptID], t)
 	}
 	sort.Strings(order)
-	var out []v1.Trace
+	var out []v2.Trace
 	for _, attempt := range order {
 		group := byAttempt[attempt]
 		sort.Slice(group, func(i, j int) bool {
@@ -81,14 +81,14 @@ func limitPerAttempt(traces []v1.Trace, limit int) []v1.Trace {
 	return out
 }
 
-func sequenceOf(step v1.TraceStep) int {
+func sequenceOf(step v2.TraceStep) int {
 	if step.Sequence == nil {
 		return 0
 	}
 	return *step.Sequence
 }
 
-func revisionOf(trace v1.Trace) int {
+func revisionOf(trace v2.Trace) int {
 	if trace.Revision == nil {
 		return 0
 	}
