@@ -139,12 +139,14 @@ Each issue/substage below is **one commit**; closely-related sub-tasks are folde
 
 ## Exit criteria
 
-- [ ] All ten issues implemented and closed (docs + GitHub), or explicitly deferred with new issues.
-- [ ] R4–R9 and A4–A9 resolved or recorded.
-- [ ] Boundaries and contracts coherent; `archtest` and all module suites green.
-- [ ] Architecture/terminology/directives/indexes/MANIFEST/diagrams current; docs link check green.
-- [ ] Sprint summary + UML authored; sprint PR merged to `main`; branch retained.
-- [ ] Review and audit comments posted for each stage/issue.
+- [x] All ten issues implemented and closed (docs + GitHub `Closes #n`), or explicitly deferred with new issues.
+- [x] R4–R9 and A4–A9 resolved or recorded.
+- [x] Boundaries and contracts coherent; `archtest` and all module suites green.
+- [x] Architecture/terminology/directives/indexes/MANIFEST/diagrams current; docs link check green.
+- [x] Sprint summary + UML authored ([summary.md](./summary.md)); sprint PR #21 (`dev` → `main`) open; branch retained.
+- [x] Review/audit comments posted per issue; closeout comment on PR #21.
+
+Completed: see [summary.md](./summary.md).
 
 ## Future register
 

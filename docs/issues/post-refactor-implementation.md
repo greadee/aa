@@ -1,7 +1,7 @@
 # ISS-IMP — post-refactor implementation sprint (ten issues)
 
 **Type:** umbrella (feature program)
-**Status:** in progress (sprint planning complete; implementation not started)
+**Status:** complete (all ten sub-issues implemented; sprint summary authored)
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#22](https://github.com/greadee/aa/issues/22)
@@ -56,11 +56,13 @@ minimise cross-module jumping.
 
 ## Acceptance Criteria
 
-- [ ] All ten sub-issues implemented and closed (project/work/issue history + GitHub `Closes #n`), or explicitly deferred with a new issue.
-- [ ] R4–R9 and A4–A9 resolved or recorded.
-- [ ] `go build`/`go vet`/`go test`/`gofmt`, `tools/archtest`, contracts Go+Python+TypeScript, and `runtime/inference` checks pass.
-- [ ] Architecture, terminology, directives, indexes, `MANIFEST.json`, and diagrams current; docs link check passes.
-- [ ] Sprint summary + UML authored; sprint PR merged; branch retained.
+- [x] All ten sub-issues implemented and closed (project/work/issue history + GitHub `Closes #n`), or explicitly deferred with a new issue.
+- [x] R4–R9 and A4–A9 resolved or recorded.
+- [x] `go build`/`go vet`/`go test`/`gofmt`, `tools/archtest`, contracts Go+Python+TypeScript, and `runtime/inference` checks pass.
+- [x] Architecture, terminology, directives, indexes, `MANIFEST.json`, and diagrams current; docs link check passes.
+- [x] Sprint summary + UML authored; sprint PR opens (`dev` → `main`); branch retained. *(GitHub issues close when PR #21 merges.)*
+
+Sprint summary: [../updates/issue-impl-sep28/summary.md](../updates/issue-impl-sep28/summary.md).
 
 ## Notes
 

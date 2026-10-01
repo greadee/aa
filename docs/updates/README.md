@@ -13,7 +13,7 @@ owning update phase.
 | Update phase | Scope | Plan | Summary |
 |---|---|---|---|
 | [architecture-refactor-1](./architecture-refactor-1/plan.md) | Target boundaries, contracts v2, `registry`/`runtime`/`ui`, documentation restructure | [plan](./architecture-refactor-1/plan.md) | [summary](./architecture-refactor-1/summary.md) |
-| [issue-impl-sep28](./issue-impl-sep28/plan.md) | Implement the ten post-refactor issues in staged form; resolve R4–R9/A4–A9 | [plan](./issue-impl-sep28/plan.md) | pending |
+| [issue-impl-sep28](./issue-impl-sep28/plan.md) | Implement the ten post-refactor issues in staged form; resolve R4–R9/A4–A9 | [plan](./issue-impl-sep28/plan.md) | [summary](./issue-impl-sep28/summary.md) |
 
 ## Historical module updates
 
