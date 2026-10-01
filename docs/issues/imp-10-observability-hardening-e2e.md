@@ -1,7 +1,7 @@
 # ISS-IMP-10 — obsv + all: observability, hardening & end-to-end validation
 
 **Type:** feature / hardening
-**Status:** planned
+**Status:** complete
 **Branch:** `dev`
 **Sprint PR:** [#21](https://github.com/greadee/aa/pull/21)
 **GitHub issue:** [#32](https://github.com/greadee/aa/issues/32)
@@ -37,13 +37,29 @@ scenario coverage for the finished pipeline.
 
 ## Acceptance Criteria
 
-- [ ] Structured events/traces emitted across the listed seams, with correlation IDs.
-- [ ] Metrics and failure visibility; cost/token/compute accounting where available.
-- [ ] Identity chain attribution preserved end to end.
-- [ ] E2E scenarios above pass.
-- [ ] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, contracts Go+Python+TypeScript, `runtime/inference` checks, and docs link check pass.
-- [ ] tests added or updated
-- [ ] documentation updated where required
+- [x] Structured events/traces emitted across the listed seams, with correlation IDs.
+- [x] Metrics and failure visibility; cost/token/compute accounting where available.
+- [x] Identity chain attribution preserved end to end.
+- [x] E2E scenarios above pass.
+- [x] `go build`, `go vet`, `go test`, `gofmt`, `tools/archtest`, contracts Go+Python+TypeScript, `runtime/inference` checks, and docs link check pass.
+- [x] tests added or updated
+- [x] documentation updated where required
+
+## Solution
+
+`kernel/observability` adds the seam event vocabulary, the identity chain
+`organization → project → subtask → crew → worker → {role → team, model}` with a
+canonical `Chain()`, correlation IDs, a `Recorder` seam (`MemRecorder`
+reference), deterministic `Summarize` metrics, and per-chain `Accounting`
+(tokens, cost, compute-ms, failures, retries).
+
+End-to-end scenarios in `kernel/e2e_test.go` cover: **simple** (one unit → local
+model → one worker), **difficult** (reasoning capability → escalated model),
+**decomposable** (three units → justified parallelism 2 → aggregation), and
+**tool-using** (computer-use through the runtime sandbox gate), asserting the
+identity chain and accounting.
+
+Decision record: [ADR-0153](../adr/ADR-0153-observability-identity-chain-and-accounting.md).
 
 ## Dependencies
 

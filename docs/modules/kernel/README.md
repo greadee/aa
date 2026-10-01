@@ -60,6 +60,7 @@ the constraints on transitional packages, are recorded in
 | [`joblearn/candidates`](./joblearn-candidates.md) | Package candidates derives learning candidates from attributed outcomes. |
 | [`joblearn/distill`](./joblearn-distill.md) | Package distill synthesizes scoped subagent artifacts from trace evidence. |
 | [`joblearn/experience`](./joblearn-experience.md) | Closed learning loop: verified results → reusable lessons with learning states and mentorship. |
+| [`observability`](./observability.md) | Structured seam events, the identity chain, and cost/token/compute accounting. |
 | [`joblearn/features`](./joblearn-features.md) | Package features extracts step-level, content-free features from a trace. |
 | [`joblearn/gate`](./joblearn-gate.md) | Package gate governs learned capabilities with evidence gates. |
 | [`joblearn/promote`](./joblearn-promote.md) | Package promote persists learning candidates as CANDIDATE memory records. |
