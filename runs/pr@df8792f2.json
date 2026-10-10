@@ -1,0 +1,1450 @@
+{
+  "ID": "pr@df8792f2",
+  "Profile": "pr",
+  "Repository": "greadee/aa",
+  "Ref": "df8792f2",
+  "Base": "bf8e09d8",
+  "Head": "df8792f2",
+  "Generated": "2026-10-10T20:10:31.004839345Z",
+  "Findings": [
+    {
+      "id": "97a30ed8a86e0733b8dcbccc2de6af92",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "forge/memsync/memsync.go",
+        "line": 35,
+        "snippet": "func NewExporter"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "forge/memsync",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewExporter",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "5b5da44b026318f9df53eeea02d189f9",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/allocator/routing/routing.go",
+        "line": 70,
+        "snippet": "func Decide"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/allocator/routing",
+      "detector": "detector.orphan",
+      "anchor": "orphan:Decide",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "040f0f45eb27858da85aa8404311fe1b",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/allocator/routing/routing.go",
+        "line": 95,
+        "snippet": "if decision.Escalate \u0026\u0026 req.Budget.MaxCostUSD != nil \u0026\u0026 cost \u003e *req.Budget.MaxCostUSD {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if decision.Escalate \u0026\u0026 req.Budget.MaxCostUSD != nil \u0026\u0026 cost \u003e *req.Budget.MaxCostUSD {",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "9bfe44512ff6264f05fe0433c0f5b1ec",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/context/select.go",
+        "line": 32,
+        "snippet": "func DeriveNeeds"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/context",
+      "detector": "detector.orphan",
+      "anchor": "orphan:DeriveNeeds",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "eddacedeb16dfb7799dc1309b4fe8726",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/attribution/trace.go",
+        "line": 93,
+        "snippet": "func DeriveTraces"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/attribution",
+      "detector": "detector.orphan",
+      "anchor": "orphan:DeriveTraces",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "11aa546c67516b0aca0f6a09aa3791fc",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/experience/experience.go",
+        "line": 79,
+        "snippet": "func DefaultPolicy"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/experience",
+      "detector": "detector.orphan",
+      "anchor": "orphan:DefaultPolicy",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "6eddcfda3c469aac67f59c51582a6291",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/experience/experience.go",
+        "line": 175,
+        "snippet": "func Graduate"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/experience",
+      "detector": "detector.orphan",
+      "anchor": "orphan:Graduate",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "199a957cd578fe7808a8300189a9f779",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/experience/experience.go",
+        "line": 217,
+        "snippet": "func NewMemStore"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/experience",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewMemStore",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "012fd40d657c526afc05ae42b740c30c",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/features/features.go",
+        "line": 104,
+        "snippet": "func ExtractAll"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/features",
+      "detector": "detector.orphan",
+      "anchor": "orphan:ExtractAll",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "c3b58c7bc9daf3646254fbe53d870855",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/promote/memory.go",
+        "line": 16,
+        "snippet": "func NewMemorySink"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/promote",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewMemorySink",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "8d869b0c2e869984b13678b94318a841",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/tracesource/memory.go",
+        "line": 16,
+        "snippet": "func NewMemorySource"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/tracesource",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewMemorySource",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "2755b8293c9125ff312ed17039e598e1",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/tracesource/tracesource.go",
+        "line": 39,
+        "snippet": "func DefaultBounds"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/tracesource",
+      "detector": "detector.orphan",
+      "anchor": "orphan:DefaultBounds",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "dfd83513f7bc88646f9eb6e0a429ea9f",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/tracesource/tracesource.go",
+        "line": 58,
+        "snippet": "func NewStatic"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/tracesource",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewStatic",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "f27551d98e4fbd659c0e89e57c49d5ba",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/tracesource/tracesource.go",
+        "line": 79,
+        "snippet": "func NewFake"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn/tracesource",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewFake",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "70c1b75bb9dbfd6d07fe8fb4dfabb93d",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/joblearn/types.go",
+        "line": 241,
+        "snippet": "func DefaultGatePolicy"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/joblearn",
+      "detector": "detector.orphan",
+      "anchor": "orphan:DefaultGatePolicy",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "85678c3041a6a6d14ee477ddca530e6d",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/observability/observability.go",
+        "line": 92,
+        "snippet": "func NewMemRecorder"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/observability",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewMemRecorder",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "4afe83b36d69b35089e3350cc33f78fb",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "kernel/observability/observability.go",
+        "line": 152,
+        "snippet": "func Accounting"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "kernel/observability",
+      "detector": "detector.orphan",
+      "anchor": "orphan:Accounting",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "0cc000c123ac09edd68e42412810dd56",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "memory/retention/retention.go",
+        "line": 26,
+        "snippet": "func DefaultPolicy"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "memory/retention",
+      "detector": "detector.orphan",
+      "anchor": "orphan:DefaultPolicy",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "1c63c9d3e53a9193e26f92b8cfc42739",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "memory/retrieval/retrieve.go",
+        "line": 107,
+        "snippet": "if req.Filter != nil \u0026\u0026 !req.Filter(candidate) {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if req.Filter != nil \u0026\u0026 !req.Filter(candidate) {",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "1570d0e959c32737090d0d0134037149",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "memory/retrieval/trace.go",
+        "line": 99,
+        "snippet": "if step.Redacted != nil \u0026\u0026 *step.Redacted {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if step.Redacted != nil \u0026\u0026 *step.Redacted {",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "f7df732f5dab1a1deeaafa01d6fbd5c8",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "registry/models/registry.go",
+        "line": 20,
+        "snippet": "func NewDefaultRegistry"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "registry/models",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewDefaultRegistry",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "5d00885e793d40562f369716374a1934",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "runtime/sandbox/enforcer.go",
+        "line": 14,
+        "snippet": "func NewEnforcer"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "runtime/sandbox",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewEnforcer",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "0e7c5f5399b202255112e3637a942515",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "runtime/sandbox/sandbox.go",
+        "line": 139,
+        "snippet": "if s.policy != nil \u0026\u0026 len(spec.Permissions) \u003e 0 \u0026\u0026 !s.policy.Allowed(spec.Permissions) {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if s.policy != nil \u0026\u0026 len(spec.Permissions) \u003e 0 \u0026\u0026 !s.policy.Allowed(spec.Permissions) {",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "f31cf27de9d65de6a8d5c38c43b31064",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/computeruse/computeruse.go",
+        "line": 112,
+        "snippet": "func NewFake"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "toolbox/computeruse",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewFake",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "708f54e052897b8a1eb5147b8181c288",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/computeruse/computeruse.go",
+        "line": 174,
+        "snippet": "func NewProvider"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "toolbox/computeruse",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewProvider",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "9459fd01c883f58b3d22e8b0f2697d27",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/types.go",
+        "line": 81,
+        "snippet": "func HashString"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "toolbox",
+      "detector": "detector.orphan",
+      "anchor": "orphan:HashString",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "522b667a6a50bfad85d1cbac221a9a3e",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "contracts/POLICY.md",
+        "snippet": "python/aa_contracts/v1.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:python/aa_contracts/v1.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "3347bd1fcf9f113cb722c0c8ecc278e6",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "contracts/POLICY.md",
+        "snippet": "schemas/v1/trace.schema.json"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:schemas/v1/trace.schema.json",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "d364fb38988b387f69a0a98eac493553",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/adr/ADR-0041-observation-protocol-v1-is-owned-by-obsv-contracts.md",
+        "snippet": "contracts/go/v1/event.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:contracts/go/v1/event.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "b2de6cccbbbc7b7a536cc7db126655c9",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/adr/ADR-0122-consume-traces-through-a-pure-tracesource-seam-the-store.md",
+        "snippet": "promote/memory.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:promote/memory.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "64d36cbb8ff8ac1bebb41c7290a78aa4",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/adr/ADR-0133-rename-console-to-ui-with-cli-and-tui-surfaces.md",
+        "snippet": "console/aa-tui.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:console/aa-tui.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "2eb20a12f9d599fe4f0f963d7e3140be",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/adr/README.md",
+        "snippet": "promote/memory.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:promote/memory.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "e7ca30cdc2ee14f668d005e8a502b302",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/github-os/documentation-system.md",
+        "snippet": "plan.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:plan.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "742da2bdd240f83b6d2eed0f618cc08c",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/github-os/documentation-system.md",
+        "snippet": "summary.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:summary.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "6bc787505af4cfe350373d44290e5ead",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/github-os/documentation-system.md",
+        "snippet": "issues/issue-123-name.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:issues/issue-123-name.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "331463db0d86874f1d4ce802821a7f71",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/github-os/documentation-system.md",
+        "snippet": "adr.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:adr.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "502c75faa068f45ba18e017be000dded",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/issues/ph1-contracts-trace-contract.md",
+        "snippet": "contracts/schemas/v1/trace.schema.json"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:contracts/schemas/v1/trace.schema.json",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "631aab7374ca5c1f836f32649369b47b",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/contracts/updates/trace-contract/plan.md",
+        "snippet": "contracts/schemas/v1/trace.schema.json"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:contracts/schemas/v1/trace.schema.json",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "57e640e595a6ec2d07c0d064b0bd27ba",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/contracts/updates/trace-contract/plan.md",
+        "snippet": "schemas/v1/README.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:schemas/v1/README.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "c00c0d7280bde1e08c8c70a304f4d37e",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/contracts/updates/trace-contract/summary.md",
+        "snippet": "schemas/v1/trace.schema.json"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:schemas/v1/trace.schema.json",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "c7d37f8975bec396b90c9d380d164332",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/contracts/updates/trace-contract/summary.md",
+        "snippet": "go/v1/trace.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:go/v1/trace.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "22083f2b66bc2f4163594004900c9310",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/contracts/updates/trace-contract/summary.md",
+        "snippet": "testdata/trace.json"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:testdata/trace.json",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "badeb72416299fa0f79aca0a6f496dac",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/contracts/updates/trace-contract/summary.md",
+        "snippet": "testdata/trace-invalid.json"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:testdata/trace-invalid.json",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "bf71ef4602789f939179b8539a405f48",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/kernel/updates/joblearn-trace-distillation/plan.md",
+        "snippet": "promote/memory.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:promote/memory.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "58f1648eabee3c3d96e3bfd943fbf147",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/kernel/updates/joblearn-trace-distillation/summary.md",
+        "snippet": "attribution/trace.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:attribution/trace.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "b203d88306ad40f5bed53e09cf318eb6",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/kernel/updates/joblearn-trace-distillation/summary.md",
+        "snippet": "backtest/trace.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:backtest/trace.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "a65217e00cf5dade8985bd51a9c718fd",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/kernel/updates/joblearn-trace-distillation/summary.md",
+        "snippet": "gate/evidence.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:gate/evidence.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "6875540fff1717c6952f1706ab27ddd2",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/kernel/updates/joblearn-trace-distillation/summary.md",
+        "snippet": "tracesource/memory.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:tracesource/memory.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "a572d76ace10126b166196f1183340ea",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/kernel/updates/joblearn-trace-distillation/summary.md",
+        "snippet": "promote/memory.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:promote/memory.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "d7c27b83a9698ef49069c570f4fcb1c2",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/memory/updates/trace-store/summary.md",
+        "snippet": "memory/query/trace.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:memory/query/trace.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "8eadb410ec6d6decdc8a929e8ae31669",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/obsv/updates/observation-substrate/plan.md",
+        "snippet": "contracts/go/v1/event.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:contracts/go/v1/event.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "886a060efbb2545459cda8d136ccbb68",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/registry/models.md",
+        "snippet": "runtime/inference/.../catalog.toml"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:runtime/inference/.../catalog.toml",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "a6e416820c5602c1e2188d2ecf2e5203",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/plan.md",
+        "snippet": "kernel/runtime/runtime.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:kernel/runtime/runtime.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "23227e6ea78cfe58ba681a514673550e",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/framing.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/framing.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "2ab6f6629d336f65af0281d2347cc6b9",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/endpoint.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/endpoint.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "f9772e9455b3e0291e060e2bc50f42a5",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/listener.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/listener.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "6198eef85fe8452d7dcabd4cf848f516",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/identity.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/identity.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "e8cb2e193256fa168d2e5e1a565a58ec",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/deadline.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/deadline.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "c375af4063897fb462ece2753bf9191f",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/errors.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/errors.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "d8dd3b188a91ec05ba03bd0b4aff32cb",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/idempotency.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/idempotency.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "2b53405129838b043104c88c141c5dc5",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/server.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/server.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "e0fc7612bfc4f1fe56cf220a5c0d19dc",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "rpc/client.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/client.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "bc99790293f557935f379de1828694bd",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "cli/serve_commands.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:cli/serve_commands.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "79447cadfaf0d64a9693bc05f0f30039",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "cli/main.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:cli/main.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "7186ebb31dd724933ab9febdeb357adf",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/runtime/inference/updates/production-rpc-wiring/summary.md",
+        "snippet": "tests/unit/test_rpc_security.py"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:tests/unit/test_rpc_security.py",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "14c2b7ef842c95c2f7484175f5f69e14",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/modules/visualizer/updates/obsv-adoption/plan.md",
+        "snippet": "contracts/go/v1/event.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:contracts/go/v1/event.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "790d3552f6c2bba653280c3455c5ee12",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph0-scaffold/summary.md",
+        "snippet": "ph1-contracts/plan.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:ph1-contracts/plan.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "997ec3cbeab605f04c45cb6ba5c758a0",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph1-contracts/plan.md",
+        "snippet": "contracts/schemas/v1/README.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:contracts/schemas/v1/README.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "a7c96199599e8a2640c3aa15fe8b0f6f",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph1-contracts/plan.md",
+        "snippet": "contracts/go/v1/validate.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:contracts/go/v1/validate.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "e0ba783d26070fac8ff37fa306e424bf",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph1-contracts/plan.md",
+        "snippet": "contracts/go/v1/conformance_test.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:contracts/go/v1/conformance_test.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "b18c50237e9739a9a5a760aedf13ef98",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph1-contracts/summary.md",
+        "snippet": "rpc/rpc-v1.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:rpc/rpc-v1.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "ad0849eccd3896d562ed221e5a0515ce",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph1-contracts/summary.md",
+        "snippet": "openapi/control-plane-v1.yaml"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:openapi/control-plane-v1.yaml",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "c7ed2ce9adba5b4552eeadc947987c24",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph2-memory/summary.md",
+        "snippet": "store/ingest.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:store/ingest.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "fcb4a9d001952dba3628751340467cd8",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph2-memory/summary.md",
+        "snippet": "store/retention.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:store/retention.go",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "d2444031cdf90b957f813ac11b018b23",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph4-sifter/plan.md",
+        "snippet": "sifter/pyproject.toml"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:sifter/pyproject.toml",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "977db9ee4ecf955b34dbbe648e686fa5",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/phases/ph4-sifter/plan.md",
+        "snippet": "sifter/README.md"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Update or remove the reference.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:sifter/README.md",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    },
+    {
+      "id": "5be23792a9ce781321e4adbf420a6b61",
+      "title": "Exported function is unused",
+      "classification": "Maintainability",
+      "severity": "P3",
+      "evidence": {
+        "file": "memory/projection/projection.go",
+        "line": 152,
+        "snippet": "func DigestOf"
+      },
+      "impact": "Dead exported API increases surface area.",
+      "recommendation": "Remove the function, or reference it from production.",
+      "scope": "memory/projection",
+      "detector": "detector.orphan",
+      "anchor": "orphan:DigestOf",
+      "status": "new",
+      "firstSeen": "pr@df8792f2",
+      "lastSeen": "pr@df8792f2",
+      "runId": "pr@df8792f2"
+    }
+  ],
+  "Resolved": null,
+  "BlockThreshold": "P1",
+  "ArchiveURL": ""
+}
