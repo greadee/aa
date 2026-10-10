@@ -1,0 +1,47 @@
+@startuml
+title Review Findings Remediation Sprint (revu-findings) — staged plan
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:Objective — resolve the 77 PR #21 review findings (issue #36);
+
+partition "Stage 0 — Fail-closed guards (4)" {
+  :sandbox.go:139 deny when policy is nil;
+  :routing.go:95 fail closed on over-budget;
+  :retrieve.go:107 / trace.go:99 explicit nil handling;
+}
+
+partition "Stage 1 — Composition root & wiring (23 orphans)" {
+  :add cmd/aa + internal/bootstrap;
+  :wire kernel seams (context, allocator, routing,
+   scheduler, joblearn, observability);
+  :wire runtime (sandbox, intake), toolbox, registry;
+  :wire memory + forge; drop dead exports;
+}
+
+partition "Stage 2 — Documentation hygiene (50 stale refs)" {
+  :repair genuine stale references
+   (contracts, adr, modules, phases);
+  :add ignore for template placeholders
+   and module-relative examples;
+}
+
+partition "Stage 3 — Verification & closeout" {
+  :re-run revu audit -> 0 findings;
+  :summary.md + summary.uml; reconcile issues; close #36;
+}
+
+stop
+
+note right
+  One commit per stage/module grouping.
+  Green gates: gofmt/build/vet/test,
+  archtest, contracts Go/Py/TS,
+  inference pytest/ruff/mypy, docs link.
+  Per stage: stop for review.
+end note
+
+@enduml
