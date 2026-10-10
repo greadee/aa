@@ -136,9 +136,15 @@ func (s *Sandbox) Run(ctx context.Context, spec Spec) (Result, error) {
 	if len(spec.Command) == 0 {
 		return Result{}, fmt.Errorf("%w: command is required", ErrInvalid)
 	}
-	if s.policy != nil && len(spec.Permissions) > 0 && !s.policy.Allowed(spec.Permissions) {
-		s.emit(Event{Type: "SANDBOX_DENIED", Command: spec.Command, Reason: "permission denied", Labels: spec.Labels})
-		return Result{}, fmt.Errorf("%w: %s", ErrDenied, strings.Join(spec.Permissions, ","))
+	if len(spec.Permissions) > 0 {
+		if s.policy == nil {
+			s.emit(Event{Type: "SANDBOX_DENIED", Command: spec.Command, Reason: "no permission policy configured", Labels: spec.Labels})
+			return Result{}, fmt.Errorf("%w: no permission policy configured", ErrDenied)
+		}
+		if !s.policy.Allowed(spec.Permissions) {
+			s.emit(Event{Type: "SANDBOX_DENIED", Command: spec.Command, Reason: "permission denied", Labels: spec.Labels})
+			return Result{}, fmt.Errorf("%w: %s", ErrDenied, strings.Join(spec.Permissions, ","))
+		}
 	}
 
 	dir, cleanup, err := s.prepareDir(spec.Dir)

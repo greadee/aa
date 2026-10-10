@@ -92,10 +92,14 @@ func Decide(req Request) (Decision, error) {
 		decision.Reason = "cloud is disabled by the active profile"
 		return decision, nil
 	}
-	if decision.Escalate && req.Budget.MaxCostUSD != nil && cost > *req.Budget.MaxCostUSD {
-		decision.Blocked = true
-		decision.Reason = "estimated cost exceeds the budget"
-		return decision, nil
+	if decision.Escalate {
+		if maxCost := req.Budget.MaxCostUSD; maxCost != nil {
+			if cost > *maxCost {
+				decision.Blocked = true
+				decision.Reason = "estimated cost exceeds the budget"
+				return decision, nil
+			}
+		}
 	}
 	return decision, nil
 }

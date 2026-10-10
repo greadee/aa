@@ -98,6 +98,18 @@ func TestRunDeniedBeforeExecution(t *testing.T) {
 	}
 }
 
+func TestRunDeniedWithoutPolicy(t *testing.T) {
+	runner := &fakeRunner{}
+	s := newSandbox(t, runner, nil, nil)
+	_, err := s.Run(context.Background(), Spec{Command: []string{"x"}, Permissions: []string{"read"}})
+	if !errors.Is(err, ErrDenied) {
+		t.Fatalf("expected ErrDenied when permissions are declared without a policy, got %v", err)
+	}
+	if runner.calls != 0 {
+		t.Fatalf("runner called despite denial")
+	}
+}
+
 func TestRunRejectsPathEscape(t *testing.T) {
 	runner := &fakeRunner{}
 	s := newSandbox(t, runner, nil, nil)

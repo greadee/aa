@@ -104,7 +104,7 @@ func (q *Query) Retrieve(ctx context.Context, req Request) ([]Result, error) {
 					Hash:     entry.Hash,
 				},
 			}
-			if req.Filter != nil && !req.Filter(candidate) {
+			if !accepts(req.Filter, candidate) {
 				continue
 			}
 			results = append(results, Result{Candidate: candidate, Score: score(candidate.Text, terms)})
@@ -195,6 +195,15 @@ func score(text string, terms []string) int {
 		}
 	}
 	return total
+}
+
+// accepts reports whether a candidate passes the optional filter. A nil filter
+// accepts every candidate.
+func accepts(filter func(Candidate) bool, c Candidate) bool {
+	if filter == nil {
+		return true
+	}
+	return filter(c)
 }
 
 // candidateText derives a deterministic snippet from a record. It reads a small

@@ -96,8 +96,10 @@ func Summarize(trace v2.Trace) TraceSummary {
 		if step.CostUSD != nil {
 			s.CostUSD += *step.CostUSD
 		}
-		if step.Redacted != nil && *step.Redacted {
-			s.Redacted = true
+		if step.Redacted != nil {
+			if *step.Redacted {
+				s.Redacted = true
+			}
 		}
 	}
 	switch {
