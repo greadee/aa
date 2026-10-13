@@ -1,0 +1,43 @@
+@startuml
+title Review Findings Remediation Sprint (revu-findings) — summary
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:PR #21 review (issue #36): 77 findings;
+
+partition "Stage 0 — Fail-closed guards (4 → 0)" {
+  :sandbox deny when policy is nil;
+  :routing budget gate; retrieval/trace nil handling;
+}
+
+partition "Stage 1 — Composition root (orphan 23 → 4)" {
+  :add app/ (aa selfcheck) wiring all seams;
+  :18 wired, 1 dead export removed;
+  :4 accepted exceptions tracked as issues;
+}
+
+partition "Stage 2 — Strikethrough deprecation (stale -> 0)" {
+  :mark superseded references deprecated in place;
+  :never delete; 28 docs updated;
+}
+
+partition "Stage 3 — Closeout" {
+  :summary + uml;
+  :reconcile issues (#28/#31 stay open, rest close);
+  :close #36;
+}
+
+:revu pr-scoped: 4 findings (all accepted);
+
+stop
+
+note right
+  Records are never deleted:
+  deprecate with ~~strikethrough~~.
+  Engine honours it (ADR-0007).
+end note
+
+@enduml
