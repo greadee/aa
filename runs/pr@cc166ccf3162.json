@@ -1,0 +1,13 @@
+{
+  "ID": "pr@cc166ccf3162",
+  "Profile": "pr",
+  "Repository": "greadee/aa",
+  "Ref": "cc166ccf3162a0811b37ab9cee1589ec24466d3d",
+  "Base": "origin/dev",
+  "Head": "cc166ccf3162a0811b37ab9cee1589ec24466d3d",
+  "Generated": "2026-10-13T04:13:28.815525576Z",
+  "Findings": [],
+  "Resolved": null,
+  "BlockThreshold": "P1",
+  "ArchiveURL": ""
+}
