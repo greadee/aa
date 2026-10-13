@@ -52,6 +52,9 @@ import (
 	"github.com/greadee/aa/toolbox/computeruse"
 	"github.com/greadee/aa/toolbox/policy"
 	"github.com/greadee/aa/toolbox/registry"
+	uicp "github.com/greadee/aa/ui/controlplane"
+	"github.com/greadee/aa/ui/surfaces/tui"
+	wsurface "github.com/greadee/aa/ui/surfaces/web"
 )
 
 const version = "0.1.0"
@@ -70,8 +73,14 @@ func main() {
 				os.Exit(1)
 			}
 			return
+		case "console":
+			if err := console(os.Args[2:]); err != nil {
+				fmt.Fprintf(os.Stderr, "aa: %v\n", err)
+				os.Exit(1)
+			}
+			return
 		case "-h", "--help", "help":
-			fmt.Fprintln(os.Stderr, "usage: aa [serve|selfcheck|version]")
+			fmt.Fprintln(os.Stderr, "usage: aa [serve|console|selfcheck|version]")
 			return
 		default:
 			fmt.Fprintf(os.Stderr, "aa: unknown command %q\n", os.Args[1])
@@ -129,6 +138,41 @@ func defaultRoot() string {
 		return v
 	}
 	return ".aa"
+}
+
+// console runs the console over the control plane: the read-only web surface
+// (--web) or the text surface. It imports only the ui client, never modules.
+func console(args []string) error {
+	fs := flag.NewFlagSet("console", flag.ContinueOnError)
+	control := fs.String("control", "http://127.0.0.1:7100/api/v1", "control-plane base URL")
+	token := fs.String("token", os.Getenv("AA_CONTROL_TOKEN"), "bearer token for the control plane")
+	project := fs.String("project", "default", "project id")
+	web := fs.Bool("web", false, "serve the read-only web surface instead of the text surface")
+	addr := fs.String("addr", "127.0.0.1:7101", "web listen address")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	client := uicp.NewHTTPClient(*control, *token)
+	if *web {
+		srv := &http.Server{Addr: *addr, Handler: wsurface.New(client, *project).Handler(), ReadHeaderTimeout: 5 * time.Second}
+		fmt.Fprintf(os.Stderr, "aa console web on http://%s\n", *addr)
+		errCh := make(chan error, 1)
+		go func() { errCh <- srv.ListenAndServe() }()
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		select {
+		case err := <-errCh:
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				return err
+			}
+		case <-ctx.Done():
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = srv.Shutdown(shutdownCtx)
+		}
+		return nil
+	}
+	return tui.New(client, *project).Run(context.Background(), os.Stdin, os.Stdout)
 }
 
 // runtime is the wired composition graph.

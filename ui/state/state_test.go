@@ -1,0 +1,24 @@
+package state
+
+import (
+	"context"
+	"testing"
+
+	"github.com/greadee/aa/ui/controlplane"
+)
+
+func TestLoadAndCycle(t *testing.T) {
+	m, err := Load(context.Background(), controlplane.NewFake(), "default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.Status.Projects == 0 || len(m.Nodes) == 0 || len(m.Tools) == 0 {
+		t.Fatalf("model not loaded: %+v", m)
+	}
+	if got := Cycle(ViewProjects, 1); got != ViewGraph {
+		t.Fatalf("cycle forward = %s", got)
+	}
+	if got := Cycle(ViewProjects, -1); got != ViewApprovals {
+		t.Fatalf("cycle backward = %s", got)
+	}
+}
