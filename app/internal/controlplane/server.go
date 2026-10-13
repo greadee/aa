@@ -56,7 +56,12 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/work-packages", s.auth(s.workList))
 	s.mux.Handle("POST "+APIPrefix+"/projects/{projectId}/work-packages", s.auth(s.workSubmit))
 	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/graph", s.auth(s.workList))
+	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/issues", s.auth(s.issues))
+	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/strategies", s.auth(s.strategies))
+	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/events", s.auth(s.events))
 	s.mux.Handle("GET "+APIPrefix+"/assignments", s.auth(s.assignments))
+	s.mux.Handle("GET "+APIPrefix+"/nodes", s.auth(s.nodes))
+	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
 	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
 	return s
 }
@@ -153,6 +158,46 @@ func (s *Server) assignments(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, s.cfg.Backend.Assignments())
+}
+
+func (s *Server) issues(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, []json.RawMessage{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.Issues(r.PathValue("projectId")))
+}
+
+func (s *Server) strategies(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, []json.RawMessage{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.Strategies(r.PathValue("projectId")))
+}
+
+func (s *Server) events(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, []json.RawMessage{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.Events(r.PathValue("projectId")))
+}
+
+func (s *Server) nodes(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, []Node{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.Nodes())
+}
+
+func (s *Server) tools(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, []Tool{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.Tools())
 }
 
 func (s *Server) approve(w http.ResponseWriter, r *http.Request) {

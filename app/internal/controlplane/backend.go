@@ -1,5 +1,7 @@
 package controlplane
 
+import "encoding/json"
+
 // Project is a project summary.
 type Project struct {
 	ID   string `json:"id"`
@@ -23,6 +25,21 @@ type AssignmentView struct {
 	Attempt       int    `json:"attempt"`
 }
 
+// Node is a compute/sync node summary.
+type Node struct {
+	ID        string `json:"id"`
+	Authority bool   `json:"authority"`
+	State     string `json:"state"`
+}
+
+// Tool is a registered tool/plugin manifest summary.
+type Tool struct {
+	ID      string `json:"id"`
+	Name    string `json:"name,omitempty"`
+	Kind    string `json:"kind,omitempty"`
+	Sandbox bool   `json:"sandbox,omitempty"`
+}
+
 // Backend supplies the control plane's resources. It is implemented by the
 // composition root (app/), which composes memory and the kernel scheduler; the
 // transport never reaches into modules itself.
@@ -33,4 +50,9 @@ type Backend interface {
 	SubmitWork(projectID, title string, dependsOn []string) (string, error)
 	Assignments() []AssignmentView
 	Approve(gateID string) error
+	Issues(projectID string) []json.RawMessage
+	Strategies(projectID string) []json.RawMessage
+	Events(projectID string) []json.RawMessage
+	Nodes() []Node
+	Tools() []Tool
 }

@@ -51,6 +51,7 @@ import (
 	"github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/computeruse"
 	"github.com/greadee/aa/toolbox/policy"
+	"github.com/greadee/aa/toolbox/registry"
 )
 
 const version = "0.1.0"
@@ -145,6 +146,7 @@ type runtime struct {
 	traceSrc   *tracesource.MemorySource
 	traceSink  *promote.MemorySink
 	computer   *computeruse.Provider
+	tools      *registry.Registry
 	graph      *planner.Graph
 	sched      *scheduler.Scheduler
 	api        *api.Service
@@ -245,6 +247,49 @@ func (b *backend) Approve(gateID string) error {
 	return nil
 }
 
+func (b *backend) records(kind string) []json.RawMessage {
+	recs, err := b.g.store.ListRecords(kind)
+	if err != nil {
+		return nil
+	}
+	out := make([]json.RawMessage, 0, len(recs))
+	for _, r := range recs {
+		out = append(out, r.Data)
+	}
+	return out
+}
+
+func (b *backend) Issues(string) []json.RawMessage     { return b.records("issue") }
+func (b *backend) Strategies(string) []json.RawMessage { return b.records("strategy") }
+
+func (b *backend) Events(string) []json.RawMessage {
+	evs, err := b.g.store.Events()
+	if err != nil {
+		return nil
+	}
+	out := make([]json.RawMessage, 0, len(evs))
+	for _, e := range evs {
+		out = append(out, e.Data)
+	}
+	return out
+}
+
+func (b *backend) Nodes() []controlplane.Node {
+	return []controlplane.Node{{ID: "local", Authority: true, State: "ready"}}
+}
+
+func (b *backend) Tools() []controlplane.Tool {
+	if b.g.tools == nil {
+		return nil
+	}
+	ms := b.g.tools.List("")
+	out := make([]controlplane.Tool, 0, len(ms))
+	for _, m := range ms {
+		out = append(out, controlplane.Tool{ID: string(m.ID), Name: m.Name, Kind: m.ToolKind, Sandbox: m.Sandbox != nil})
+	}
+	return out
+}
+
 // build constructs the graph. Every dependency is passed explicitly; there is
 // no global state and no implicit wiring.
 func build(root string) (*runtime, error) {
@@ -285,6 +330,13 @@ func build(root string) (*runtime, error) {
 		return nil, fmt.Errorf("toolbox/computeruse: %w", err)
 	}
 
+	// Toolbox registry: register the builtin computer-use tool so /tools has a
+	// real manifest to serve.
+	toolReg := registry.New()
+	if err := toolReg.Register(computeruse.Manifest("tool_screen")); err != nil {
+		return nil, fmt.Errorf("toolbox/registry: %w", err)
+	}
+
 	sb, err := sandbox.New(sandbox.Config{
 		Root:         filepath.Join(root, "sandbox"),
 		EnvAllowlist: []string{"PATH", "HOME"},
@@ -321,6 +373,7 @@ func build(root string) (*runtime, error) {
 		traceSrc:   traceSrc,
 		traceSink:  traceSink,
 		computer:   computerProvider,
+		tools:      toolReg,
 		graph:      graph,
 		sched:      sched,
 		api:        apiSvc,

@@ -71,8 +71,17 @@ func (fakeBackend) SubmitWork(projectID, title string, dependsOn []string) (stri
 	}
 	return "wp-1", nil
 }
-func (fakeBackend) Assignments() []AssignmentView { return []AssignmentView{} }
-func (fakeBackend) Approve(gateID string) error   { return nil }
+func (fakeBackend) Assignments() []AssignmentView       { return []AssignmentView{} }
+func (fakeBackend) Approve(gateID string) error         { return nil }
+func (fakeBackend) Issues(string) []json.RawMessage     { return nil }
+func (fakeBackend) Strategies(string) []json.RawMessage { return nil }
+func (fakeBackend) Events(string) []json.RawMessage     { return nil }
+func (fakeBackend) Nodes() []Node {
+	return []Node{{ID: "local", Authority: true, State: "ready"}}
+}
+func (fakeBackend) Tools() []Tool {
+	return []Tool{{ID: "tool_screen", Kind: "builtin"}}
+}
 
 func withToken(req *http.Request) *http.Request {
 	req.Header.Set("Authorization", "Bearer secret")
@@ -106,5 +115,17 @@ func TestResourcesRequireTokenAndServe(t *testing.T) {
 	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/projects/p1/work-packages", nil)))
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "PROPOSED") {
 		t.Fatalf("work list = %d %s", rec.Code, rec.Body.String())
+	}
+
+	// Nodes + tools.
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/nodes", nil)))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "local") {
+		t.Fatalf("nodes = %d %s", rec.Code, rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/tools", nil)))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "tool_screen") {
+		t.Fatalf("tools = %d %s", rec.Code, rec.Body.String())
 	}
 }
