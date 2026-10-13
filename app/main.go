@@ -13,11 +13,17 @@ package main
 
 import (
 	"context"
+	"errors"
+	"flag"
 	"fmt"
+	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
+	"github.com/greadee/aa/app/internal/controlplane"
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge/memsync"
 	"github.com/greadee/aa/kernel/allocator/routing"
@@ -51,8 +57,14 @@ func main() {
 			return
 		case "selfcheck", "--selfcheck", "-c":
 			// fall through to selfcheck
+		case "serve":
+			if err := serve(os.Args[2:]); err != nil {
+				fmt.Fprintf(os.Stderr, "aa: %v\n", err)
+				os.Exit(1)
+			}
+			return
 		case "-h", "--help", "help":
-			fmt.Fprintln(os.Stderr, "usage: aa [selfcheck|version]")
+			fmt.Fprintln(os.Stderr, "usage: aa [serve|selfcheck|version]")
 			return
 		default:
 			fmt.Fprintf(os.Stderr, "aa: unknown command %q\n", os.Args[1])
@@ -63,6 +75,52 @@ func main() {
 		fmt.Fprintf(os.Stderr, "aa: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// serve runs the control plane over loopback until interrupted.
+func serve(args []string) error {
+	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
+	addr := fs.String("addr", "127.0.0.1:7100", "loopback listen address")
+	token := fs.String("token", os.Getenv("AA_CONTROL_TOKEN"), "bearer token required on all paths except /health")
+	root := fs.String("root", defaultRoot(), "state root directory")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	g, err := build(*root)
+	if err != nil {
+		return err
+	}
+	handler := controlplane.New(controlplane.Config{
+		Version: version,
+		Token:   *token,
+		Status:  g.status,
+	})
+	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
+	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- srv.ListenAndServe() }()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	select {
+	case err := <-errCh:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(shutdownCtx)
+	}
+	return nil
+}
+
+func defaultRoot() string {
+	if v := os.Getenv("AA_ROOT"); v != "" {
+		return v
+	}
+	return ".aa"
 }
 
 // runtime is the wired composition graph.
@@ -80,6 +138,15 @@ type runtime struct {
 	traceSrc   *tracesource.MemorySource
 	traceSink  *promote.MemorySink
 	computer   *computeruse.Provider
+}
+
+// status reports the aggregate host status for the control plane.
+func (g *runtime) status() controlplane.Status {
+	projects := 0
+	if recs, err := g.store.ListRecords("project_record"); err == nil {
+		projects = len(recs)
+	}
+	return controlplane.Status{Projects: projects, ActiveAssignments: 0, Nodes: 1}
 }
 
 // build constructs the graph. Every dependency is passed explicitly; there is
