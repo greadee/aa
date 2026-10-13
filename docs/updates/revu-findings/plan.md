@@ -117,9 +117,9 @@ The following orphan findings are accepted as-is for this sprint. Each is a legi
 requires work outside this sprint's scope, and is tracked as its own GitHub issue so it is not
 forgotten in future development.
 
-| Symbol | Why accepted |
-|---|---|
-| `kernel/joblearn/tracesource.NewStatic` | Cross-package test seam: constructs a fixed trace set for tests in other modules. |
-| `kernel/joblearn/tracesource.NewFake` | Cross-package test double for the `Source` seam. |
-| `toolbox/computeruse.NewFake` | Cross-package test double for the `Driver` seam. |
-| `toolbox/computeruse.NewProvider` | Needs a real `computeruse.Driver`, which is not implemented; wiring a test double into production is not acceptable. |
+| Issue | Symbol | Why accepted |
+|---|---|---|
+| ISS-REVU-1 | `toolbox/computeruse.NewProvider` | Needs a real `computeruse.Driver`, which is not implemented; wiring a test double into production is not acceptable. |
+| ISS-REVU-2 | `toolbox/computeruse.NewFake` | Cross-package test double for the `Driver` seam. |
+| ISS-REVU-3 | `kernel/joblearn/tracesource.NewStatic` | Cross-package test seam: constructs a fixed trace set for tests in other modules. |
+| ISS-REVU-4 | `kernel/joblearn/tracesource.NewFake` | Cross-package test double for the `Source` seam. |
