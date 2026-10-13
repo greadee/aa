@@ -30,6 +30,7 @@ jobs:
           - toolbox
           - visualizer
           - ui
+          - app
     steps:
       - uses: actions/checkout@v4
 

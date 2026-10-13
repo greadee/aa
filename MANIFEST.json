@@ -16,7 +16,8 @@
     "forge",
     "toolbox",
     "visualizer",
-    "ui"
+    "ui",
+    "app"
   ],
   "docs": [
     "docs/index/README.md",
