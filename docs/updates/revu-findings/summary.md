@@ -32,10 +32,10 @@ Tracked as their own GitHub issues so they are not forgotten in future developme
 
 | Issue | Symbol | Why accepted |
 |---|---|---|
-| ISS-REVU-1 | `toolbox/computeruse.NewProvider` | Needs a real `computeruse.Driver`, not implemented; a test double must not be wired into production. |
-| ISS-REVU-2 | `toolbox/computeruse.NewFake` | Cross-package test double for the `Driver` seam. |
-| ISS-REVU-3 | `kernel/joblearn/tracesource.NewStatic` | Cross-package test seam (fixed trace set for other modules' tests). |
-| ISS-REVU-4 | `kernel/joblearn/tracesource.NewFake` | Cross-package test double for the `Source` seam. |
+| [ISS-REVU-1](https://github.com/greadee/aa/issues/40) | `toolbox/computeruse.NewProvider` | Needs a real `computeruse.Driver`, not implemented; a test double must not be wired into production. |
+| [ISS-REVU-2](https://github.com/greadee/aa/issues/39) | `toolbox/computeruse.NewFake` | Cross-package test double for the `Driver` seam. |
+| [ISS-REVU-3](https://github.com/greadee/aa/issues/37) | `kernel/joblearn/tracesource.NewStatic` | Cross-package test seam (fixed trace set for other modules' tests). |
+| [ISS-REVU-4](https://github.com/greadee/aa/issues/38) | `kernel/joblearn/tracesource.NewFake` | Cross-package test double for the `Source` seam. |
 
 ## Deviations
 

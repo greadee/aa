@@ -63,11 +63,13 @@ clean; docs link check valid.
 - Register the module in `go.work`, the CI Go matrix, `tools/archtest`, and `MANIFEST.json`.
 - **Commit** `add app composition root wiring kernel, runtime and toolbox seams`.
 - **Outcome:** 18 of the 23 sprint orphans wired through `app/`. **Accepted exceptions (4):**
-  `tracesource.NewStatic` and `tracesource.NewFake` (cross-package test seams), `computeruse.NewFake`
-  (test double) and `computeruse.NewProvider` (needs a real `Driver`, none implemented). The dead
-  `projection.DigestOf` was removed. A whole-repo audit still lists other pre-existing uncomposed
-  libraries (sync, obsv, visualizer, forge lifecycle/template, …); wiring those is out of this
-  sprint's scope.
+  [`tracesource.NewStatic`](https://github.com/greadee/aa/issues/37) and
+  [`tracesource.NewFake`](https://github.com/greadee/aa/issues/38) (cross-package test seams),
+  [`computeruse.NewFake`](https://github.com/greadee/aa/issues/39) (test double) and
+  [`computeruse.NewProvider`](https://github.com/greadee/aa/issues/40) (needs a real `Driver`, none
+  implemented). The dead `projection.DigestOf` was removed. A whole-repo audit still lists other
+  pre-existing uncomposed libraries (sync, obsv, visualizer, forge lifecycle/template, …); wiring
+  those is out of this sprint's scope.
 
 ### Stage 2 — Documentation hygiene (stale-reference findings)
 - Mark superseded/not-applicable references **deprecated in place with Markdown strikethrough**
@@ -119,7 +121,7 @@ forgotten in future development.
 
 | Issue | Symbol | Why accepted |
 |---|---|---|
-| ISS-REVU-1 | `toolbox/computeruse.NewProvider` | Needs a real `computeruse.Driver`, which is not implemented; wiring a test double into production is not acceptable. |
-| ISS-REVU-2 | `toolbox/computeruse.NewFake` | Cross-package test double for the `Driver` seam. |
-| ISS-REVU-3 | `kernel/joblearn/tracesource.NewStatic` | Cross-package test seam: constructs a fixed trace set for tests in other modules. |
-| ISS-REVU-4 | `kernel/joblearn/tracesource.NewFake` | Cross-package test double for the `Source` seam. |
+| [ISS-REVU-1](https://github.com/greadee/aa/issues/40) | `toolbox/computeruse.NewProvider` | Needs a real `computeruse.Driver`, which is not implemented; wiring a test double into production is not acceptable. |
+| [ISS-REVU-2](https://github.com/greadee/aa/issues/39) | `toolbox/computeruse.NewFake` | Cross-package test double for the `Driver` seam. |
+| [ISS-REVU-3](https://github.com/greadee/aa/issues/37) | `kernel/joblearn/tracesource.NewStatic` | Cross-package test seam: constructs a fixed trace set for tests in other modules. |
+| [ISS-REVU-4](https://github.com/greadee/aa/issues/38) | `kernel/joblearn/tracesource.NewFake` | Cross-package test double for the `Source` seam. |
