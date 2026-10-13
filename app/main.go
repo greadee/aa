@@ -37,6 +37,7 @@ import (
 	"github.com/greadee/aa/registry/models"
 	"github.com/greadee/aa/runtime/sandbox"
 	"github.com/greadee/aa/toolbox"
+	"github.com/greadee/aa/toolbox/computeruse"
 	"github.com/greadee/aa/toolbox/policy"
 )
 
@@ -78,6 +79,7 @@ type runtime struct {
 	memories   *repo.MemoryRecordRepository
 	traceSrc   *tracesource.MemorySource
 	traceSink  *promote.MemorySink
+	computer   *computeruse.Provider
 }
 
 // build constructs the graph. Every dependency is passed explicitly; there is
@@ -112,6 +114,14 @@ func build(root string) (*runtime, error) {
 	enforcer := sandbox.NewEnforcer()
 	policyEngine := policy.New(enforcer, toolbox.SystemClock{})
 
+	// Computer-use capability: wired with the declared Headless driver (no
+	// desktop backend in this build). The provider is a live, reachable
+	// capability that fails closed rather than a test double.
+	computerProvider, err := computeruse.NewProvider(computeruse.NewHeadless())
+	if err != nil {
+		return nil, fmt.Errorf("toolbox/computeruse: %w", err)
+	}
+
 	sb, err := sandbox.New(sandbox.Config{
 		Root:         filepath.Join(root, "sandbox"),
 		EnvAllowlist: []string{"PATH", "HOME"},
@@ -135,6 +145,7 @@ func build(root string) (*runtime, error) {
 		memories:   memories,
 		traceSrc:   traceSrc,
 		traceSink:  traceSink,
+		computer:   computerProvider,
 	}, nil
 }
 
@@ -249,6 +260,7 @@ func selfcheck() error {
 	fmt.Printf("  joblearn pipeline:   traces=%d promoter=%T graduated=%s\n", len(attributionResults), promoter, graduated.Level)
 	fmt.Printf("  retention policy:    %+v\n", retentionPolicy)
 	fmt.Printf("  trace source/sink:   %T / %T\n", g.traceSrc, g.traceSink)
+	fmt.Printf("  computer-use:        provider kind=%s\n", g.computer.Kind())
 	fmt.Printf("  toolbox hash:        %s\n", hash[:12])
 	fmt.Printf("  retrieval ready:     %v\n", g.query != nil)
 	fmt.Println("selfcheck ok")
