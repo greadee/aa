@@ -34,6 +34,8 @@ type Config struct {
 	Token string
 	// Status supplies the aggregate status. Optional.
 	Status func() Status
+	// Backend supplies projects/work/assignments/approvals. Optional.
+	Backend Backend
 }
 
 // Server is the control-plane HTTP handler.
@@ -46,9 +48,16 @@ type Server struct {
 func New(cfg Config) *Server {
 	s := &Server{cfg: cfg, mux: http.NewServeMux()}
 	// /health is unauthenticated per the spec (security: []).
-	s.mux.HandleFunc(APIPrefix+"/health", s.health)
+	s.mux.HandleFunc("GET "+APIPrefix+"/health", s.health)
 	// Everything else carries the bearer token.
-	s.mux.HandleFunc(APIPrefix+"/status", s.auth(s.status))
+	s.mux.Handle("GET "+APIPrefix+"/status", s.auth(s.status))
+	s.mux.Handle("GET "+APIPrefix+"/projects", s.auth(s.projectsList))
+	s.mux.Handle("POST "+APIPrefix+"/projects", s.auth(s.projectsCreate))
+	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/work-packages", s.auth(s.workList))
+	s.mux.Handle("POST "+APIPrefix+"/projects/{projectId}/work-packages", s.auth(s.workSubmit))
+	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/graph", s.auth(s.workList))
+	s.mux.Handle("GET "+APIPrefix+"/assignments", s.auth(s.assignments))
+	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
 	return s
 }
 
@@ -79,6 +88,84 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 		st = s.cfg.Status()
 	}
 	writeJSON(w, http.StatusOK, st)
+}
+
+func (s *Server) projectsList(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, []Project{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.Projects())
+}
+
+func (s *Server) projectsCreate(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeError(w, http.StatusServiceUnavailable, "aa.unavailable", "no backend configured")
+		return
+	}
+	var req struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "aa.invalid", "invalid JSON body")
+		return
+	}
+	if err := s.cfg.Backend.CreateProject(req.ID, req.Name); err != nil {
+		writeError(w, http.StatusBadRequest, "aa.invalid", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, Project{ID: req.ID, Name: req.Name})
+}
+
+func (s *Server) workList(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, []WorkPackageView{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.WorkPackages(r.PathValue("projectId")))
+}
+
+func (s *Server) workSubmit(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeError(w, http.StatusServiceUnavailable, "aa.unavailable", "no backend configured")
+		return
+	}
+	var req struct {
+		Title     string   `json:"title"`
+		DependsOn []string `json:"dependsOn"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "aa.invalid", "invalid JSON body")
+		return
+	}
+	id, err := s.cfg.Backend.SubmitWork(r.PathValue("projectId"), req.Title, req.DependsOn)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "aa.invalid", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+}
+
+func (s *Server) assignments(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, []AssignmentView{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.Assignments())
+}
+
+func (s *Server) approve(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeError(w, http.StatusServiceUnavailable, "aa.unavailable", "no backend configured")
+		return
+	}
+	gateID := r.PathValue("gateId")
+	if err := s.cfg.Backend.Approve(gateID); err != nil {
+		writeError(w, http.StatusBadRequest, "aa.invalid", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "approved", "gateId": gateID})
 }
 
 func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {

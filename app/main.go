@@ -13,6 +13,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -20,13 +21,17 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/greadee/aa/app/internal/controlplane"
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge/memsync"
+	"github.com/greadee/aa/kernel/allocator/planner"
+	"github.com/greadee/aa/kernel/allocator/role_allocator"
 	"github.com/greadee/aa/kernel/allocator/routing"
+	"github.com/greadee/aa/kernel/api"
 	aaContext "github.com/greadee/aa/kernel/context"
 	"github.com/greadee/aa/kernel/joblearn"
 	"github.com/greadee/aa/kernel/joblearn/attribution"
@@ -35,6 +40,7 @@ import (
 	"github.com/greadee/aa/kernel/joblearn/promote"
 	"github.com/greadee/aa/kernel/joblearn/tracesource"
 	"github.com/greadee/aa/kernel/observability"
+	"github.com/greadee/aa/kernel/scheduler"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/repo"
 	"github.com/greadee/aa/memory/retention"
@@ -94,6 +100,7 @@ func serve(args []string) error {
 		Version: version,
 		Token:   *token,
 		Status:  g.status,
+		Backend: &backend{g: g},
 	})
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
@@ -138,6 +145,9 @@ type runtime struct {
 	traceSrc   *tracesource.MemorySource
 	traceSink  *promote.MemorySink
 	computer   *computeruse.Provider
+	graph      *planner.Graph
+	sched      *scheduler.Scheduler
+	api        *api.Service
 }
 
 // status reports the aggregate host status for the control plane.
@@ -147,6 +157,92 @@ func (g *runtime) status() controlplane.Status {
 		projects = len(recs)
 	}
 	return controlplane.Status{Projects: projects, ActiveAssignments: 0, Nodes: 1}
+}
+
+// backend implements controlplane.Backend over the composed graph.
+type backend struct {
+	g   *runtime
+	mu  sync.Mutex
+	seq int
+}
+
+func (b *backend) Projects() []controlplane.Project {
+	recs, err := b.g.store.ListRecords("project_record")
+	if err != nil {
+		return nil
+	}
+	out := make([]controlplane.Project, 0, len(recs))
+	for _, r := range recs {
+		var m struct {
+			Name string `json:"name"`
+		}
+		_ = json.Unmarshal(r.Data, &m)
+		out = append(out, controlplane.Project{ID: r.ID, Name: m.Name})
+	}
+	return out
+}
+
+func (b *backend) CreateProject(id, name string) error {
+	if id == "" {
+		return errors.New("project id is required")
+	}
+	data, err := json.Marshal(map[string]any{
+		"contractVersion": "2.0",
+		"kind":            "project_record",
+		"id":              id,
+		"name":            name,
+		"state":           "CREATED",
+		"layoutVersion":   "1",
+	})
+	if err != nil {
+		return err
+	}
+	rec, err := store.NewRecord("project_record", id, 1, data)
+	if err != nil {
+		return err
+	}
+	_, err = b.g.store.PutRecord(rec)
+	return err
+}
+
+func (b *backend) WorkPackages(projectID string) []controlplane.WorkPackageView {
+	if projectID != b.g.graph.ProjectID {
+		return nil
+	}
+	wps := b.g.api.Status().WorkPackages
+	out := make([]controlplane.WorkPackageView, 0, len(wps))
+	for _, wp := range wps {
+		out = append(out, controlplane.WorkPackageView{ID: wp.ID, Title: wp.Title, State: string(wp.State), DependsOn: wp.DependsOn})
+	}
+	return out
+}
+
+func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {
+	if projectID != b.g.graph.ProjectID {
+		return "", fmt.Errorf("unknown project %q", projectID)
+	}
+	b.mu.Lock()
+	b.seq++
+	id := fmt.Sprintf("wp-%d", b.seq)
+	b.mu.Unlock()
+	if err := b.g.graph.Add(planner.WorkPackage{ID: id, Title: title, DependsOn: dependsOn}); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+func (b *backend) Assignments() []controlplane.AssignmentView {
+	as := b.g.api.Status().Assignments
+	out := make([]controlplane.AssignmentView, 0, len(as))
+	for _, a := range as {
+		out = append(out, controlplane.AssignmentView{ID: a.ID, WorkPackageID: a.WorkPackageID, WorkerID: a.WorkerID, State: a.State, Attempt: a.Attempt})
+	}
+	return out
+}
+
+func (b *backend) Approve(gateID string) error {
+	b.g.api.Approve(gateID)
+	return nil
 }
 
 // build constructs the graph. Every dependency is passed explicitly; there is
@@ -199,6 +295,18 @@ func build(root string) (*runtime, error) {
 		return nil, fmt.Errorf("runtime/sandbox: %w", err)
 	}
 
+	// Kernel control path: one project graph + scheduler, exposed in-process by
+	// kernel/api. Execution stays disabled on the core path (no model, no worker).
+	graph := planner.NewGraph("default", "plan-main")
+	sched, err := scheduler.New(graph, scheduler.Config{Registry: role_allocator.New()})
+	if err != nil {
+		return nil, fmt.Errorf("kernel/scheduler: %w", err)
+	}
+	apiSvc, err := api.New(api.Config{Scheduler: sched})
+	if err != nil {
+		return nil, fmt.Errorf("kernel/api: %w", err)
+	}
+
 	return &runtime{
 		recorder:   recorder,
 		models:     modelRegistry,
@@ -213,6 +321,9 @@ func build(root string) (*runtime, error) {
 		traceSrc:   traceSrc,
 		traceSink:  traceSink,
 		computer:   computerProvider,
+		graph:      graph,
+		sched:      sched,
+		api:        apiSvc,
 	}, nil
 }
 

@@ -2,8 +2,10 @@ package controlplane
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -45,5 +47,64 @@ func TestStatusRequiresToken(t *testing.T) {
 	}
 	if st.Projects != 2 || st.Nodes != 1 {
 		t.Fatalf("status = %+v", st)
+	}
+}
+
+type fakeBackend struct{}
+
+func (fakeBackend) Projects() []Project { return []Project{{ID: "p1", Name: "Alpha"}} }
+func (fakeBackend) CreateProject(id, name string) error {
+	if id == "" {
+		return errors.New("bad id")
+	}
+	return nil
+}
+func (fakeBackend) WorkPackages(projectID string) []WorkPackageView {
+	if projectID != "p1" {
+		return nil
+	}
+	return []WorkPackageView{{ID: "wp-1", Title: "first", State: "PROPOSED"}}
+}
+func (fakeBackend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {
+	if projectID != "p1" {
+		return "", errors.New("unknown project")
+	}
+	return "wp-1", nil
+}
+func (fakeBackend) Assignments() []AssignmentView { return []AssignmentView{} }
+func (fakeBackend) Approve(gateID string) error   { return nil }
+
+func withToken(req *http.Request) *http.Request {
+	req.Header.Set("Authorization", "Bearer secret")
+	return req
+}
+
+func TestResourcesRequireTokenAndServe(t *testing.T) {
+	s := New(Config{Version: "0.1.0", Token: "secret", Backend: fakeBackend{}})
+
+	// Missing token is rejected.
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, APIPrefix+"/projects", nil))
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("projects without token = %d", rec.Code)
+	}
+
+	// Projects list.
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/projects", nil)))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Alpha") {
+		t.Fatalf("projects = %d %s", rec.Code, rec.Body.String())
+	}
+
+	// Work-package submit + list.
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodPost, APIPrefix+"/projects/p1/work-packages", strings.NewReader(`{"title":"first"}`))))
+	if rec.Code != http.StatusCreated || !strings.Contains(rec.Body.String(), "wp-1") {
+		t.Fatalf("submit = %d %s", rec.Code, rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/projects/p1/work-packages", nil)))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "PROPOSED") {
+		t.Fatalf("work list = %d %s", rec.Code, rec.Body.String())
 	}
 }
