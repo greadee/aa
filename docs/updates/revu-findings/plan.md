@@ -107,6 +107,19 @@ clean; docs link check valid.
 
 - [ ] The four fail-open guards fail closed, with tests.
 - [ ] A composition root exists and every orphaned symbol is wired or removed.
-- [ ] Stale references repaired; remaining detector output explained by documented ignore patterns.
+- [ ] Stale references marked deprecated in place with strikethrough (records are never deleted).
 - [ ] `revu` audit of `dev` reports 0 findings, or each accepted finding is recorded.
 - [ ] Sprint summary + UML authored; #36 closed; affected issues reconciled.
+
+## Accepted exceptions
+
+The following orphan findings are accepted as-is for this sprint. Each is a legitimate testing seam or
+requires work outside this sprint's scope, and is tracked as its own GitHub issue so it is not
+forgotten in future development.
+
+| Symbol | Why accepted |
+|---|---|
+| `kernel/joblearn/tracesource.NewStatic` | Cross-package test seam: constructs a fixed trace set for tests in other modules. |
+| `kernel/joblearn/tracesource.NewFake` | Cross-package test double for the `Source` seam. |
+| `toolbox/computeruse.NewFake` | Cross-package test double for the `Driver` seam. |
+| `toolbox/computeruse.NewProvider` | Needs a real `computeruse.Driver`, which is not implemented; wiring a test double into production is not acceptable. |
