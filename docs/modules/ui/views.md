@@ -4,7 +4,7 @@
 
 **Responsibility** — View definitions rendered by the surfaces (graph, sessions,
 issues, strategies, status); the surface decides how to render them. Scaffolded;
-delivered in ph10-ui.
+delivered in phase10b-console.
 
 **Source** — [`ui/views/`](../../../ui/views/)
 
