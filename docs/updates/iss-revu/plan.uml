@@ -1,0 +1,31 @@
+@startuml
+title ISS-REVU Resolution Sprint — plan
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:Gate: disjoint from phase 10 (console/ui)? yes;
+
+partition "ISS-REVU-1 — real driver" {
+  :add computeruse.Headless (NewHeadless);
+  :wire NewProvider(NewHeadless()) in app/;
+}
+
+partition "ISS-REVU-2 — computeruse test double" {
+  :unexport fake/newFake;
+  :kernel test gets a local fakeDriver;
+}
+
+partition "ISS-REVU-3/4 — tracesource test impls" {
+  :unexport static/fake, newStatic/newFake;
+}
+
+:revu --profile pr on branch -> 0 findings;
+:open PR -> dev; link to #21 and ISS-REVU;
+:close ISS-REVU issues, PR, and #21;
+
+stop
+
+@enduml
