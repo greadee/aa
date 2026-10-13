@@ -1,0 +1,41 @@
+# Review engine (revu) — Shape A: single-file, trusted PR review.
+#
+# Runs on same-repository pull requests. Static-only (no model, no provider key);
+# posts a summary comment and archives findings. For untrusted forks, use the
+# two-file collect/finalize pattern instead.
+name: revu
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: revu-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: revu (pr review)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: greadee/review-engine@main
+        with:
+          profile: pr
+          semantic: "false"
+          base: origin/${{ github.base_ref }}
+          head: ${{ github.event.pull_request.head.sha }}
+          pr: ${{ github.event.pull_request.number }}
+          repository: ${{ github.repository }}
+          publish: "true"
+          comment: "true"
+          block: "true"
