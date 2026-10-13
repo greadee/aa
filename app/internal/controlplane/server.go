@@ -63,7 +63,13 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/nodes", s.auth(s.nodes))
 	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
 	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
+	// Anything else under the prefix is not found (JSON, same error vocabulary).
+	s.mux.HandleFunc(APIPrefix+"/", s.notFound)
 	return s
+}
+
+func (s *Server) notFound(w http.ResponseWriter, _ *http.Request) {
+	writeError(w, http.StatusNotFound, codeNotFound, "not found")
 }
 
 // ServeHTTP implements http.Handler.
@@ -73,7 +79,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "aa.method_not_allowed", "method not allowed")
+		writeError(w, http.StatusMethodNotAllowed, codeMethodNotFound, "method not allowed")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{
@@ -85,7 +91,7 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "aa.method_not_allowed", "method not allowed")
+		writeError(w, http.StatusMethodNotAllowed, codeMethodNotFound, "method not allowed")
 		return
 	}
 	st := Status{}
@@ -105,7 +111,7 @@ func (s *Server) projectsList(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) projectsCreate(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.Backend == nil {
-		writeError(w, http.StatusServiceUnavailable, "aa.unavailable", "no backend configured")
+		writeError(w, http.StatusServiceUnavailable, codeUnavailable, "no backend configured")
 		return
 	}
 	var req struct {
@@ -113,11 +119,11 @@ func (s *Server) projectsCreate(w http.ResponseWriter, r *http.Request) {
 		Name string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "aa.invalid", "invalid JSON body")
+		writeError(w, http.StatusBadRequest, codeInvalidParams, "invalid JSON body")
 		return
 	}
 	if err := s.cfg.Backend.CreateProject(req.ID, req.Name); err != nil {
-		writeError(w, http.StatusBadRequest, "aa.invalid", err.Error())
+		writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
 		return
 	}
 	writeJSON(w, http.StatusCreated, Project{ID: req.ID, Name: req.Name})
@@ -133,7 +139,7 @@ func (s *Server) workList(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) workSubmit(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.Backend == nil {
-		writeError(w, http.StatusServiceUnavailable, "aa.unavailable", "no backend configured")
+		writeError(w, http.StatusServiceUnavailable, codeUnavailable, "no backend configured")
 		return
 	}
 	var req struct {
@@ -141,12 +147,12 @@ func (s *Server) workSubmit(w http.ResponseWriter, r *http.Request) {
 		DependsOn []string `json:"dependsOn"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "aa.invalid", "invalid JSON body")
+		writeError(w, http.StatusBadRequest, codeInvalidParams, "invalid JSON body")
 		return
 	}
 	id, err := s.cfg.Backend.SubmitWork(r.PathValue("projectId"), req.Title, req.DependsOn)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "aa.invalid", err.Error())
+		writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
@@ -202,12 +208,12 @@ func (s *Server) tools(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) approve(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.Backend == nil {
-		writeError(w, http.StatusServiceUnavailable, "aa.unavailable", "no backend configured")
+		writeError(w, http.StatusServiceUnavailable, codeUnavailable, "no backend configured")
 		return
 	}
 	gateID := r.PathValue("gateId")
 	if err := s.cfg.Backend.Approve(gateID); err != nil {
-		writeError(w, http.StatusBadRequest, "aa.invalid", err.Error())
+		writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "approved", "gateId": gateID})
@@ -217,7 +223,7 @@ func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if s.cfg.Token != "" {
 			if r.Header.Get("Authorization") != "Bearer "+s.cfg.Token {
-				writeError(w, http.StatusUnauthorized, "aa.unauthorized", "missing or invalid bearer token")
+				writeError(w, http.StatusUnauthorized, codeUnauthorized, "missing or invalid bearer token")
 				return
 			}
 		}
