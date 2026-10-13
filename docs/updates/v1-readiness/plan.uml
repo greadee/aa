@@ -1,19 +1,19 @@
 @startuml
-title v1 Scope & Composition — plan
+title v1 Scope & Composition — plan (decided)
 
 skinparam shadowing false
 skinparam defaultTextAlignment left
 
 start
 
-:Decide v1 definition of done;
+:Decide v1 definition of done (D1-D5);
 
 partition "Surfaces (phase 10)" {
-  :10a console: CLI + TUI + local web (in v1);
-  :10b desktop (Wails/React): optional / post-v1;
+  :console: CLI + TUI + local web (in v1);
+  :desktop (Wails/React): OUT of phase 10 -> v2;
 }
 
-partition "Control-plane server" {
+partition "Control-plane server (D2)" {
   :home: app/ daemon exposing OpenAPI;
   :compose kernel + memory + toolbox + runtime;
   :auth: loopback bearer only (phase 11 for real authn);
@@ -21,15 +21,16 @@ partition "Control-plane server" {
 
 partition "Composition coverage" {
   :in v1: scheduler/gate/planner, worker/intake,
-   toolbox host, joblearn, inference path;
-  :deferred: sync, obsv, visualizer, forge lifecycle,
+   toolbox host, joblearn, inference, forge lifecycle+template,
+   control-plane server;
+  :v2: sync, obsv, visualizer, ui,
    registry teams/routines/policies, runtime/lifecycle;
 }
 
 partition "Release-readiness (phase 11)" {
   :threat model; perf/load; chaos/recovery;
   :packaging/install; versioning/tags/CHANGELOG;
-  :docs; whole-repo revu audits; migration guides;
+  :docs; whole-repo revu audits (static-only); migration guides;
 }
 
 :deferred register -> issues;
@@ -38,9 +39,8 @@ partition "Release-readiness (phase 11)" {
 stop
 
 note right
-  Documentation-only phase.
-  Gate: docs link check,
-  revu (static-only), archtest.
+  v1 review gate: revu static-only (D5).
+  Desktop and sync/obsv/visualizer = v2.
 end note
 
 @enduml
