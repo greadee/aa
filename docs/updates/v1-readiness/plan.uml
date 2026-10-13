@@ -1,0 +1,46 @@
+@startuml
+title v1 Scope & Composition — plan
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:Decide v1 definition of done;
+
+partition "Surfaces (phase 10)" {
+  :10a console: CLI + TUI + local web (in v1);
+  :10b desktop (Wails/React): optional / post-v1;
+}
+
+partition "Control-plane server" {
+  :home: app/ daemon exposing OpenAPI;
+  :compose kernel + memory + toolbox + runtime;
+  :auth: loopback bearer only (phase 11 for real authn);
+}
+
+partition "Composition coverage" {
+  :in v1: scheduler/gate/planner, worker/intake,
+   toolbox host, joblearn, inference path;
+  :deferred: sync, obsv, visualizer, forge lifecycle,
+   registry teams/routines/policies, runtime/lifecycle;
+}
+
+partition "Release-readiness (phase 11)" {
+  :threat model; perf/load; chaos/recovery;
+  :packaging/install; versioning/tags/CHANGELOG;
+  :docs; whole-repo revu audits; migration guides;
+}
+
+:deferred register -> issues;
+:merge plan on dev;
+
+stop
+
+note right
+  Documentation-only phase.
+  Gate: docs link check,
+  revu (static-only), archtest.
+end note
+
+@enduml
