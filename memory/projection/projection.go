@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/greadee/aa/memory/store"
@@ -146,22 +145,4 @@ func (p *MemProjection) Digest() string {
 	}
 	p.mu.RUnlock()
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-// DigestOf returns the digest for an arbitrary set of entries.
-func DigestOf(entries []Entry) string {
-	sorted := make([]Entry, len(entries))
-	copy(sorted, entries)
-	sort.Slice(sorted, func(i, j int) bool {
-		if sorted[i].Kind != sorted[j].Kind {
-			return sorted[i].Kind < sorted[j].Kind
-		}
-		return sorted[i].ID < sorted[j].ID
-	})
-	var b strings.Builder
-	for _, e := range sorted {
-		fmt.Fprintf(&b, "%s\x00%s\x00%d\x00%s\n", e.Kind, e.ID, e.Revision, e.Hash)
-	}
-	sum := sha256.Sum256([]byte(b.String()))
-	return hex.EncodeToString(sum[:])
 }

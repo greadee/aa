@@ -55,14 +55,19 @@ clean; docs link check valid.
 - **Commit** `fail closed on nil dependencies in sandbox, routing and retrieval`.
 
 ### Stage 1 — Composition root & wiring (orphan findings)
-- Add `cmd/aa` + `internal/bootstrap` composing the delivered seams: kernel (context, allocator,
-  routing, scheduler, joblearn, observability), runtime (sandbox, intake), toolbox (computeruse),
-  registry (models), memory (retrieval/retention/promotion), forge (memsync).
-- Wire each orphaned constructor into the root; delete exports confirmed dead
-  (`memory/projection` unused function).
-- Grouped commits by module area: `wire kernel seams into a composition root`,
-  `wire runtime, toolbox and registry into the composition root`,
-  `wire memory and forge into the composition root and drop dead exports`.
+- Add `app/` (`module github.com/greadee/aa/app`, entrypoint `app/main.go`, `aa selfcheck`) composing
+  the delivered seams: kernel (context, allocator/routing, joblearn, observability), runtime
+  (store-backed retrieval, sandbox), toolbox (policy engine wired to the sandbox enforcer), registry
+  (models), memory (store/repo/projection/retention), forge (memsync).
+- Wire each orphaned constructor into the root; delete exports confirmed dead.
+- Register the module in `go.work`, the CI Go matrix, `tools/archtest`, and `MANIFEST.json`.
+- **Commit** `add app composition root wiring kernel, runtime and toolbox seams`.
+- **Outcome:** 18 of the 23 sprint orphans wired through `app/`. **Accepted exceptions (4):**
+  `tracesource.NewStatic` and `tracesource.NewFake` (cross-package test seams), `computeruse.NewFake`
+  (test double) and `computeruse.NewProvider` (needs a real `Driver`, none implemented). The dead
+  `projection.DigestOf` was removed. A whole-repo audit still lists other pre-existing uncomposed
+  libraries (sync, obsv, visualizer, forge lifecycle/template, …); wiring those is out of this
+  sprint's scope.
 
 ### Stage 2 — Documentation hygiene (stale-reference findings)
 - Fix genuine stale references: `contracts/POLICY.md`, `docs/adr/*` (v1 paths), `docs/modules/**`
