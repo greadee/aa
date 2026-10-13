@@ -48,40 +48,40 @@ func (b Bounds) Validate() error {
 	return nil
 }
 
-// Static is a deterministic in-memory Source. It sorts by trace id on
+// static is a deterministic in-memory Source. It sorts by trace id on
 // construction so the order never depends on how it was built.
-type Static struct {
+type static struct {
 	traces []v2.Trace
 }
 
-// NewStatic returns a Source over a copy of traces, sorted by id.
-func NewStatic(traces []v2.Trace) *Static {
+// newStatic returns a Source over a copy of traces, sorted by id.
+func newStatic(traces []v2.Trace) *static {
 	ordered := append([]v2.Trace(nil), traces...)
 	sort.SliceStable(ordered, func(i, j int) bool { return ordered[i].ID < ordered[j].ID })
-	return &Static{traces: ordered}
+	return &static{traces: ordered}
 }
 
 // Traces returns a copy of the traces in stable order.
-func (s *Static) Traces() ([]v2.Trace, error) {
+func (s *static) Traces() ([]v2.Trace, error) {
 	return append([]v2.Trace(nil), s.traces...), nil
 }
 
-// Fake is a scripted Source for tests. It returns a fixed set of traces or a
+// fake is a scripted Source for tests. It returns a fixed set of traces or a
 // fixed error, and records how many times it was read.
-type Fake struct {
+type fake struct {
 	Traces_  []v2.Trace
 	Err      error
 	Reads    int
 	Validate bool
 }
 
-// NewFake returns a fake Source over traces.
-func NewFake(traces ...v2.Trace) *Fake {
-	return &Fake{Traces_: append([]v2.Trace(nil), traces...)}
+// newFake returns a fake Source over traces.
+func newFake(traces ...v2.Trace) *fake {
+	return &fake{Traces_: append([]v2.Trace(nil), traces...)}
 }
 
 // Traces implements Source.
-func (f *Fake) Traces() ([]v2.Trace, error) {
+func (f *fake) Traces() ([]v2.Trace, error) {
 	f.Reads++
 	if f.Err != nil {
 		return nil, f.Err

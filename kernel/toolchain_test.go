@@ -3,6 +3,7 @@ package kernel
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/greadee/aa/runtime/sandbox"
@@ -16,9 +17,34 @@ import (
 // The kernel composes the toolbox (tool capability) with the runtime sandbox
 // (isolation) at the policy seam; roles and the scheduler never see either.
 
-func computerUseHost(t *testing.T, enforcer policy.SandboxEnforcer) (*host.Host, *computeruse.Fake) {
+// fakeDriver is a local, deterministic computeruse.Driver for these tests. The
+// production driver seam carries no test double; each consumer supplies its own.
+type fakeDriver struct {
+	mu    sync.Mutex
+	calls []computeruse.Action
+}
+
+func (f *fakeDriver) Perform(ctx context.Context, action computeruse.Action) (computeruse.Outcome, error) {
+	f.mu.Lock()
+	f.calls = append(f.calls, action)
+	f.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return computeruse.Outcome{}, err
+	}
+	return computeruse.Outcome{Output: map[string]any{"action": string(action.Kind)}}, nil
+}
+
+func (f *fakeDriver) Close() error { return nil }
+
+func (f *fakeDriver) Calls() []computeruse.Action {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]computeruse.Action(nil), f.calls...)
+}
+
+func computerUseHost(t *testing.T, enforcer policy.SandboxEnforcer) (*host.Host, *fakeDriver) {
 	t.Helper()
-	driver := computeruse.NewFake()
+	driver := &fakeDriver{}
 	provider, err := computeruse.NewProvider(driver)
 	if err != nil {
 		t.Fatal(err)

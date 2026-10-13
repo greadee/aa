@@ -99,8 +99,8 @@ type Driver interface {
 	Close() error
 }
 
-// Fake is a deterministic Driver for tests and pilots.
-type Fake struct {
+// fake is a deterministic Driver for tests and pilots.
+type fake struct {
 	mu      sync.Mutex
 	results map[ActionKind]Outcome
 	errs    map[ActionKind]error
@@ -108,20 +108,20 @@ type Fake struct {
 	closed  bool
 }
 
-// NewFake returns an empty fake driver.
-func NewFake() *Fake {
-	return &Fake{results: map[ActionKind]Outcome{}, errs: map[ActionKind]error{}}
+// newFake returns an empty fake driver.
+func newFake() *fake {
+	return &fake{results: map[ActionKind]Outcome{}, errs: map[ActionKind]error{}}
 }
 
 // Script configures the outcome for an action kind.
-func (f *Fake) Script(kind ActionKind, out Outcome) {
+func (f *fake) Script(kind ActionKind, out Outcome) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.results[kind] = out
 }
 
 // ScriptError configures an error for an action kind.
-func (f *Fake) ScriptError(kind ActionKind, err error) {
+func (f *fake) ScriptError(kind ActionKind, err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.errs[kind] = err
@@ -129,7 +129,7 @@ func (f *Fake) ScriptError(kind ActionKind, err error) {
 
 // Perform records the action and returns the scripted outcome. It honors
 // context cancellation.
-func (f *Fake) Perform(ctx context.Context, action Action) (Outcome, error) {
+func (f *fake) Perform(ctx context.Context, action Action) (Outcome, error) {
 	f.mu.Lock()
 	f.calls = append(f.calls, action)
 	err, scriptedErr := f.errs[action.Kind]
@@ -149,7 +149,7 @@ func (f *Fake) Perform(ctx context.Context, action Action) (Outcome, error) {
 }
 
 // Close marks the driver closed.
-func (f *Fake) Close() error {
+func (f *fake) Close() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.closed = true
@@ -157,7 +157,7 @@ func (f *Fake) Close() error {
 }
 
 // Calls returns a copy of the recorded actions in order.
-func (f *Fake) Calls() []Action {
+func (f *fake) Calls() []Action {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	out := make([]Action, len(f.calls))
