@@ -10,4 +10,5 @@ require (
 	github.com/greadee/aa/registry v0.0.0
 	github.com/greadee/aa/runtime v0.0.0
 	github.com/greadee/aa/toolbox v0.0.0
+	github.com/greadee/aa/ui v0.0.0
 )
