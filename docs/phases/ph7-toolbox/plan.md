@@ -10,7 +10,7 @@ Deliver `aa-toolbox`: a tool, plugin, and MCP registry with declared manifests; 
 
 - Starting ref: `main @ a934498` (after phase 6 merge and record).
 - Available:
-  - `aa-contracts` v1 schemas and Go bindings for `tool_manifest` (`contracts/go/v1/tool.go`) and `workflow` (`contracts/go/v1/workflow.go`), plus `Capability`, `ExecutionContract`, `Budget`, and the shared validators.
+  - `aa-contracts` v1 schemas and Go bindings for `tool_manifest` (`~~contracts/go/v1/tool.go~~`) and `workflow` (`~~contracts/go/v1/workflow.go~~`), plus `Capability`, `ExecutionContract`, `Budget`, and the shared validators.
   - The `toolbox.*` RPC method names and envelope conventions (`contracts/rpc/rpc-v1.md`).
   - A scaffolded `toolbox/` Go module (`go.mod`, `doc.go`, `README.md`, `aa-toolbox.md`).
   - The architecture boundary harness allowing `toolbox -> contracts` (`tools/archtest`).
@@ -91,16 +91,16 @@ Each slice is independently validatable and maps to exactly one commit.
 **Goal** — Domain types, sentinel errors, a deterministic clock, and idempotency keys. **Inputs** — the toolbox directive. **Expected Output** — `toolbox/types.go`, `toolbox/errors.go`, `toolbox/clock.go`, `toolbox/idempotency.go` + tests. **Model Class** — General. **Commit Message** — `add toolbox core types and errors`. **Validation** — `go test ./...`. **Dependencies** — slice 1. **Documentation** — `toolbox/README.md`.
 
 ### Slice 3 — Registry and manifests
-**Goal** — Register, validate, look up, list, and remove tool/plugin/MCP manifests; the provider seam. **Inputs** — slice 2, `contracts/go/v1/tool.go`. **Expected Output** — `toolbox/registry/*.go` + tests. **Model Class** — General. **Commit Message** — `add toolbox registry and manifests`. **Validation** — `go test ./...`; invalid manifests rejected. **Dependencies** — slice 2. **Documentation** — `toolbox/README.md`.
+**Goal** — Register, validate, look up, list, and remove tool/plugin/MCP manifests; the provider seam. **Inputs** — slice 2, `~~contracts/go/v1/tool.go~~`. **Expected Output** — `toolbox/registry/*.go` + tests. **Model Class** — General. **Commit Message** — `add toolbox registry and manifests`. **Validation** — `go test ./...`; invalid manifests rejected. **Dependencies** — slice 2. **Documentation** — `toolbox/README.md`.
 
 ### Slice 4 — Policy engine and capability grants
-**Goal** — Intersect declared capabilities with the execution contract, honor denials, decide sandbox/network, and append to the audit log. **Inputs** — slices 2–3, `contracts/go/v1/executioncontract.go`. **Expected Output** — `toolbox/policy/*.go` + tests. **Model Class** — Strong. **Commit Message** — `add toolbox policy engine and grants`. **Validation** — `go test ./...`; permission-denial tests. **Dependencies** — slice 3. **Documentation** — `toolbox/README.md`.
+**Goal** — Intersect declared capabilities with the execution contract, honor denials, decide sandbox/network, and append to the audit log. **Inputs** — slices 2–3, `~~contracts/go/v1/executioncontract.go~~`. **Expected Output** — `toolbox/policy/*.go` + tests. **Model Class** — Strong. **Commit Message** — `add toolbox policy engine and grants`. **Validation** — `go test ./...`; permission-denial tests. **Dependencies** — slice 3. **Documentation** — `toolbox/README.md`.
 
 ### Slice 5 — Invocation host and fake provider
 **Goal** — Provider-agnostic invocation with idempotent replay, deterministic results, and an in-memory fake provider. **Inputs** — slices 3–4. **Expected Output** — `toolbox/host/*.go`, `toolbox/host/fake.go` + tests. **Model Class** — Strong. **Commit Message** — `add toolbox invocation host and fake`. **Validation** — `go test ./...`; replay and denial tests. **Dependencies** — slice 4. **Documentation** — `toolbox/README.md`.
 
 ### Slice 6 — Workflow compiler
-**Goal** — Validate a workflow, reject duplicate IDs, dangling dependencies, and cycles, and produce a deterministic topological plan. **Inputs** — slices 2, `contracts/go/v1/workflow.go`. **Expected Output** — `toolbox/workflow/compile.go` + tests. **Model Class** — Strong. **Commit Message** — `add toolbox workflow compiler`. **Validation** — `go test ./...`; cycle and determinism tests. **Dependencies** — slice 5. **Documentation** — `toolbox/README.md`.
+**Goal** — Validate a workflow, reject duplicate IDs, dangling dependencies, and cycles, and produce a deterministic topological plan. **Inputs** — slices 2, `~~contracts/go/v1/workflow.go~~`. **Expected Output** — `toolbox/workflow/compile.go` + tests. **Model Class** — Strong. **Commit Message** — `add toolbox workflow compiler`. **Validation** — `go test ./...`; cycle and determinism tests. **Dependencies** — slice 5. **Documentation** — `toolbox/README.md`.
 
 ### Slice 7 — Workflow runtime
 **Goal** — Resumable execution over a runner seam with bounded retries, gates, human approval, and per-step failure policy. **Inputs** — slice 6. **Expected Output** — `toolbox/workflow/runtime.go` + tests. **Model Class** — Strong. **Commit Message** — `add toolbox workflow runtime`. **Validation** — `go test ./...`; resume, retry, and gate tests. **Dependencies** — slice 6. **Documentation** — `toolbox/README.md`.

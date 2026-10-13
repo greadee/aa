@@ -19,7 +19,7 @@ This plan is planning only: **no code is implemented in this module update yet**
   - The single expert-egress redaction chokepoint (`_call_tier`) and its spy-provider tests.
   - The v1 transport spec: `contracts/rpc/rpc-v1.md` (framing, addressing, security, deadlines, errors, idempotency, method set).
   - The `obsv` local transport (`hello`/`append`/`replay`/`subscribe`) as the canonical attach-or-own, identity-bound service.
-  - The kernel's `runtime.Adapter` seam (`kernel/runtime/runtime.go`) and its scripted fake; the kernel reaches `inference` over RPC, never by import.
+  - The kernel's `runtime.Adapter` seam (`~~kernel/runtime/runtime.go~~`) and its scripted fake; the kernel reaches `inference` over RPC, never by import.
 - Missing:
   - Any transport binding: no socket/pipe server, no framing reader/writer, no client.
   - Server lifecycle: no `aa-inference serve` command, readiness, logging, or graceful shutdown.

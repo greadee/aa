@@ -69,23 +69,23 @@ docs/
 │       ├── <submodule>.md         one page per submodule
 │       └── updates/
 │           └── <slug>/
-│               ├── plan.md        module update plan
-│               └── summary.md     module update summary
+│               ├── ~~plan.md~~        module update plan
+│               └── ~~summary.md~~     module update summary
 │
 ├── phases/                        work history: numbered major additions
 │   └── ph{N}-{scope}/
-│       ├── plan.md
+│       ├── ~~plan.md~~
 │       ├── plan.uml
-│       ├── summary.md
+│       ├── ~~summary.md~~
 │       ├── summary.uml
 │       └── issues/
 │           └── issue-123-name.md
 │
 ├── updates/                       work history: unnumbered update phases
 │   └── <slug>/
-│       ├── plan.md
+│       ├── ~~plan.md~~
 │       ├── plan.uml
-│       ├── summary.md
+│       ├── ~~summary.md~~
 │       └── summary.uml
 │
 ├── issues/
@@ -122,9 +122,9 @@ They should not duplicate all downstream content.
 Required:
 
 ```text
-plan.md
+~~plan.md~~
 plan.uml
-summary.md
+~~summary.md~~
 summary.uml
 issues/
 ```
@@ -132,7 +132,7 @@ issues/
 ADRs are no longer stored per phase; every accepted decision lives in the global
 [ADR store](../adr/README.md) and is linked from the phase/update that made it.
 
-The plan documents (`plan.md`, `plan.uml`) are authored at the start of the phase; the summary documents (`summary.md`, `summary.uml`) are authored at the end. The branch name equals the folder name. See [phase-documentation.md](phase-documentation.md).
+The plan documents (`~~plan.md~~`, `plan.uml`) are authored at the start of the phase; the summary documents (`~~summary.md~~`, `summary.uml`) are authored at the end. The branch name equals the folder name. See [phase-documentation.md](phase-documentation.md).
 
 Optional:
 
@@ -156,16 +156,16 @@ Recommended content:
 ## Status
 
 ## Plan
-[Phase Plan](./plan.md) · [Plan UML](./plan.uml)
+[Phase Plan](./~~plan.md~~) · [Plan UML](./plan.uml)
 
 ## Summary
-[Phase Summary](./summary.md) · [Summary UML](./summary.uml)
+[Phase Summary](./~~summary.md~~) · [Summary UML](./summary.uml)
 
 ## Issues
-- [#123 ...](./issues/issue-123-name.md)
+- [#123 ...](./~~issues/issue-123-name.md~~)
 
 ## Architecture Decisions
-[Phase ADRs](./adr.md)
+[Phase ADRs](./~~adr.md~~)
 
 ## GitHub
 - Milestone: ...
@@ -176,14 +176,14 @@ Recommended content:
 
 ## Phase Scope
 
-Scope is recorded inside `plan.md`. It should answer:
+Scope is recorded inside `~~plan.md~~`. It should answer:
 
 1. What exists when the phase begins?
 2. What is in scope?
 3. What must exist when it ends?
 4. What is explicitly out of scope?
 
-Recommended section in `plan.md`:
+Recommended section in `~~plan.md~~`:
 
 ```markdown
 ## Starting State
@@ -200,7 +200,7 @@ Recommended section in `plan.md`:
 - [ ] ...
 
 ## Issues
-- [#123 ...](./issues/issue-123-name.md)
+- [#123 ...](./~~issues/issue-123-name.md~~)
 ```
 
 ## Starting-State Snapshot
@@ -283,7 +283,7 @@ PRs:
 ## Implementation Notes
 
 ## Architecture Decisions
-- [ADR-P4-003 — ...](../adr.md#...)
+- [ADR-P4-003 — ...](../~~adr.md~~#...)
 
 ## Dependencies
 
@@ -307,13 +307,13 @@ update on the retained phase branch. The plan and summary live in **project
 history**, under the module:
 
 ```text
-docs/modules/<module>/updates/<slug>/plan.md
-docs/modules/<module>/updates/<slug>/summary.md
+docs/modules/<module>/updates/<slug>/~~plan.md~~
+docs/modules/<module>/updates/<slug>/~~summary.md~~
 ```
 
 The owning **update phase** (`docs/updates/<slug>/`) is the **work history** and
 links its module updates. Together the plan and summary are the durable record of
-the update, exactly as `plan.md` and `summary.md` are for a phase. See
+the update, exactly as `~~plan.md~~` and `~~summary.md~~` are for a phase. See
 [module-updates.md](module-updates.md).
 
 ## Module Documentation
@@ -344,9 +344,9 @@ not numbered phases:
 
 ```text
 docs/updates/<slug>/
-├── plan.md
+├── ~~plan.md~~
 ├── plan.uml
-├── summary.md
+├── ~~summary.md~~
 └── summary.uml
 ```
 
@@ -390,8 +390,8 @@ Do not wait until the final commit to reconstruct documentation from memory.
 Before phase merge:
 
 ```text
-[ ] plan.md and plan.uml authored at phase start
-[ ] summary.md and summary.uml complete
+[ ] ~~plan.md~~ and plan.uml authored at phase start
+[ ] ~~summary.md~~ and summary.uml complete
 [ ] starting state documented
 [ ] required end state verified
 [ ] significant issues have issue docs

@@ -6,7 +6,7 @@
 > [architecture README](../../architecture/README.md) is updated with **every** change.
 > **Predecessor handoff:** `AA Architecture Refactor — Planning Handoff`.
 > **Successor handoff:** `AA Ten-Issue Plan — Post-Refactor Planning Handoff`
-> (`aa-downloads/AA_TEN_ISSUE_POST_REFACTOR_HANDOFF.md`).
+> (`~~aa-downloads/AA_TEN_ISSUE_POST_REFACTOR_HANDOFF.md~~`).
 
 ## Objective
 
@@ -185,7 +185,7 @@ architecture README + terminology updated; ADRs added/updated; relative links va
 
 ### Slice 5 — registry module skeleton
 - **Goal** — Add `registry/{roles,models,teams,capabilities,routines,policies}` with
-  interfaces/types; move durable definitions out of `kernel/registry/roles.go` and
+  interfaces/types; move durable definitions out of `~~kernel/registry/roles.go~~` and
   contract capability vocabularies.
 - **Model Class** — Strong. **Commit** — `add registry module skeleton`.
 - **Dependencies** — slice 3. **Validation** — build/vet/test; no behavior change.

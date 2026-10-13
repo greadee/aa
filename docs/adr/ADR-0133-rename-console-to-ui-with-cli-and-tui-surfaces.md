@@ -18,7 +18,7 @@ structure.
 Rename the module **`console` → `ui`** (`github.com/greadee/aa/ui`) and give it a
 structure: `components`, `views`, `state`, and `surfaces/`. Surfaces are `cli`
 and `tui` for now; web and desktop surfaces are reserved. The directive
-`console/aa-tui.md` becomes `ui/aa-ui.md`.
+`~~console/aa-tui.md~~` becomes `ui/aa-ui.md`.
 
 ## Rationale
 

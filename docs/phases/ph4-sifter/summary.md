@@ -18,7 +18,7 @@
 | Redaction chokepoint | Complete | `d1c6e66` | `_call_tier`, `generate`, preflight, decompose |
 | Token limits and budget waivers/grants | Complete | `62399ec` | context sizing, `max_tokens`, waivers, grants |
 | RPC service and contracts bridge | Complete | `b5bdf01` | `aa_sifter/{contracts,rpc}` |
-| Memory traces and recommender wiring | Complete | `9f6ea46` | `aa_sifter/memory.py`, `sifter.recommend` |
+| Memory traces and recommender wiring | Complete | `9f6ea46` | `~~aa_sifter/memory.py~~`, `sifter.recommend` |
 | Test fix found by CI | Complete | `aa739c2` | fake provider in the memory-sink test |
 | Phase summary and UML | Complete | this commit | summary.md, summary.uml, plan ref correction |
 
@@ -41,7 +41,7 @@
 | sifter types | Pass | `mypy` — 68 source files, no issues |
 | sifter tests | Pass | 358 tests; default suite makes no network calls |
 | Contract round-trip | Pass | `sifter.route`/`generate`/`health` validate against `aa_contracts` |
-| Redaction | Pass | spy provider sees no secret on any expert path (`tests/unit/test_redaction_paths.py`) |
+| Redaction | Pass | spy provider sees no secret on any expert path (`~~tests/unit/test_redaction_paths.py~~`) |
 | Token limits | Pass | messages fit `context_limit`; `max_output_tokens` forwarded |
 | Budgets / waivers / grants | Pass | pre-flight estimates; cost waiver raises the cap; grant bypasses escalation approval |
 | Memory candidates | Pass | each run emits a validated `memory_record` candidate |
@@ -123,7 +123,7 @@ Audit result: no blocking findings. Boundary rule holds: `aa_sifter` imports no 
 
 | Pitfall | Cause | Solution | Regression protection |
 |---|---|---|---|
-| Desktop major-approval integration test flaked on CI py3.12 | Fixed `sleep` between the two approval stages raced the service's approval future | Poll for the approval `stage` and retry the post until accepted | `tests/integration/test_desktop_workflows.py` helpers; 10× local stress run |
+| Desktop major-approval integration test flaked on CI py3.12 | Fixed `sleep` between the two approval stages raced the service's approval future | Poll for the approval `stage` and retry the post until accepted | `~~tests/integration/test_desktop_workflows.py~~` helpers; 10× local stress run |
 | A new test used the real provider on CI | A `ComputeSifter` was built without an injected provider, so it constructed Ollama and attempted egress | Inject `FakeProvider` | Default suite makes zero network calls; the failure surfaced on CI, not locally |
 
 ### As-Built Diagram

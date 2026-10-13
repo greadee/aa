@@ -67,7 +67,7 @@ The scaffolding already validates several architecture decisions by construction
 
 - Create the GitHub milestone, tracking issue, and (if desired) a retroactive `ph0-scaffold` record; commit and push the remote.
 - Build the architecture/boundary test harness (D5) — the first task of `ph1-contracts`.
-- Author `ph1-contracts/plan.md` + `plan.uml` before starting phase 1.
+- Author `~~ph1-contracts/plan.md~~` + `plan.uml` before starting phase 1.
 - Confirm the docs link-check and CI workflows pass on GitHub after the first push.
 - Add `go.work.sum` handling / module toolchain pinning once real dependencies land.
 

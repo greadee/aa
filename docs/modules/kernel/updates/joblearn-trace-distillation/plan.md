@@ -40,7 +40,7 @@ This plan is planning only: **no code is implemented in this module update yet**
 - Artifact distillation into existing `Candidate` kinds, scoped by role/trade/task and carrying trace provenance.
 - A trace-derived backtest dataset, a bounded order-independent `backtest.Run`, and a production baseline arm behind the `backtest.Predictor` seam.
 - Gate evidence and capability enablement derived from trace outcomes.
-- A store adapter (mirroring `promote/memory.go`) and an end-to-end store → engine → promotion integration test.
+- A store adapter (mirroring `~~promote/memory.go~~`) and an end-to-end store → engine → promotion integration test.
 - Module documentation, the sub-issue document, and the module summary.
 
 ### Out of Scope
@@ -55,7 +55,7 @@ This plan is planning only: **no code is implemented in this module update yet**
 
 | # | Decision | Reasoning |
 |---|---|---|
-| ADR-P9U-001 | Consume traces through a pure `TraceSource` seam; the store adapter lives beside the engine like `promote/memory.go` | Keeps the engine pure and unit-testable while `kernel` remains the only importer of `memory` |
+| ADR-P9U-001 | Consume traces through a pure `TraceSource` seam; the store adapter lives beside the engine like `~~promote/memory.go~~` | Keeps the engine pure and unit-testable while `kernel` remains the only importer of `memory` |
 | ADR-P9U-002 | Distilled artifacts use the existing `Candidate` kinds and levels; no contract change | The candidate shape already carries provenance, scope, and confidence; contract evolution belongs to `contracts` |
 | ADR-P9U-003 | Traces are first-class but the telemetry input is retained | Existing callers and tests keep working; traces are additive evidence, not a breaking replacement |
 | ADR-P9U-004 | Extract a fixed, content-free step feature vector (phase, operation, outcome, error class, duration, tokens, cost) | Deterministic and privacy-safe; hashes stay for correlation only |

@@ -16,6 +16,6 @@ registry.
 ## Registry
 
 `NewRegistry()` is empty; `NewDefaultRegistry()` loads `DefaultCatalog()`
-(10 models mirrored from `runtime/inference/.../catalog.toml`). `Add` validates
+(10 models mirrored from `~~runtime/inference/.../catalog.toml~~`). `Add` validates
 the spec and rejects duplicates; `Get`/`List`/`Count` read deterministically
 (`List` sorted by id). Allocating a model is `kernel/allocator/model_allocator`.

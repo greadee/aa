@@ -12,7 +12,7 @@ Replace the visualizer's stand-in `EventSource` fake with the real `obsv` `Repla
 - Starting ref: `main @ d9f8477`; branch `ph8-visualizer` fast-forwarded to it.
 - Available:
   - The phase 8 visualizer packages: `source` (`EventSource` seam + `Fake`), `compat` (versioned profile for `secondary_paths`/`access_sequence`), `session`, `layout`, `replay`, `bridge`, `browse`, `retention`, and core types (`visualizer.Event = contracts` `v1.Event`).
-  - The `contracts` event taxonomy (`contracts/go/v1/event.go`).
+  - The `contracts` event taxonomy (`~~contracts/go/v1/event.go~~`).
   - The `obsv` module API delivered by `ISS-OBSV-1` (`ph3-kernel`, PR #15): `protocol.Event`, `Replay`, `Subscribe`, `Report`, and the attach-or-own in-process transport.
   - The architecture boundary allowing `visualizer -> contracts, obsv, memory` (`tools/archtest`).
   - The memory query seam for past sessions (`browse`).

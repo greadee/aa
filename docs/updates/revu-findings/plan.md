@@ -70,11 +70,12 @@ clean; docs link check valid.
   sprint's scope.
 
 ### Stage 2 — Documentation hygiene (stale-reference findings)
-- Fix genuine stale references: `contracts/POLICY.md`, `docs/adr/*` (v1 paths), `docs/modules/**`
-  (removed paths), `docs/phases/**`.
-- Add `ignore` entries for template placeholders (`plan.md`, `summary.md`, `issues/issue-123-name.md`)
-  and intentional module-relative examples.
-- **Commit** `repair stale documentation references after the v1 sunset`.
+- Mark superseded/not-applicable references **deprecated in place with Markdown strikethrough**
+  (`~~...~~`). Records are never deleted — history is preserved. Applies across `contracts/`,
+  `docs/adr/`, `docs/modules/**`, `docs/phases/**`, and `docs/updates/**`.
+- The review engine's stale-reference detector honours strikethrough and reports the deprecation
+  recommendation (ADR-0007 in `review-engine`), so struck references clear automatically.
+- **Commit** `mark superseded documentation references deprecated with strikethrough`.
 
 ### Stage 3 — Verification & closeout
 - Re-run `revu run --profile audit` on `dev`; attach the summary; reconcile affected issues.

@@ -130,7 +130,7 @@ add contract schemas v1
 
 **Dependencies** — Slice 2.
 
-**Documentation** — `contracts/schemas/v1/README.md`.
+**Documentation** — `~~contracts/schemas/v1/README.md~~`.
 
 ### Slice 4 — RPC and control-plane API specs
 
@@ -160,7 +160,7 @@ add rpc and control-plane api specs
 
 **Inputs** — Schemas v1.
 
-**Expected Output** — `contracts/go/v1/*.go` plus `contracts/go/v1/validate.go`.
+**Expected Output** — `contracts/go/v1/*.go` plus `~~contracts/go/v1/validate.go~~`.
 
 **Model Class** — Strong
 
@@ -182,7 +182,7 @@ add go contract types
 
 **Inputs** — Go types, schemas.
 
-**Expected Output** — `contracts/go/v1/testdata/*.json`, `contracts/go/v1/conformance_test.go`.
+**Expected Output** — `contracts/go/v1/testdata/*.json`, `~~contracts/go/v1/conformance_test.go~~`.
 
 **Model Class** — Strong
 

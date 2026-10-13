@@ -59,11 +59,11 @@ Each slice maps to exactly one commit.
 
 ## Required End State
 
-- [ ] `contracts/schemas/v1/trace.schema.json` exists and parses as draft 2020-12 with a versioned `$id`.
+- [ ] `~~contracts/schemas/v1/trace.schema.json~~` exists and parses as draft 2020-12 with a versioned `$id`.
 - [ ] Go, TypeScript, and Python bindings mirror the schema.
 - [ ] Go conformance decodes, validates, and round-trips a valid trace, and rejects an invalid one.
 - [ ] Python and TypeScript validate the same fixtures.
-- [ ] `contracts/README.md`, `schemas/v1/README.md`, and `POLICY.md` updated; `summary.md` authored.
+- [ ] `contracts/README.md`, `~~schemas/v1/README.md~~`, and `POLICY.md` updated; `summary.md` authored.
 - [ ] `go build`, `go vet`, `go test`, `gofmt`, Python tests, and `tsc --noEmit` pass.
 
 ## Exit Criteria

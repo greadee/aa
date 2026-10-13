@@ -9,7 +9,7 @@
 | Phase plan and UML | Complete | `d0a09e4` | plan.md + plan.uml |
 | Contract versioning policy | Complete | `200e610` | `contracts/POLICY.md` |
 | Core schemas v1 | Complete | `1ef39be` | 14 JSON Schemas |
-| RPC and control-plane API specs | Complete | `497f989` | `rpc/rpc-v1.md`, `openapi/control-plane-v1.yaml` |
+| RPC and control-plane API specs | Complete | `497f989` | `~~rpc/rpc-v1.md~~`, `~~openapi/control-plane-v1.yaml~~` |
 | Go contract types and validators | Complete | `f60f71b` | `contracts/go/v1` |
 | Go conformance tests and fixtures | Complete | `825f991` | 14 fixtures + 1 invalid |
 | TypeScript bindings | Complete | `b945a0e` | `contracts/typescript/v1` |

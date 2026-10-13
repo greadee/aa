@@ -9,7 +9,7 @@
 |---|---|---|---|
 | Issue documentation and module plan | Complete | `add ph2 memory module update plan and issue documentation` | `docs/issues/`, this plan |
 | Trace repository | Complete | `add memory trace repository` | `memory/repo/trace.go` + tests |
-| Trace query summaries | Complete | `add memory trace query summaries` | `memory/query/trace.go` + tests |
+| Trace query summaries | Complete | `add memory trace query summaries` | `~~memory/query/trace.go~~` + tests |
 | Projected-view retention | Complete | `add memory trace retention` | `memory/retention/` + tests |
 | Facade wiring | Complete | `wire memory trace store` | `Memory.Traces()`, README, integration test |
 | Module update summary | Complete | `add ph2 memory module update summary` | this file |

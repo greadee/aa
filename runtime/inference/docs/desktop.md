@@ -52,14 +52,14 @@ step and no CDN dependencies, so local-only profiles work offline.
 
 ## Architecture
 
-- `aa-inference/desktop/service.py` — `AaInferenceService`, the shared application/service
+- `~~aa-inference/desktop/service.py~~` — `AaInferenceService`, the shared application/service
   boundary (`submit`, `cancel`, `get`, `profiles`, `models`, `system`, `doctor`, `metrics`).
-- `aa-inference/desktop/server.py` — localhost-only HTTP JSON API plus Server-Sent Events.
-- `aa-inference/desktop/launcher.py` — process ownership, single-instance, health checks, state.
-- `aa-inference/desktop/errors.py` — startup error translation.
+- `~~aa-inference/desktop/server.py~~` — localhost-only HTTP JSON API plus Server-Sent Events.
+- `~~aa-inference/desktop/launcher.py~~` — process ownership, single-instance, health checks, state.
+- `~~aa-inference/desktop/errors.py~~` — startup error translation.
 - `aa-inference/desktop/web/` — the UI (Task console, Approvals, Profiles, Models, System,
   Doctor, Usage, Settings, Advanced Trace).
-- `aa-inference/doctor.py` — shared diagnostics used by both `aa-inference doctor` and the UI.
+- `~~aa-inference/doctor.py~~` — shared diagnostics used by both `aa-inference doctor` and the UI.
 
 The CLI, desktop UI, and future aa-sync all call the same core. Removing the
 desktop UI does not affect the CLI or headless operation.
