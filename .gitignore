@@ -2,6 +2,7 @@
 /bin/
 /dist/
 /build/
+/app/app
 *.exe
 *.dll
 *.so
