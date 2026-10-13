@@ -27,7 +27,7 @@ func trace(id, attempt string, steps int) v2.Trace {
 }
 
 func TestStaticSortsDeterministically(t *testing.T) {
-	src := NewStatic([]v2.Trace{
+	src := newStatic([]v2.Trace{
 		trace("trc_c", "att_c", 1),
 		trace("trc_a", "att_a", 1),
 		trace("trc_b", "att_b", 1),
@@ -44,7 +44,7 @@ func TestStaticSortsDeterministically(t *testing.T) {
 
 func TestStaticDoesNotMutateOrAliasInput(t *testing.T) {
 	input := []v2.Trace{trace("trc_b", "att_b", 1), trace("trc_a", "att_a", 1)}
-	src := NewStatic(input)
+	src := newStatic(input)
 
 	got, _ := src.Traces()
 	got[0].ID = "mutated"
@@ -102,7 +102,7 @@ func TestBoundRejectsNegative(t *testing.T) {
 
 func TestLoadValidatesEveryTrace(t *testing.T) {
 	bad := trace("trc_a", "", 1)
-	if _, err := Load(NewFake(bad), DefaultBounds()); !errors.Is(err, joblearn.ErrInvalid) {
+	if _, err := Load(newFake(bad), DefaultBounds()); !errors.Is(err, joblearn.ErrInvalid) {
 		t.Fatalf("expected ErrInvalid for a missing attemptId, got %v", err)
 	}
 }
@@ -115,7 +115,7 @@ func TestLoadRequiresSource(t *testing.T) {
 
 func TestLoadPropagatesSourceError(t *testing.T) {
 	sentinel := errors.New("store down")
-	src := &Fake{Err: sentinel}
+	src := &fake{Err: sentinel}
 
 	if _, err := Load(src, DefaultBounds()); !errors.Is(err, sentinel) {
 		t.Fatalf("expected source error, got %v", err)
@@ -123,7 +123,7 @@ func TestLoadPropagatesSourceError(t *testing.T) {
 }
 
 func TestFakeRecordsReads(t *testing.T) {
-	src := NewFake(trace("trc_a", "att_a", 1))
+	src := newFake(trace("trc_a", "att_a", 1))
 
 	if _, err := Load(src, DefaultBounds()); err != nil {
 		t.Fatalf("Load: %v", err)

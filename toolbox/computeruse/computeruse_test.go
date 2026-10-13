@@ -34,7 +34,7 @@ func TestManifestDeclaresCapabilityAndPermissions(t *testing.T) {
 }
 
 func TestProviderRunsActionAndReportsArtifacts(t *testing.T) {
-	driver := NewFake()
+	driver := newFake()
 	driver.Script(ActionScreenshot, Outcome{
 		Output:    map[string]any{"width": 1280},
 		Artifacts: []Artifact{{ID: "shot_1", Kind: "screenshot", Hash: "abc"}},
@@ -62,7 +62,7 @@ func TestProviderRunsActionAndReportsArtifacts(t *testing.T) {
 func TestProviderDeniesUndeclaredPermission(t *testing.T) {
 	m := Manifest("tool_screen")
 	m.Permissions = []string{PermissionInputInjection} // screen_capture not declared
-	_, err := mustProvider(t, NewFake()).Invoke(context.Background(), m, map[string]any{
+	_, err := mustProvider(t, newFake()).Invoke(context.Background(), m, map[string]any{
 		"action": map[string]any{"kind": "screenshot"},
 	})
 	if !errors.Is(err, toolbox.ErrDenied) {
@@ -71,7 +71,7 @@ func TestProviderDeniesUndeclaredPermission(t *testing.T) {
 }
 
 func TestProviderRejectsInvalidAction(t *testing.T) {
-	provider := mustProvider(t, NewFake())
+	provider := mustProvider(t, newFake())
 	manifest := Manifest("tool_screen")
 	cases := []map[string]any{
 		{}, // missing action
@@ -89,7 +89,7 @@ func TestProviderRejectsInvalidAction(t *testing.T) {
 func TestProviderPropagatesCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := mustProvider(t, NewFake()).Invoke(ctx, Manifest("tool_screen"), map[string]any{
+	_, err := mustProvider(t, newFake()).Invoke(ctx, Manifest("tool_screen"), map[string]any{
 		"action": map[string]any{"kind": "screenshot"},
 	})
 	if !errors.Is(err, context.Canceled) {
@@ -98,7 +98,7 @@ func TestProviderPropagatesCancellation(t *testing.T) {
 }
 
 func TestProviderWrapsDriverFailure(t *testing.T) {
-	driver := NewFake()
+	driver := newFake()
 	driver.ScriptError(ActionKey, errors.New("input device unavailable"))
 	_, err := mustProvider(t, driver).Invoke(context.Background(), Manifest("tool_screen"), map[string]any{
 		"action": map[string]any{"kind": "key", "key": "Enter"},
@@ -109,7 +109,7 @@ func TestProviderWrapsDriverFailure(t *testing.T) {
 }
 
 func TestProviderKind(t *testing.T) {
-	if got := mustProvider(t, NewFake()).Kind(); got != toolbox.KindBuiltin {
+	if got := mustProvider(t, newFake()).Kind(); got != toolbox.KindBuiltin {
 		t.Fatalf("kind = %q", got)
 	}
 }
