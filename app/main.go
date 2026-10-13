@@ -148,11 +148,17 @@ func console(args []string) error {
 	token := fs.String("token", os.Getenv("AA_CONTROL_TOKEN"), "bearer token for the control plane")
 	project := fs.String("project", "default", "project id")
 	web := fs.Bool("web", false, "serve the read-only web surface instead of the text surface")
+	fake := fs.Bool("fake", false, "use the deterministic fake control plane (offline; no server)")
 	addr := fs.String("addr", "127.0.0.1:7101", "web listen address")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	client := uicp.NewHTTPClient(*control, *token)
+	var client uicp.Client
+	if *fake {
+		client = uicp.NewFake()
+	} else {
+		client = uicp.NewHTTPClient(*control, *token)
+	}
 	if *web {
 		srv := &http.Server{Addr: *addr, Handler: wsurface.New(client, *project).Handler(), ReadHeaderTimeout: 5 * time.Second}
 		fmt.Fprintf(os.Stderr, "aa console web on http://%s\n", *addr)
