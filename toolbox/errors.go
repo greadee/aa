@@ -23,6 +23,8 @@ var (
 	ErrCycle = errors.New("toolbox: workflow cycle")
 	// ErrFailed means a workflow step failed and its policy did not recover.
 	ErrFailed = errors.New("toolbox: workflow step failed")
+	// ErrUnsupported means the capability is not available in this environment.
+	ErrUnsupported = errors.New("toolbox: unsupported")
 	// ErrApproval means a workflow is waiting on a human approval gate.
 	ErrApproval = errors.New("toolbox: approval required")
 )

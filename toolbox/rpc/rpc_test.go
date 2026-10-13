@@ -184,3 +184,23 @@ func TestInvalidJSONRPC(t *testing.T) {
 		t.Fatalf("error = %+v", resp.Error)
 	}
 }
+
+func TestVersionCompatibilityAndCapabilities(t *testing.T) {
+	service, _ := newService(t)
+	ctx := context.Background()
+
+	minor := service.Handle(ctx, Request{JSONRPC: "2.0", ID: 1, Method: MethodRegistry, AA: &AA{RPCVersion: "1.7", ContractVersion: "2.3"}})
+	if minor.Error != nil {
+		t.Fatalf("minor versions must be compatible: %+v", minor.Error)
+	}
+
+	contract := service.Handle(ctx, Request{JSONRPC: "2.0", ID: 2, Method: MethodRegistry, AA: &AA{ContractVersion: "1.0"}})
+	if contract.Error == nil || contract.Error.Code != CodeIncompatible {
+		t.Fatalf("expected aa.incompatible, got %+v", contract.Error)
+	}
+
+	caps := service.Capabilities()
+	if caps.ContractVersion != "2.0" || len(caps.Methods) != 3 {
+		t.Fatalf("capabilities = %+v", caps)
+	}
+}

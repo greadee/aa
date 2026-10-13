@@ -8,8 +8,8 @@
 | Slice | Status | Commit message | Notes |
 |---|---|---|---|
 | Issue documentation and module plan | Complete | `add trace learning issue documentation and module update plan` | `docs/issues/`, this plan |
-| Trace schema | Complete | `add trace contract schema` | `schemas/v1/trace.schema.json` (contract 1.1) |
-| Go binding and fixtures | Complete | `add trace go binding and fixtures` | `go/v1/trace.go`, conformance wiring, valid + invalid fixtures |
+| Trace schema | Complete | `add trace contract schema` | `~~schemas/v1/trace.schema.json~~` (contract 1.1) |
+| Go binding and fixtures | Complete | `add trace go binding and fixtures` | `~~go/v1/trace.go~~`, conformance wiring, valid + invalid fixtures |
 | TypeScript binding | Complete | `add trace typescript binding` | `TraceStep`, `Trace`, union member |
 | Python binding | Complete | `add trace python binding` | validator, TypedDicts, exports |
 | Module update summary | Complete | `add ph1 contracts module update summary` | this file |
@@ -17,11 +17,11 @@
 
 ## What was added
 
-- `schemas/v1/trace.schema.json` — a `trace` object: `attemptId` (+ optional `assignmentId`, `workPackageId`), `redactionVersion`, `truncated`, and `steps[]`. Each step carries a required `sequence`, `phase`, and `outcome`, with optional actor, operation, target, input/output hashes, timing, tokens, cost, redaction flag, and evidence references.
+- `~~schemas/v1/trace.schema.json~~` — a `trace` object: `attemptId` (+ optional `assignmentId`, `workPackageId`), `redactionVersion`, `truncated`, and `steps[]`. Each step carries a required `sequence`, `phase`, and `outcome`, with optional actor, operation, target, input/output hashes, timing, tokens, cost, redaction flag, and evidence references.
 - Go: `Trace`, `TraceStep`, `TracePhase`, `TraceOutcome`, and validators in `contracts/go/v1`.
 - TypeScript: `TracePhase`, `TraceOutcome`, `TraceStep`, `Trace`, added to `ContractObject`.
 - Python: `TRACE_PHASES`, `TRACE_STEP_OUTCOMES`, `Trace`, `TraceStep`, runtime validation, and exports.
-- Conformance: `testdata/trace.json` (valid) and `testdata/trace-invalid.json` (rejected), wired into `decodeByKind`.
+- Conformance: `~~testdata/trace.json~~` (valid) and `~~testdata/trace-invalid.json~~` (rejected), wired into `decodeByKind`.
 - Documentation: schema index, module README status, and a `POLICY.md` additive change-log entry.
 
 ## What this changes about the module and the app

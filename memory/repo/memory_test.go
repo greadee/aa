@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/store"
 )
@@ -19,12 +19,12 @@ func newRecordRepo(t *testing.T) (*store.Store, *projection.MemProjection, *Memo
 	return s, p, NewMemoryRecordRepository(s, p)
 }
 
-func record(id string) v1.MemoryRecord {
-	return v1.MemoryRecord{
-		Envelope: v1.Envelope{ID: id, ProjectID: "prj_1"},
+func record(id string) v2.MemoryRecord {
+	return v2.MemoryRecord{
+		Envelope: v2.Envelope{ID: id, ProjectID: "prj_1"},
 		Level:    "project",
 		Title:    "Prefer contracts first",
-		Content:  v1.MemoryContent{Summary: "Define contracts before behavior."},
+		Content:  v2.MemoryContent{Summary: "Define contracts before behavior."},
 	}
 }
 
@@ -34,7 +34,7 @@ func TestMemoryRecordProposeIsCandidateOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rec.Kind != "memory_record" || rec.Lifecycle != v1.MemoryCandidate {
+	if rec.Kind != "memory_record" || rec.Lifecycle != v2.MemoryCandidate {
 		t.Fatalf("unexpected record: %+v", rec)
 	}
 	if rec.Revision == nil || *rec.Revision != 1 {
@@ -52,7 +52,7 @@ func TestMemoryRecordProposeIsCandidateOnly(t *testing.T) {
 func TestMemoryRecordProposeRejectsPromoted(t *testing.T) {
 	_, _, records := newRecordRepo(t)
 	rec := record("mem_1")
-	rec.Lifecycle = v1.MemoryActive
+	rec.Lifecycle = v2.MemoryActive
 	if _, err := records.Propose(rec); err == nil {
 		t.Fatal("expected non-CANDIDATE proposal to be rejected")
 	}
@@ -64,24 +64,24 @@ func TestMemoryRecordTransitionStaysExplicit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := records.Transition(rec.ID, v1.MemoryActive); !errors.Is(err, ErrInvalidTransition) {
+	if _, err := records.Transition(rec.ID, v2.MemoryActive); !errors.Is(err, ErrInvalidTransition) {
 		t.Fatalf("CANDIDATE -> ACTIVE err = %v, want ErrInvalidTransition", err)
 	}
-	if _, err := records.Transition(rec.ID, v1.MemoryValidated); err != nil {
+	if _, err := records.Transition(rec.ID, v2.MemoryValidated); err != nil {
 		t.Fatal(err)
 	}
-	active, err := records.Transition(rec.ID, v1.MemoryActive)
+	active, err := records.Transition(rec.ID, v2.MemoryActive)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if active.Lifecycle != v1.MemoryActive {
+	if active.Lifecycle != v2.MemoryActive {
 		t.Fatalf("lifecycle = %s", active.Lifecycle)
 	}
-	validated, err := records.ListByLifecycle(v1.MemoryValidated)
+	validated, err := records.ListByLifecycle(v2.MemoryValidated)
 	if err != nil || len(validated) != 0 {
 		t.Fatalf("validated = %v err = %v", validated, err)
 	}
-	got, err := records.ListByLifecycle(v1.MemoryActive)
+	got, err := records.ListByLifecycle(v2.MemoryActive)
 	if err != nil || len(got) != 1 {
 		t.Fatalf("active = %v err = %v", got, err)
 	}
@@ -116,17 +116,17 @@ func TestMemoryRecordSupersede(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := records.Transition(old.ID, v1.MemoryValidated); err != nil {
+	if _, err := records.Transition(old.ID, v2.MemoryValidated); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := records.Transition(old.ID, v1.MemoryActive); err != nil {
+	if _, err := records.Transition(old.ID, v2.MemoryActive); err != nil {
 		t.Fatal(err)
 	}
 	if err := records.Supersede(old.ID, next.ID); err != nil {
 		t.Fatal(err)
 	}
 	superseded, err := records.Get(old.ID)
-	if err != nil || superseded.Lifecycle != v1.MemorySuperseded {
+	if err != nil || superseded.Lifecycle != v2.MemorySuperseded {
 		t.Fatalf("old = %+v err = %v", superseded, err)
 	}
 	updated, err := records.Get(next.ID)

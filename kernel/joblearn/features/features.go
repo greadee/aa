@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 // Step is the content-free feature vector of one trace step.
@@ -48,7 +48,7 @@ type Set struct {
 
 // Extract builds the content-free feature set of one trace. Steps keep their
 // sequence order; a nil duration, token count, or cost contributes zero.
-func Extract(trace v1.Trace) Set {
+func Extract(trace v2.Trace) Set {
 	set := Set{
 		TraceID:   trace.ID,
 		AttemptID: trace.AttemptID,
@@ -81,13 +81,13 @@ func Extract(trace v1.Trace) Set {
 			feature.Redacted = *step.Redacted
 		}
 		switch step.Outcome {
-		case v1.TraceSucceeded:
+		case v2.TraceSucceeded:
 			set.Succeeded++
-		case v1.TraceFailed:
+		case v2.TraceFailed:
 			set.Failed++
-		case v1.TraceBlocked:
+		case v2.TraceBlocked:
 			set.Blocked++
-		case v1.TraceSkipped:
+		case v2.TraceSkipped:
 			set.Skipped++
 		}
 		set.DurationMS += feature.DurationMS
@@ -101,7 +101,7 @@ func Extract(trace v1.Trace) Set {
 }
 
 // ExtractAll extracts every trace's features, sorted by trace id.
-func ExtractAll(traces []v1.Trace) []Set {
+func ExtractAll(traces []v2.Trace) []Set {
 	out := make([]Set, 0, len(traces))
 	for _, trace := range traces {
 		out = append(out, Extract(trace))
@@ -126,7 +126,7 @@ func (s Set) Key() string {
 	return b.String()
 }
 
-func sequence(step v1.TraceStep) int {
+func sequence(step v2.TraceStep) int {
 	if step.Sequence == nil {
 		return 0
 	}

@@ -16,6 +16,16 @@ Canonical vocabulary for **aa**. If a term is ambiguous across modules, this doc
 | **Deficiency** | A verified shortfall against acceptance criteria that requires repair. |
 | **Checkpoint** | A durable marker in project history (phase, milestone, or projection state). Context determines which meaning; the specific kind is always stated. |
 
+### 1.1 Role ≠ capability ≠ parallelism
+
+These are three independent axes. Conflating them is a known failure mode, so the distinction is normative:
+
+- **Role — who is responsible.** A durable organizational responsibility with authority and artifacts (e.g. Architect, Inspector). It is not a bundle of permissions.
+- **Capability — what is permitted.** A named member of the closed execution-capability vocabulary (`registry/capabilities`) that a work package may be granted and an execution contract grants or denies. A role *requires* capabilities; it is not one, and holding a role grants no capability.
+- **Parallelism — how many run at once.** The worker count / concurrent execution for a work package (compute allocation). It is neither a role nor a capability; adding workers adds no permission.
+
+Allocation (Issue 7) selects a role, grants capabilities, and sizes parallelism **independently**; one never implies another.
+
 ## 2. Platform terms
 
 | Term | Meaning |

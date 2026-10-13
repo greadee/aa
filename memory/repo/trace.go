@@ -3,7 +3,7 @@ package repo
 import (
 	"sort"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/store"
 )
@@ -27,7 +27,7 @@ func NewTraceRepository(s *store.Store, p projection.Projection) *TraceRepositor
 // Ingest validates and stores a trace. It assigns an id and revision when
 // absent. The second result reports whether the store changed; re-ingesting
 // identical content is a no-op.
-func (r *TraceRepository) Ingest(trace v1.Trace) (v1.Trace, bool, error) {
+func (r *TraceRepository) Ingest(trace v2.Trace) (v2.Trace, bool, error) {
 	trace.Kind = "trace"
 	if trace.ID == "" {
 		trace.ID = r.newID()
@@ -37,29 +37,29 @@ func (r *TraceRepository) Ingest(trace v1.Trace) (v1.Trace, bool, error) {
 		trace.Revision = &rev
 	}
 	if err := trace.Validate(); err != nil {
-		return v1.Trace{}, false, err
+		return v2.Trace{}, false, err
 	}
 	changed, err := putTyped(r.store, r.proj, "trace", trace.ID, *trace.Revision, trace)
 	if err != nil {
-		return v1.Trace{}, false, err
+		return v2.Trace{}, false, err
 	}
 	return trace, changed, nil
 }
 
 // Get returns a trace by id.
-func (r *TraceRepository) Get(id string) (v1.Trace, error) {
-	return getTyped[v1.Trace](r.store, "trace", id)
+func (r *TraceRepository) Get(id string) (v2.Trace, error) {
+	return getTyped[v2.Trace](r.store, "trace", id)
 }
 
 // List returns all traces, sorted by id.
-func (r *TraceRepository) List() ([]v1.Trace, error) {
+func (r *TraceRepository) List() ([]v2.Trace, error) {
 	records, err := r.store.ListRecords("trace")
 	if err != nil {
 		return nil, err
 	}
-	out := make([]v1.Trace, 0, len(records))
+	out := make([]v2.Trace, 0, len(records))
 	for _, rec := range records {
-		var trace v1.Trace
+		var trace v2.Trace
 		if err := decode(rec, &trace); err != nil {
 			return nil, err
 		}
@@ -70,27 +70,27 @@ func (r *TraceRepository) List() ([]v1.Trace, error) {
 }
 
 // ListByAttempt returns traces for one attempt, sorted by id.
-func (r *TraceRepository) ListByAttempt(attemptID string) ([]v1.Trace, error) {
-	if err := v1.RequireIdentifier("attemptId", attemptID); err != nil {
+func (r *TraceRepository) ListByAttempt(attemptID string) ([]v2.Trace, error) {
+	if err := v2.RequireIdentifier("attemptId", attemptID); err != nil {
 		return nil, err
 	}
-	return r.filter(func(t v1.Trace) bool { return t.AttemptID == attemptID })
+	return r.filter(func(t v2.Trace) bool { return t.AttemptID == attemptID })
 }
 
 // ListByProject returns traces for one project, sorted by id.
-func (r *TraceRepository) ListByProject(projectID string) ([]v1.Trace, error) {
-	if err := v1.RequireIdentifier("projectId", projectID); err != nil {
+func (r *TraceRepository) ListByProject(projectID string) ([]v2.Trace, error) {
+	if err := v2.RequireIdentifier("projectId", projectID); err != nil {
 		return nil, err
 	}
-	return r.filter(func(t v1.Trace) bool { return t.ProjectID == projectID })
+	return r.filter(func(t v2.Trace) bool { return t.ProjectID == projectID })
 }
 
-func (r *TraceRepository) filter(keep func(v1.Trace) bool) ([]v1.Trace, error) {
+func (r *TraceRepository) filter(keep func(v2.Trace) bool) ([]v2.Trace, error) {
 	all, err := r.List()
 	if err != nil {
 		return nil, err
 	}
-	var out []v1.Trace
+	var out []v2.Trace
 	for _, t := range all {
 		if keep(t) {
 			out = append(out, t)

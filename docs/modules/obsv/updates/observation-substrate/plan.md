@@ -12,7 +12,7 @@ Deliver the missing `aa-obsv` observation substrate: a product-neutral protocol 
 - Starting ref: `main @ 79b495d`; branch `ph3-kernel` fast-forwarded to it.
 - Available:
   - `obsv` module scaffold (`go.mod`, `doc.go`, `README.md`, `aa-obsrv.md`) and the architecture boundary `obsv -> contracts`.
-  - `contracts` v1 event taxonomy, which explicitly leaves observation events to `aa-obsv` (`contracts/go/v1/event.go`).
+  - `contracts` v1 event taxonomy, which explicitly leaves observation events to `aa-obsv` (`~~contracts/go/v1/event.go~~`).
   - The kernel control plane that emits through an `orchestrator.Sink` and the visualizer's event seam that expects an `obsv` transport.
 - Missing:
   - Any executable `obsv` code: protocol types, emitter, journal, transport, reports, translator, or facade.
@@ -44,7 +44,7 @@ Deliver the missing `aa-obsv` observation substrate: a product-neutral protocol 
 
 | # | Decision | Reasoning |
 |---|---|---|
-| ADR-P3U-001 | Observation protocol v1 is owned by `obsv`; `contracts` orchestration events are untouched | `contracts/go/v1/event.go` already defers observation events to `aa-obsv`; one owner per vocabulary |
+| ADR-P3U-001 | Observation protocol v1 is owned by `obsv`; `contracts` orchestration events are untouched | `~~contracts/go/v1/event.go~~` already defers observation events to `aa-obsv`; one owner per vocabulary |
 | ADR-P3U-002 | Metadata-only, allowlist-first sanitization at the protocol boundary | Privacy by default: content, prompts, source, and credentials never reach the journal |
 | ADR-P3U-003 | The emitter is bounded and failure-open | A full queue or a failing sink drops observation without blocking or changing agent behavior |
 | ADR-P3U-004 | The journal is append-only, sequence-ordered, and replay-equivalent; retention trims a projected view only | Deterministic replay and a canonical record mirror the `memory`/`visualizer` retention precedent |

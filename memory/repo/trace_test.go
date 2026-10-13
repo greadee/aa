@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/store"
 )
@@ -19,15 +19,15 @@ func newTraceRepo(t *testing.T) (*store.Store, *projection.MemProjection, *Trace
 	return s, p, NewTraceRepository(s, p)
 }
 
-func step(seq int, phase v1.TracePhase, outcome v1.TraceOutcome) v1.TraceStep {
-	return v1.TraceStep{Sequence: &seq, Phase: phase, Outcome: outcome}
+func step(seq int, phase v2.TracePhase, outcome v2.TraceOutcome) v2.TraceStep {
+	return v2.TraceStep{Sequence: &seq, Phase: phase, Outcome: outcome}
 }
 
-func trace(id, attempt string) v1.Trace {
-	return v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: "1.1", ID: id, ProjectID: "prj_1"},
+func trace(id, attempt string) v2.Trace {
+	return v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: "1.1", ID: id, ProjectID: "prj_1"},
 		AttemptID: attempt,
-		Steps:     []v1.TraceStep{step(0, v1.TraceObserve, v1.TraceSucceeded)},
+		Steps:     []v2.TraceStep{step(0, v2.TraceObserve, v2.TraceSucceeded)},
 	}
 }
 
@@ -72,14 +72,14 @@ func TestTraceIngestSupersedesAndRejectsStale(t *testing.T) {
 	next := trace("trc_1", "att_1")
 	rev := 2
 	next.Revision = &rev
-	next.Steps = append(next.Steps, step(1, v1.TraceTest, v1.TraceFailed))
+	next.Steps = append(next.Steps, step(1, v2.TraceTest, v2.TraceFailed))
 	if _, changed, err := traces.Ingest(next); err != nil || !changed {
 		t.Fatalf("supersede changed=%v err=%v", changed, err)
 	}
 	stale := trace("trc_1", "att_1")
 	staleRev := 1
 	stale.Revision = &staleRev
-	stale.Steps = append(stale.Steps, step(2, v1.TraceVerify, v1.TraceSucceeded))
+	stale.Steps = append(stale.Steps, step(2, v2.TraceVerify, v2.TraceSucceeded))
 	if _, _, err := traces.Ingest(stale); err == nil {
 		t.Fatal("expected stale revision to be rejected")
 	}

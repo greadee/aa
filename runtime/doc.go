@@ -10,7 +10,8 @@
 //
 //   - `worker`   — the provider-neutral execution adapter and deterministic fake;
 //   - `lifecycle` — worker lifecycle (start, stop, termination, events), reserved;
-//   - `sandbox`  — process/workload isolation, reserved and not implemented;
+//   - `sandbox`  — process/workload isolation, behind the worker adapter;
+//   - `intake`   — validate and deduplicate untrusted result envelopes;
 //   - `inference` — the Python model provider/execution service (renamed from
 //     inference), a nested subproject.
 package runtime

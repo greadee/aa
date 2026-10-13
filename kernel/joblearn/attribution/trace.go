@@ -3,7 +3,7 @@ package attribution
 import (
 	"sort"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 	"github.com/greadee/aa/kernel/joblearn/features"
 )
@@ -11,7 +11,7 @@ import (
 // TraceOutcome derives an attempt outcome from a bounded trace. A failed step
 // dominates a blocked step; a truncated trace is partial because its evidence is
 // incomplete; a trace with only skipped steps carries no outcome.
-func TraceOutcome(trace v1.Trace) joblearn.Outcome {
+func TraceOutcome(trace v2.Trace) joblearn.Outcome {
 	set := features.Extract(trace)
 	switch {
 	case set.Failed > 0:
@@ -29,7 +29,7 @@ func TraceOutcome(trace v1.Trace) joblearn.Outcome {
 
 // AttributeTrace links a trace to its work package, role, and worker.
 // The trace id is always recorded as evidence.
-func AttributeTrace(trace v1.Trace, meta Meta) (joblearn.Attribution, error) {
+func AttributeTrace(trace v2.Trace, meta Meta) (joblearn.Attribution, error) {
 	if trace.WorkPackageID == "" {
 		return joblearn.Attribution{}, invalid("trace.workPackageId is required")
 	}
@@ -52,7 +52,7 @@ func AttributeTrace(trace v1.Trace, meta Meta) (joblearn.Attribution, error) {
 // ScoreTrace normalizes a trace's metadata-only features into a versioned score.
 // Cost, duration, and retry components are lower-is-better; the overall score
 // rewards their complement. No content is read.
-func ScoreTrace(trace v1.Trace, meta Meta, limits Limits) (joblearn.Score, error) {
+func ScoreTrace(trace v2.Trace, meta Meta, limits Limits) (joblearn.Score, error) {
 	if err := limits.Validate(); err != nil {
 		return joblearn.Score{}, err
 	}
@@ -77,7 +77,7 @@ func ScoreTrace(trace v1.Trace, meta Meta, limits Limits) (joblearn.Score, error
 }
 
 // DeriveTrace attributes and scores one trace.
-func DeriveTrace(trace v1.Trace, meta Meta, limits Limits) (Result, error) {
+func DeriveTrace(trace v2.Trace, meta Meta, limits Limits) (Result, error) {
 	attr, err := AttributeTrace(trace, meta)
 	if err != nil {
 		return Result{}, err
@@ -90,7 +90,7 @@ func DeriveTrace(trace v1.Trace, meta Meta, limits Limits) (Result, error) {
 }
 
 // DeriveTraces attributes and scores every trace, preserving input order.
-func DeriveTraces(traces []v1.Trace, metaFor func(v1.Trace) Meta, limits Limits) ([]Result, error) {
+func DeriveTraces(traces []v2.Trace, metaFor func(v2.Trace) Meta, limits Limits) ([]Result, error) {
 	out := make([]Result, 0, len(traces))
 	for _, trace := range traces {
 		result, err := DeriveTrace(trace, metaFor(trace), limits)
@@ -104,7 +104,7 @@ func DeriveTraces(traces []v1.Trace, metaFor func(v1.Trace) Meta, limits Limits)
 
 // traceEvidence returns the unique evidence references of a trace, sorted:
 // the trace itself plus every step's references and the caller's references.
-func traceEvidence(trace v1.Trace, extra []joblearn.Reference) []joblearn.Reference {
+func traceEvidence(trace v2.Trace, extra []joblearn.Reference) []joblearn.Reference {
 	refs := []joblearn.Reference{{Kind: "trace", ID: trace.ID}}
 	for _, step := range trace.Steps {
 		refs = append(refs, step.Evidence...)

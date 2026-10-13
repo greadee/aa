@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/obsv/protocol"
 	visualizer "github.com/greadee/aa/visualizer"
 )
@@ -37,7 +37,7 @@ func TestToContractMapsFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ToContract: %v", err)
 	}
-	if out.Kind != "event" || out.ContractVersion != v1.Version {
+	if out.Kind != "event" || out.ContractVersion != v2.Version {
 		t.Fatalf("envelope = %q %q", out.Kind, out.ContractVersion)
 	}
 	if out.ID != "sess_1:7" {
@@ -46,7 +46,7 @@ func TestToContractMapsFields(t *testing.T) {
 	if out.Sequence != 7 || out.OccurredAt != "2026-01-01T00:00:07Z" {
 		t.Fatalf("sequence/occurredAt = %d %q", out.Sequence, out.OccurredAt)
 	}
-	if out.Type != v1.EventTelemetryRecorded {
+	if out.Type != v2.EventTelemetryRecorded {
 		t.Fatalf("type = %q", out.Type)
 	}
 	if out.Aggregate.Kind != "work_package" || out.Aggregate.ID != "wp_1" {

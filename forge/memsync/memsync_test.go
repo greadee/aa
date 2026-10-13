@@ -6,17 +6,17 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge"
 )
 
 type recorder struct {
-	issues   []v1.Issue
-	memories []v1.MemoryRecord
+	issues   []v2.Issue
+	memories []v2.MemoryRecord
 	failWith error
 }
 
-func (r *recorder) PutIssue(_ context.Context, issue v1.Issue) error {
+func (r *recorder) PutIssue(_ context.Context, issue v2.Issue) error {
 	if r.failWith != nil {
 		return r.failWith
 	}
@@ -24,7 +24,7 @@ func (r *recorder) PutIssue(_ context.Context, issue v1.Issue) error {
 	return nil
 }
 
-func (r *recorder) PutMemoryRecord(_ context.Context, record v1.MemoryRecord) error {
+func (r *recorder) PutMemoryRecord(_ context.Context, record v2.MemoryRecord) error {
 	if r.failWith != nil {
 		return r.failWith
 	}
@@ -54,7 +54,7 @@ func TestIssueMappingValidatesAgainstContracts(t *testing.T) {
 	if err := mapped.Validate(); err != nil {
 		t.Fatalf("contract validation: %v", err)
 	}
-	if mapped.Status != v1.IssueOpen || mapped.Type != "feature" {
+	if mapped.Status != v2.IssueOpen || mapped.Type != "feature" {
 		t.Fatalf("unexpected mapping: %+v", mapped)
 	}
 	if mapped.ForgeRef == nil || mapped.ForgeRef.ID != "issue_1" {
@@ -67,14 +67,14 @@ func TestIssueMappingValidatesAgainstContracts(t *testing.T) {
 
 func TestIssueStateMapping(t *testing.T) {
 	exporter := testExporter()
-	cases := map[string]v1.IssueState{
-		"":            v1.IssueOpen,
-		"open":        v1.IssueOpen,
-		"in_progress": v1.IssueInProgress,
-		"review":      v1.IssueReview,
-		"closed":      v1.IssueClosed,
-		"deferred":    v1.IssueDeferred,
-		"cancelled":   v1.IssueCancelled,
+	cases := map[string]v2.IssueState{
+		"":            v2.IssueOpen,
+		"open":        v2.IssueOpen,
+		"in_progress": v2.IssueInProgress,
+		"review":      v2.IssueReview,
+		"closed":      v2.IssueClosed,
+		"deferred":    v2.IssueDeferred,
+		"cancelled":   v2.IssueCancelled,
 	}
 	for state, want := range cases {
 		mapped, err := exporter.Issue(sampleRepo(), forge.Issue{ID: "issue_1", Title: "t", State: state})
@@ -104,7 +104,7 @@ func TestCheckpointMapping(t *testing.T) {
 	if err := record.Validate(); err != nil {
 		t.Fatalf("contract validation: %v", err)
 	}
-	if record.Level != "project" || record.Lifecycle != v1.MemoryCandidate {
+	if record.Level != "project" || record.Lifecycle != v2.MemoryCandidate {
 		t.Fatalf("unexpected record: %+v", record)
 	}
 	if len(record.Evidence) != 2 {

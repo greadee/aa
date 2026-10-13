@@ -14,7 +14,7 @@
     }
   ],
   "deliverables": [
-    "schemas/v1/event.schema.json"
+    "schemas/v2/event.schema.json"
   ],
   "acceptance": [
     "schemas parse",

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	aasync "github.com/greadee/aa/sync"
@@ -18,6 +19,9 @@ import (
 
 // RPCVersion is the supported RPC major.minor.
 const RPCVersion = "1.0"
+
+// supportedContractMajor is the contracts generation this adapter speaks.
+const supportedContractMajor = "2"
 
 // Method names from contracts/rpc/rpc-v1.md.
 const (
@@ -54,10 +58,11 @@ type Request struct {
 	AA      *AA            `json:"aa,omitempty"`
 }
 
-// Error is a JSON-RPC 2.0 error object.
+// Error is a JSON-RPC 2.0 error object. Governed codes carry data.retryable.
 type Error struct {
-	Code    any    `json:"code"`
-	Message string `json:"message"`
+	Code    any            `json:"code"`
+	Message string         `json:"message"`
+	Data    map[string]any `json:"data,omitempty"`
 }
 
 // Response is a JSON-RPC 2.0 response.
@@ -80,13 +85,30 @@ func New(d *distribute.Distributor) *Service {
 	return &Service{distributor: d, cache: map[string]any{}}
 }
 
+// Capabilities reports the RPC/contract versions and methods this adapter speaks,
+// so a host can negotiate before calling.
+func (s *Service) Capabilities() Capabilities {
+	return Capabilities{
+		RPCVersion:      RPCVersion,
+		ContractVersion: supportedContractMajor + ".0",
+		Methods:         []string{MethodDistribute, MethodFetchArtifact, MethodStatus},
+	}
+}
+
+// Capabilities is the advertised version and method set of an adapter.
+type Capabilities struct {
+	RPCVersion      string   `json:"rpcVersion"`
+	ContractVersion string   `json:"contractVersion"`
+	Methods         []string `json:"capabilities"`
+}
+
 // Handle validates the envelope and dispatches one request.
 func (s *Service) Handle(ctx context.Context, req Request) Response {
 	if req.JSONRPC != "" && req.JSONRPC != "2.0" {
 		return errResponse(req.ID, CodeInvalidRequest, "jsonrpc must be \"2.0\"")
 	}
 	if !compatible(req.AA) {
-		return errResponse(req.ID, CodeIncompatible, "unsupported RPC major")
+		return errResponseData(req.ID, CodeIncompatible, "unsupported RPC or contract major", retryable(false))
 	}
 	if key, ok := idempotencyKey(req); ok {
 		s.mu.Lock()
@@ -187,18 +209,27 @@ func (s *Service) workPackage(params map[string]any) (aasync.WorkPackage, error)
 	return wp, nil
 }
 
+// compatible reports whether the request's envelope and contract majors are
+// supported. An absent version is treated as compatible; a present unsupported
+// major fails closed (aa.incompatible).
 func compatible(aa *AA) bool {
-	if aa == nil || aa.RPCVersion == "" {
+	if aa == nil {
 		return true
 	}
-	major := aa.RPCVersion
-	for i := 0; i < len(major); i++ {
-		if major[i] == '.' {
-			major = major[:i]
-			break
-		}
+	if aa.RPCVersion != "" && major(aa.RPCVersion) != "1" {
+		return false
 	}
-	return major == "1"
+	if aa.ContractVersion != "" && major(aa.ContractVersion) != supportedContractMajor {
+		return false
+	}
+	return true
+}
+
+func major(version string) string {
+	if i := strings.IndexByte(version, '.'); i >= 0 {
+		return version[:i]
+	}
+	return version
 }
 
 func idempotencyKey(req Request) (string, bool) {
@@ -221,16 +252,22 @@ func stringField(params map[string]any, field string) (string, error) {
 }
 
 func errResponse(id any, code any, message string) Response {
-	return Response{JSONRPC: "2.0", ID: id, Error: &Error{Code: code, Message: message}}
+	return errResponseData(id, code, message, nil)
 }
+
+func errResponseData(id any, code any, message string, data map[string]any) Response {
+	return Response{JSONRPC: "2.0", ID: id, Error: &Error{Code: code, Message: message, Data: data}}
+}
+
+func retryable(v bool) map[string]any { return map[string]any{"retryable": v} }
 
 func errResponseFrom(id any, err error) Response {
 	switch {
 	case errors.Is(err, aasync.ErrInvalid):
-		return errResponse(id, CodeInvalidParams, err.Error())
+		return errResponseData(id, CodeInvalidParams, err.Error(), retryable(false))
 	case errors.Is(err, aasync.ErrNotFound):
-		return errResponse(id, CodeNotFound, err.Error())
+		return errResponseData(id, CodeNotFound, err.Error(), retryable(false))
 	default:
-		return errResponse(id, CodeInternalError, err.Error())
+		return errResponseData(id, CodeInternalError, err.Error(), retryable(false))
 	}
 }

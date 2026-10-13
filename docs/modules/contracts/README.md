@@ -32,10 +32,10 @@ Define every object and protocol that crosses a module boundary, exactly once, a
 
 | Submodule | Responsibility |
 |---|---|
-| [`go/v1`](./go-v1.md) | Package v1 contains the Go bindings for the aa contract schemas v1. |
+| [`go/v2`](./go-v2.md) | Package v2 contains the Go bindings for the aa contract schemas v2. |
 | [`openapi`](./openapi.md) | Control-plane OpenAPI specification. |
 | [`python`](./python.md) | Hand-authored Python binding (`aa_contracts`) and its tests. |
 | [`rpc`](./rpc.md) | Inter-module JSON-RPC v1 specification and control-plane OpenAPI. |
-| [`schemas/v1`](./schemas-v1.md) | JSON Schema 2020-12 sources of truth for every cross-module object. |
+| [`schemas/v2`](./schemas-v2.md) | JSON Schema 2020-12 sources of truth for every cross-module object (current generation). |
 | [`typescript`](./typescript.md) | Hand-authored TypeScript binding and typecheck. |
 

@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/greadee/aa/memory/retrieval"
 )
 
 // Input is a candidate context item.
@@ -17,14 +19,17 @@ type Input struct {
 	Kind string
 	ID   string
 	Text string
+	// Provenance attributes the item to its source record (optional).
+	Provenance *retrieval.Provenance
 }
 
 // Section is an included item with a token estimate.
 type Section struct {
-	Kind   string `json:"kind"`
-	ID     string `json:"id"`
-	Text   string `json:"text"`
-	Tokens int    `json:"tokens"`
+	Kind       string                `json:"kind"`
+	ID         string                `json:"id"`
+	Text       string                `json:"text"`
+	Tokens     int                   `json:"tokens"`
+	Provenance *retrieval.Provenance `json:"provenance,omitempty"`
 }
 
 // Bundle is a compiled context.
@@ -80,7 +85,7 @@ func (c Compiler) Compile(projectID, workPackageID string, inputs []Input) Bundl
 		}
 		tokens := EstimateTokens(in.Text)
 		if used+tokens <= budget {
-			bundle.Sections = append(bundle.Sections, Section{Kind: in.Kind, ID: in.ID, Text: in.Text, Tokens: tokens})
+			bundle.Sections = append(bundle.Sections, Section{Kind: in.Kind, ID: in.ID, Text: in.Text, Tokens: tokens, Provenance: in.Provenance})
 			used += tokens
 			continue
 		}
@@ -94,7 +99,7 @@ func (c Compiler) Compile(projectID, workPackageID string, inputs []Input) Bundl
 			bundle.Truncated = true
 			break
 		}
-		bundle.Sections = append(bundle.Sections, Section{Kind: in.Kind, ID: in.ID, Text: truncated, Tokens: EstimateTokens(truncated)})
+		bundle.Sections = append(bundle.Sections, Section{Kind: in.Kind, ID: in.ID, Text: truncated, Tokens: EstimateTokens(truncated), Provenance: in.Provenance})
 		used += EstimateTokens(truncated)
 		bundle.Truncated = true
 		break
@@ -121,6 +126,9 @@ func digest(b Bundle) string {
 	fmt.Fprintf(h, "%s\x00%s\x00%d\n", b.ProjectID, b.WorkPackageID, b.TokenBudget)
 	for _, s := range b.Sections {
 		fmt.Fprintf(h, "%s\x00%s\x00%d\x00%s\n", s.Kind, s.ID, s.Tokens, s.Text)
+		if s.Provenance != nil {
+			fmt.Fprintf(h, "p\x00%s\x00%s\x00%s\x00%d\x00%s\n", s.Provenance.Source, s.Provenance.Kind, s.Provenance.ID, s.Provenance.Revision, s.Provenance.Hash)
+		}
 	}
 	return hex.EncodeToString(h.Sum(nil))
 }

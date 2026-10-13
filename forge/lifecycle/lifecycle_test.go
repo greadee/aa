@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge"
 	"github.com/greadee/aa/forge/fake"
 	"github.com/greadee/aa/forge/memsync"
@@ -16,16 +16,16 @@ import (
 var _ Forge = (*fake.Fake)(nil)
 
 type recorder struct {
-	issues   []v1.Issue
-	memories []v1.MemoryRecord
+	issues   []v2.Issue
+	memories []v2.MemoryRecord
 }
 
-func (r *recorder) PutIssue(_ context.Context, issue v1.Issue) error {
+func (r *recorder) PutIssue(_ context.Context, issue v2.Issue) error {
 	r.issues = append(r.issues, issue)
 	return nil
 }
 
-func (r *recorder) PutMemoryRecord(_ context.Context, record v1.MemoryRecord) error {
+func (r *recorder) PutMemoryRecord(_ context.Context, record v2.MemoryRecord) error {
 	r.memories = append(r.memories, record)
 	return nil
 }

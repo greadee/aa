@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/greadee/aa/memory/store"
@@ -31,6 +30,8 @@ type Projection interface {
 	Get(kind, id string) (Entry, bool)
 	// List returns all entries of a kind, sorted by id.
 	List(kind string) []Entry
+	// Kinds returns the distinct kinds present, sorted.
+	Kinds() []string
 	// Len returns the number of entries.
 	Len() int
 	// Reset discards all entries.
@@ -99,6 +100,22 @@ func (p *MemProjection) List(kind string) []Entry {
 	return out
 }
 
+// Kinds returns the distinct kinds present, sorted.
+func (p *MemProjection) Kinds() []string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	seen := make(map[string]struct{})
+	for _, e := range p.entries {
+		seen[e.Kind] = struct{}{}
+	}
+	out := make([]string, 0, len(seen))
+	for k := range seen {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
 // Len returns the number of entries.
 func (p *MemProjection) Len() int {
 	p.mu.RLock()
@@ -128,22 +145,4 @@ func (p *MemProjection) Digest() string {
 	}
 	p.mu.RUnlock()
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-// DigestOf returns the digest for an arbitrary set of entries.
-func DigestOf(entries []Entry) string {
-	sorted := make([]Entry, len(entries))
-	copy(sorted, entries)
-	sort.Slice(sorted, func(i, j int) bool {
-		if sorted[i].Kind != sorted[j].Kind {
-			return sorted[i].Kind < sorted[j].Kind
-		}
-		return sorted[i].ID < sorted[j].ID
-	})
-	var b strings.Builder
-	for _, e := range sorted {
-		fmt.Fprintf(&b, "%s\x00%s\x00%d\x00%s\n", e.Kind, e.ID, e.Revision, e.Hash)
-	}
-	sum := sha256.Sum256([]byte(b.String()))
-	return hex.EncodeToString(sum[:])
 }

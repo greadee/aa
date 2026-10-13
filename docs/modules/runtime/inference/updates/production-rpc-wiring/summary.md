@@ -9,17 +9,17 @@
 | Slice | Status | Commit message | Notes |
 |---|---|---|---|
 | Issue documentation and module plan | Complete | `add ph4 inference rpc wiring plan and issue documentation` | `docs/issues/`, this plan |
-| NDJSON framing | Complete | `add inference rpc framing` | `rpc/framing.py` |
-| Local socket listener | Complete | `add inference rpc socket listener` | `rpc/endpoint.py`, `rpc/listener.py` |
-| Peer and store identity | Complete | `add inference rpc peer and store identity` | `rpc/identity.py` |
-| Deadlines and cancellation | Complete | `add inference rpc deadlines and cancellation` | `rpc/deadline.py` |
-| Error mapping | Complete | `add inference rpc error mapping` | `rpc/errors.py`, `rpc/envelope.RpcError` |
-| Idempotency window | Complete | `add inference rpc idempotency window` | `rpc/idempotency.py` |
-| Server loop | Complete | `add inference rpc server loop` | `rpc/server.py` |
-| Client and runtime seam | Complete | `add inference rpc client and runtime seam` | `rpc/client.py` |
-| `serve` command | Complete | `add inference serve command` | `cli/serve_commands.py`, `cli/main.py` |
+| NDJSON framing | Complete | `add inference rpc framing` | `~~rpc/framing.py~~` |
+| Local socket listener | Complete | `add inference rpc socket listener` | `~~rpc/endpoint.py~~`, `~~rpc/listener.py~~` |
+| Peer and store identity | Complete | `add inference rpc peer and store identity` | `~~rpc/identity.py~~` |
+| Deadlines and cancellation | Complete | `add inference rpc deadlines and cancellation` | `~~rpc/deadline.py~~` |
+| Error mapping | Complete | `add inference rpc error mapping` | `~~rpc/errors.py~~`, `rpc/envelope.RpcError` |
+| Idempotency window | Complete | `add inference rpc idempotency window` | `~~rpc/idempotency.py~~` |
+| Server loop | Complete | `add inference rpc server loop` | `~~rpc/server.py~~` |
+| Client and runtime seam | Complete | `add inference rpc client and runtime seam` | `~~rpc/client.py~~` |
+| `serve` command | Complete | `add inference serve command` | `~~cli/serve_commands.py~~`, `~~cli/main.py~~` |
 | Schema validation | Complete | `add inference rpc schema validation` | `contract_schema.py`, bundled `schemas/v1/` |
-| Security tests | Complete | `add inference rpc security tests` | `tests/unit/test_rpc_security.py` |
+| Security tests | Complete | `add inference rpc security tests` | `~~tests/unit/test_rpc_security.py~~` |
 | Module update summary | Complete | `add ph4 inference rpc wiring summary` | this file |
 | Phase PR link | Complete | `link ph4 inference rpc wiring pull request` | follow-up commit |
 

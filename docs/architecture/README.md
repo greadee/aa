@@ -142,7 +142,7 @@ flowchart TB
     end
     subgraph Control["Control plane"]
         kernel["aa-kernel"]
-        runtime["aa-runtime<br/>worker · lifecycle · sandbox · inference"]
+        runtime["aa-runtime<br/>worker · lifecycle · sandbox · intake · inference"]
         toolbox["aa-toolbox"]
     end
     subgraph World["External interactions"]
@@ -183,6 +183,21 @@ flowchart TB
 `aa-registry` holds reusable durable definitions (roles, models, teams,
 capabilities, routines, policies) and no runtime instances.
 
+**Reserved boundaries — no consumers yet (R10).** The packages below are
+deliberate placeholders introduced by the architecture refactor. They compile
+and carry documentation, but **no behavior and no callers**; they must not be
+mistaken for live code. Each is delivered by a later stage of the
+[ten-issue sprint](../updates/issue-impl-sep28/plan.md).
+
+| Reserved package | Delivered by |
+|---|---|
+| `registry/teams`, `registry/routines` | allocation/learning definitions (later) |
+| `registry/policies` | policy engine (later) |
+| `runtime/lifecycle` | worker lifecycle (later) |
+
+Issue 7 delivered `kernel/allocator/{model,compute}_allocator` and populated
+`registry/models`; they are live and no longer reserved.
+
 ### 4.2 Layering and dependency rules
 
 ```mermaid
@@ -194,7 +209,7 @@ flowchart TD
     sync["aa-sync"]
     toolbox["aa-toolbox"]
     forge["aa-forge"]
-    runtime["aa-runtime (worker, lifecycle, sandbox, inference)"]
+    runtime["aa-runtime (worker, lifecycle, sandbox, intake, inference)"]
     kernel["aa-kernel"]
     visualizer["aa-visualizer"]
     ui["aa-ui"]
@@ -310,6 +325,33 @@ flowchart TB
 
 Each layer has a different authority, retention, and promotion rule. Only `aa-memory` is canonical and permanent.
 
+### 4.6 Boundaries and integration points
+
+The ten-issue sprint depends on these boundaries. Each area owns one concern and
+must not reach past its seam; the dependency rules in §4.2 and `tools/archtest`
+enforce the cross-module ones.
+
+| Area | Owner | Boundary it must not cross |
+|---|---|---|
+| Context | `kernel/context` | pure and bounded; selects no roles, models, or compute; reads retrieval, never `scheduler`/`runtime` |
+| Retrieval | `memory/retrieval` | deterministic, read-only over canonical records; executes nothing |
+| Allocation | `kernel/allocator/{planner,role,model,compute}_allocator` | produces a plan (worker, model, worker count); executes nothing |
+| Scheduling | `kernel/scheduler` | owns the control cycle; reaches execution only through the worker adapter |
+| Runtime | `runtime` (`worker`, `lifecycle`, `sandbox`, `intake`, `inference`) | execution mechanics only; decides no allocation/scheduling and owns no durable definitions or history |
+| Definitions | `registry` | durable specifications only; holds no runtime instances |
+| Tools | `toolbox` | capability-scoped invocation; grants no capability implicitly |
+| Observation | `obsv` | product-neutral events; calls no model and owns no graph state or history |
+
+**Integration points.** Retrieval feeds context; context, plan, and allocation
+feed the scheduler; the scheduler dispatches through the `runtime/worker`
+adapter; observation events flow from the control plane into `obsv`. The
+**sandbox integration point** is behind the worker adapter: the scheduler names
+no sandbox, so a role and its work package carry no isolation knowledge, and a
+run is observed as the same adapter call whether or not
+[`runtime/sandbox`](../modules/runtime/sandbox.md) (delivered by Issue 5)
+is active. Isolation is a runtime policy, never a role or a work-package
+property.
+
 ---
 
 ## 5. Module specifications
@@ -338,10 +380,10 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.3 aa-kernel (control plane)
 
 - **Purpose:** deterministic coordination of all work.
-- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; `allocator/role_allocator`: deterministic worker selection; reserved `allocator/model_allocator` and `allocator/compute_allocator`); scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; result intake; integration and human gates; operational telemetry; job-learning engine; control-plane API.
+- **Owns:** obsv host; the allocator (`allocator/planner`: task aggregate, DAG, readiness; `allocator/role_allocator`: deterministic worker selection; `allocator/model_allocator`: deterministic model selection; `allocator/compute_allocator`: justified worker count/parallelism); model-locality/tier routing and budget policy (`allocator/routing`); scheduler/leases/assignment state machine; context compiler; execution contracts, permissions, budgets; workspace/worktree manager; compute-node registry; integration and human gates; operational telemetry; job-learning engine; control-plane API.
 - **Must not:** own transfer, own canonical history, call models directly, own execution mechanics (use `aa-runtime`), or expose a remote shell.
 - **Interfaces:** control-plane API; the `aa-runtime` worker adapter; RPC to `inference`/`sync`/`forge`; `obsv` host; memory query.
-- **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there. Current kernel package placement is not final ownership — intended homes for `context`, `contract`, `gate`, `telemetry`, `joblearn`, `api`, and `intake` are recorded in [transitional-boundaries](../modules/kernel/transitional-boundaries.md).
+- **Note:** execution mechanics (the worker runtime) moved to the separate `aa-runtime` module in the [architecture refactor](../updates/architecture-refactor-1/plan.md); remaining registry/allocator moves are tracked there. Current kernel package placement is not final ownership — intended homes for `context`, `contract`, `gate`, `telemetry`, `joblearn`, and `api` are recorded in [transitional-boundaries](../modules/kernel/transitional-boundaries.md).
 - **Language:** Go.
 - **Reused assets:** `orchestration`, `scheduler`, `taskspec`, `registry`, `contextcompiler`, `executioncontract`, `resultintake`, `integrationgate`, `workspace`, `runtimecontract`, `codexruntime`, `computenode`, `dispatchbinding`, orchestration halves of `desktop`/`api`.
 - **Remaining work:** role selection, job-learning engine, de-blur taskspec/orchestration, extract from syncgate, enforce boundaries.
@@ -366,14 +408,14 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Reused assets:** `sync`, `transfer`, `transport/tcp`, `pairing`, `identity`, `filesystem`, `core`, `privatetunnel`, sync half of `desktop`/`daemon`.
 - **Remaining work:** offline queue, work-package distribution, multi-machine parallel coordination, discovery/relay decision.
 
-### 5.6 aa-runtime / inference (model provider/execution service)
+### 5.6 aa-runtime
 
-- **Purpose:** provide local and cloud model inference behind the inter-module RPC boundary.
-- **Owns:** provider abstraction (Ollama/OpenAI-compatible/DeepSeek), the model catalog, and low-level `generate`.
-- **Must not:** hold project state or orchestrate; decide allocation or scheduling.
-- **Interfaces:** RPC `inference.generate`, `inference.health`, `inference.route`, `inference.recommend`.
-- **Language:** Python; lives at `runtime/inference` (the former `aa-sifter`, renamed and reduced to provider/execution).
-- **Status:** renamed and relocated by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)). Routing, budget, verification, and context responsibilities are reserved for later issues.
+- **Purpose:** own execution mechanics for allocated work and provide local and cloud model inference behind the inter-module RPC boundary.
+- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (`sandbox`); result intake (`intake`, validating and deduplicating untrusted result envelopes); the model provider/execution service boundary (`inference`) with its provider abstraction (Ollama/OpenAI-compatible/DeepSeek), model catalog, and low-level `generate`.
+- **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own project state, durable definitions (`registry`), or canonical history (`memory`).
+- **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the `sandbox`; the `intake` service; the `inference` RPC service (`inference.generate`, `inference.health`, `inference.route`, `inference.recommend`).
+- **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject at `runtime/inference` (the former `aa-sifter`).
+- **Status:** introduced by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)); `runtime/worker` carries the moved kernel runtime; `runtime/sandbox` implements execution isolation ([ADR-0147](../adr/ADR-0147-runtime-sandbox-isolation.md)); `runtime/intake` validates result envelopes ([ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md)); the `inference` service retains provider/execution and verification. Model-locality/tier routing and budget policy are owned by the control plane (`kernel/allocator/routing`, [ADR-0151](../adr/ADR-0151-routing-and-budget-policy-in-the-allocator.md)); control-plane context is `kernel/context` ([ADR-0146](../adr/ADR-0146-context-compilation-and-a8-extraction.md)). `lifecycle` remains for later.
 
 ### 5.7 aa-forge
 
@@ -421,16 +463,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Must not:** hold runtime instances (workers, crews, assignments, executions, projects, workflows), or execute/schedule/allocate; own cross-module wire schemas (that is `contracts`).
 - **Interfaces:** definition lookups consumed by `kernel` (allocation) and `contracts` (specification schemas, contracts v2).
 - **Language:** Go.
-- **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models`, `teams`, and `routines` re-export their contracts v2 specifications (`ModelSpec`, `TeamSpec`, `RoutineSpec`); `policies` remains a reserved boundary. Consumers use contracts v2.
-
-### 5.12 aa-runtime
-
-- **Purpose:** own execution mechanics for allocated work.
-- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (reserved, not implemented); the model provider/execution service boundary (`inference`, the Python service renamed from inference).
-- **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own durable definitions (`registry`) or canonical history (`memory`).
-- **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the future sandbox; the `inference` RPC service.
-- **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject.
-- **Status:** introduced by the architecture refactor; `runtime/worker` carries the moved kernel runtime; `lifecycle`, `sandbox`, and `inference` are reserved boundaries.
+- **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models` is a populated registry (contracts v2 `ModelSpec`, mirrored default catalog); `teams`, `routines`, and `policies` remain reserved boundaries. Consumers use contracts v2.
 
 ---
 
@@ -441,6 +474,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Versioning.** Schemas are versioned `v1`, `v2`, …; additive changes are backward compatible; breaking changes require a major bump and a migration plan. Compatibility is checked in the conformance suite.
 - **Conformance suite.** One test suite validates every generator and every module against the schemas.
 - **Control-plane API.** The ui and visualizer use a versioned HTTP/JSON control-plane API (OpenAPI-documented). Write operations are idempotent and auditable.
+- **Contracts for the upcoming issues.** Generation **v2** already defines what the ten issues rest on — `RoleSpec`, `ModelSpec`, `TeamSpec`, `Routine`, `WorkPlan`, `ExecutionPlan`, `trace`, `telemetry`, and the event vocabulary. Issue 1 introduces **no speculative contract**; an issue extends `contracts` only when its behavior needs a new object or field, adding the schema, the Go/TypeScript/Python binding, and a conformance fixture together.
 
 ---
 

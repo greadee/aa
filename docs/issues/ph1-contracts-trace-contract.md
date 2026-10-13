@@ -27,7 +27,7 @@ Phase 1 defined 14 cross-module objects, but the only execution evidence object 
 
 ## Acceptance Criteria
 
-- [x] `contracts/schemas/v1/trace.schema.json` (contract 1.1) exists and parses.
+- [x] `~~contracts/schemas/v1/trace.schema.json~~` (contract 1.1) exists and parses.
 - [x] Go, TypeScript, and Python bindings mirror the schema.
 - [x] A valid fixture decodes, validates, and round-trips; an invalid fixture is rejected.
 - [x] Schemas, contracts, and policy documents updated.

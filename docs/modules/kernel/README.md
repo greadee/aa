@@ -19,7 +19,6 @@ Own deterministic coordination of all work: plan it, select roles and workers, d
 - Coordination of execution, delegating execution mechanics to the top-level `runtime` module (`runtime/worker`).
 - Workspace and Git worktree management.
 - Compute-node registry and eligibility.
-- Result intake (untrusted envelopes until accepted).
 - Integration and human gates.
 - Operational telemetry.
 - The job-learning engine (see [aa-joblearn.md](../../../kernel/aa-joblearn.md)).
@@ -54,13 +53,14 @@ the constraints on transitional packages, are recorded in
 | [`context`](./context.md) | Package context compiles deterministic, bounded context bundles. |
 | [`contract`](./contract.md) | Package contract builds immutable, least-privilege execution contracts. |
 | [`gate`](./gate.md) | Package gate evaluates deterministic and human gates before work is accepted. |
-| [`intake`](./intake.md) | Package intake validates untrusted result envelopes and deduplicates them. |
 | [`joblearn`](./joblearn.md) | Package joblearn turns completed work into evidence and evidence into learning candidates. |
 | [`joblearn/attribution`](./joblearn-attribution.md) | Package attribution links completed attempts to their work packages, roles, and workers, and normalizes evidence into versioned scores. |
 | [`joblearn/backtest`](./joblearn-backtest.md) | Package backtest compares a learned policy against a deterministic baseline over a bounded set of labeled historical samples. |
 | [`joblearn/baseline`](./joblearn-baseline.md) | Package baseline adapts the governed inference recommender to a backtest baseline. |
 | [`joblearn/candidates`](./joblearn-candidates.md) | Package candidates derives learning candidates from attributed outcomes. |
 | [`joblearn/distill`](./joblearn-distill.md) | Package distill synthesizes scoped subagent artifacts from trace evidence. |
+| [`joblearn/experience`](./joblearn-experience.md) | Closed learning loop: verified results → reusable lessons with learning states and mentorship. |
+| [`observability`](./observability.md) | Structured seam events, the identity chain, and cost/token/compute accounting. |
 | [`joblearn/features`](./joblearn-features.md) | Package features extracts step-level, content-free features from a trace. |
 | [`joblearn/gate`](./joblearn-gate.md) | Package gate governs learned capabilities with evidence gates. |
 | [`joblearn/promote`](./joblearn-promote.md) | Package promote persists learning candidates as CANDIDATE memory records. |
@@ -70,7 +70,8 @@ the constraints on transitional packages, are recorded in
 | [`scheduler`](./scheduler.md) | Runs the supervised control cycle, and owns the assignment state machine, dispatch readiness, concurrency policy, and leases. |
 | [`allocator/planner`](./allocator-planner.md) | The allocator's planning stage: work packages, dependency graph, and deterministic dispatch readiness. |
 | [`allocator/role_allocator`](./role-allocator.md) | Deterministic worker selection by role and capability, with rejection reasons. |
-| [`allocator/model_allocator`](./model-allocator.md) | Reserved: model allocation (no behavior yet). |
-| [`allocator/compute_allocator`](./compute-allocator.md) | Reserved: compute allocation (no behavior yet). |
+| [`allocator/model_allocator`](./model-allocator.md) | Deterministic model selection from `registry/models`, with an escalation target. |
+| [`allocator/compute_allocator`](./compute-allocator.md) | Worker count/parallelism/placement, justified and bounded. |
+| [`allocator/routing`](./routing.md) | Model-locality/tier routing policy and the budget gate. |
 | [`telemetry`](./telemetry.md) | Package telemetry records bounded execution evidence and derives deterministic learning candidates. |
 

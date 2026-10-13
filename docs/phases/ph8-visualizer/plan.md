@@ -10,7 +10,7 @@ Deliver `aa-visualizer`'s time-travel capability: a deterministic session-state 
 
 - Starting ref: `main @ 6fd83a3` (after phase 7 merge and record).
 - Available:
-  - The `contracts` event taxonomy (`contracts/go/v1/event.go`): `Event` with `Sequence`, `Type`, `Aggregate`, `Actor`, `CausationID`, `CorrelationID`, and `Payload`.
+  - The `contracts` event taxonomy (`~~contracts/go/v1/event.go~~`): `Event` with `Sequence`, `Type`, `Aggregate`, `Actor`, `CausationID`, `CorrelationID`, and `Payload`.
   - The `memory` query API (`memory/query`) with `Events()` and derived histories, and the facade (`memory.Open`).
   - The architecture boundary harness allowing `visualizer -> contracts, obsv, memory` (`tools/archtest`).
   - A scaffolded `visualizer/` Go module (`go.mod`, `doc.go`, `README.md`, `aa-visualizer.md`).
@@ -92,7 +92,7 @@ Each slice is independently validatable and maps to exactly one commit.
 **Goal** — Session, node, edge, graph, frame, and cursor types plus sentinel errors and a deterministic clock. **Inputs** — the visualizer directive. **Expected Output** — `visualizer/types.go`, `visualizer/errors.go`, `visualizer/clock.go` + tests. **Model Class** — General. **Commit Message** — `add visualizer core types and errors`. **Validation** — `go test ./...`. **Dependencies** — slice 1. **Documentation** — `visualizer/README.md`.
 
 ### Slice 3 — Event source, fake, and compatibility profile
-**Goal** — The `EventSource` seam, a deterministic in-memory fake, and the explicit observation-metadata compatibility profile. **Inputs** — slice 2, `contracts/go/v1/event.go`. **Expected Output** — `visualizer/source/*.go`, `visualizer/compat/*.go` + tests. **Model Class** — Strong. **Commit Message** — `add visualizer event source and compatibility profile`. **Validation** — `go test ./...`; profile and unknown-metadata tests. **Dependencies** — slice 2. **Documentation** — `visualizer/README.md`.
+**Goal** — The `EventSource` seam, a deterministic in-memory fake, and the explicit observation-metadata compatibility profile. **Inputs** — slice 2, `~~contracts/go/v1/event.go~~`. **Expected Output** — `visualizer/source/*.go`, `visualizer/compat/*.go` + tests. **Model Class** — Strong. **Commit Message** — `add visualizer event source and compatibility profile`. **Validation** — `go test ./...`; profile and unknown-metadata tests. **Dependencies** — slice 2. **Documentation** — `visualizer/README.md`.
 
 ### Slice 4 — Session projection and identity
 **Goal** — Fold events into a deterministic graph and re-derive stable node identity. **Inputs** — slice 3. **Expected Output** — `visualizer/session/*.go` + tests. **Model Class** — Strong. **Commit Message** — `add visualizer session projection and identity`. **Validation** — `go test ./...`; determinism and identity tests. **Dependencies** — slice 3. **Documentation** — `visualizer/README.md`.

@@ -12,7 +12,7 @@
 | Rebuildable projection | Complete | `704e39f` | `memory/projection` |
 | Query API and histories | Complete | `784b2bc` | `memory/query` |
 | Issue and strategy repositories | Complete | `5939414` | `memory/repo` + promotion |
-| Ingestion, provenance, retention | Complete | `8f7cfc5` | `store/ingest.go`, `store/retention.go` |
+| Ingestion, provenance, retention | Complete | `8f7cfc5` | `~~store/ingest.go~~`, `~~store/retention.go~~` |
 | Memory facade | Complete | `cf0fab4` | `memory/memory.go` |
 | Phase summary and UML | Complete | (this commit) | summary.md + summary.uml |
 

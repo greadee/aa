@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 	"github.com/greadee/aa/memory/repo"
 )
@@ -17,15 +17,15 @@ var (
 )
 
 type fakeSink struct {
-	records   map[string]v1.MemoryRecord
+	records   map[string]v2.MemoryRecord
 	proposals int
 }
 
-func newFakeSink() *fakeSink { return &fakeSink{records: map[string]v1.MemoryRecord{}} }
+func newFakeSink() *fakeSink { return &fakeSink{records: map[string]v2.MemoryRecord{}} }
 
-func (f *fakeSink) Propose(r v1.MemoryRecord) (v1.MemoryRecord, error) {
-	if r.Lifecycle != v1.MemoryCandidate {
-		return v1.MemoryRecord{}, errNotCandidate
+func (f *fakeSink) Propose(r v2.MemoryRecord) (v2.MemoryRecord, error) {
+	if r.Lifecycle != v2.MemoryCandidate {
+		return v2.MemoryRecord{}, errNotCandidate
 	}
 	f.proposals++
 	if existing, ok := f.records[r.ID]; ok {
@@ -35,13 +35,13 @@ func (f *fakeSink) Propose(r v1.MemoryRecord) (v1.MemoryRecord, error) {
 	return r, nil
 }
 
-func (f *fakeSink) Transition(id string, to v1.MemoryLifecycle) (v1.MemoryRecord, error) {
+func (f *fakeSink) Transition(id string, to v2.MemoryLifecycle) (v2.MemoryRecord, error) {
 	r, ok := f.records[id]
 	if !ok {
-		return v1.MemoryRecord{}, errMissing
+		return v2.MemoryRecord{}, errMissing
 	}
 	if !repo.CanTransition(r.Lifecycle, to) {
-		return v1.MemoryRecord{}, errIllegal
+		return v2.MemoryRecord{}, errIllegal
 	}
 	r.Lifecycle = to
 	f.records[id] = r
@@ -84,10 +84,10 @@ func TestProposeMapsCandidateToCandidateRecord(t *testing.T) {
 		t.Fatalf("stored = %d, want 1", len(stored))
 	}
 	rec := stored[0]
-	if rec.Kind != "memory_record" || rec.ContractVersion != v1.Version {
+	if rec.Kind != "memory_record" || rec.ContractVersion != v2.Version {
 		t.Fatalf("envelope = %+v", rec.Envelope)
 	}
-	if rec.Lifecycle != v1.MemoryCandidate {
+	if rec.Lifecycle != v2.MemoryCandidate {
 		t.Fatalf("lifecycle = %s, want CANDIDATE", rec.Lifecycle)
 	}
 	if rec.Level != "project" || rec.Title != candidate().Title || rec.Content.Summary != candidate().Content {
@@ -174,7 +174,7 @@ func TestProposeNeverPromotes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sink.records[stored[0].ID].Lifecycle != v1.MemoryCandidate {
+	if sink.records[stored[0].ID].Lifecycle != v2.MemoryCandidate {
 		t.Fatal("proposal auto-promoted")
 	}
 }
@@ -187,23 +187,23 @@ func TestPromoteIsExplicitAndValidated(t *testing.T) {
 		t.Fatal(err)
 	}
 	id := stored[0].ID
-	if _, err := p.Promote(id, v1.MemoryActive); !errors.Is(err, errIllegal) {
+	if _, err := p.Promote(id, v2.MemoryActive); !errors.Is(err, errIllegal) {
 		t.Fatalf("CANDIDATE -> ACTIVE err = %v, want illegal", err)
 	}
-	if _, err := p.Promote(id, v1.MemoryValidated); err != nil {
+	if _, err := p.Promote(id, v2.MemoryValidated); err != nil {
 		t.Fatal(err)
 	}
-	active, err := p.Promote(id, v1.MemoryActive)
+	active, err := p.Promote(id, v2.MemoryActive)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if active.Lifecycle != v1.MemoryActive {
+	if active.Lifecycle != v2.MemoryActive {
 		t.Fatalf("lifecycle = %s", active.Lifecycle)
 	}
-	if _, err := p.Promote("", v1.MemoryValidated); !errors.Is(err, joblearn.ErrInvalid) {
+	if _, err := p.Promote("", v2.MemoryValidated); !errors.Is(err, joblearn.ErrInvalid) {
 		t.Fatalf("empty id err = %v, want ErrInvalid", err)
 	}
-	if _, err := p.Promote(id, v1.MemoryLifecycle("BOGUS")); !errors.Is(err, joblearn.ErrInvalid) {
+	if _, err := p.Promote(id, v2.MemoryLifecycle("BOGUS")); !errors.Is(err, joblearn.ErrInvalid) {
 		t.Fatalf("bad lifecycle err = %v, want ErrInvalid", err)
 	}
 }

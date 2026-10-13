@@ -1,4 +1,4 @@
-# ADR-0122 — Consume traces through a pure `TraceSource` seam; the store adapter lives beside the engine like `promote/memory.go`
+# ADR-0122 — Consume traces through a pure `TraceSource` seam; the store adapter lives beside the engine like `~~promote/memory.go~~`
 
 | Field | Value |
 |---|---|
@@ -15,7 +15,7 @@ and consequences were not.
 
 ## Decision
 
-Consume traces through a pure `TraceSource` seam; the store adapter lives beside the engine like `promote/memory.go`
+Consume traces through a pure `TraceSource` seam; the store adapter lives beside the engine like `~~promote/memory.go~~`
 
 ## Rationale
 

@@ -6,7 +6,7 @@ import "path/filepath"
 func Modules(root string) []Module {
 	names := []string{
 		"contracts", "registry", "obsv", "memory", "sync", "toolbox",
-		"forge", "runtime", "kernel", "visualizer", "ui",
+		"forge", "runtime", "kernel", "visualizer", "ui", "app",
 	}
 	mods := make([]Module, 0, len(names))
 	for _, name := range names {
@@ -30,6 +30,8 @@ func Modules(root string) []Module {
 //	visualizer -> contracts, obsv, memory
 //	ui         -> contracts
 //
+//	app is the composition root: it may depend on every product module.
+//
 // kernel reaches sync, forge, and inference over RPC, not by import.
 func Allowed() map[string]map[string]bool {
 	set := func(names ...string) map[string]bool {
@@ -51,6 +53,7 @@ func Allowed() map[string]map[string]bool {
 		"kernel":     set("contracts", "registry", "obsv", "memory", "toolbox", "runtime"),
 		"visualizer": set("contracts", "obsv", "memory"),
 		"ui":         set("contracts"),
+		"app":        set("contracts", "registry", "obsv", "memory", "sync", "toolbox", "forge", "runtime", "kernel", "visualizer", "ui"),
 	}
 }
 

@@ -6,24 +6,24 @@ import (
 	"errors"
 	"fmt"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 // ErrInvalidTransition is returned for an illegal lifecycle transition.
 var ErrInvalidTransition = errors.New("memory: invalid lifecycle transition")
 
 // transitions is the memory lifecycle state machine.
-var transitions = map[v1.MemoryLifecycle]map[v1.MemoryLifecycle]bool{
-	v1.MemoryEphemeral:  {v1.MemoryCandidate: true, v1.MemoryArchived: true},
-	v1.MemoryCandidate:  {v1.MemoryValidated: true, v1.MemoryArchived: true},
-	v1.MemoryValidated:  {v1.MemoryActive: true, v1.MemoryArchived: true},
-	v1.MemoryActive:     {v1.MemorySuperseded: true, v1.MemoryArchived: true},
-	v1.MemorySuperseded: {v1.MemoryArchived: true},
-	v1.MemoryArchived:   {},
+var transitions = map[v2.MemoryLifecycle]map[v2.MemoryLifecycle]bool{
+	v2.MemoryEphemeral:  {v2.MemoryCandidate: true, v2.MemoryArchived: true},
+	v2.MemoryCandidate:  {v2.MemoryValidated: true, v2.MemoryArchived: true},
+	v2.MemoryValidated:  {v2.MemoryActive: true, v2.MemoryArchived: true},
+	v2.MemoryActive:     {v2.MemorySuperseded: true, v2.MemoryArchived: true},
+	v2.MemorySuperseded: {v2.MemoryArchived: true},
+	v2.MemoryArchived:   {},
 }
 
 // CanTransition reports whether a lifecycle transition is permitted.
-func CanTransition(from, to v1.MemoryLifecycle) bool {
+func CanTransition(from, to v2.MemoryLifecycle) bool {
 	if from == to {
 		return true
 	}
@@ -31,7 +31,7 @@ func CanTransition(from, to v1.MemoryLifecycle) bool {
 }
 
 // Transition validates and returns the next lifecycle state.
-func Transition(from, to v1.MemoryLifecycle) (v1.MemoryLifecycle, error) {
+func Transition(from, to v2.MemoryLifecycle) (v2.MemoryLifecycle, error) {
 	if from == to {
 		return to, nil
 	}

@@ -4,27 +4,27 @@ import (
 	"reflect"
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
-func step(seq int) v1.TraceStep {
-	return v1.TraceStep{Sequence: &seq, Phase: v1.TraceTool, Outcome: v1.TraceSucceeded}
+func step(seq int) v2.TraceStep {
+	return v2.TraceStep{Sequence: &seq, Phase: v2.TraceTool, Outcome: v2.TraceSucceeded}
 }
 
-func trace(id, attempt string, revision int, seqs ...int) v1.Trace {
-	steps := make([]v1.TraceStep, len(seqs))
+func trace(id, attempt string, revision int, seqs ...int) v2.Trace {
+	steps := make([]v2.TraceStep, len(seqs))
 	for i, s := range seqs {
 		steps[i] = step(s)
 	}
 	rev := revision
-	return v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: "1.1", ID: id, Revision: &rev},
+	return v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: "1.1", ID: id, Revision: &rev},
 		AttemptID: attempt,
 		Steps:     steps,
 	}
 }
 
-func sequences(steps []v1.TraceStep) []int {
+func sequences(steps []v2.TraceStep) []int {
 	out := make([]int, len(steps))
 	for i, s := range steps {
 		out[i] = *s.Sequence
@@ -32,7 +32,7 @@ func sequences(steps []v1.TraceStep) []int {
 	return out
 }
 
-func ids(traces []v1.Trace) []string {
+func ids(traces []v2.Trace) []string {
 	out := make([]string, len(traces))
 	for i, t := range traces {
 		out[i] = t.ID
@@ -41,7 +41,7 @@ func ids(traces []v1.Trace) []string {
 }
 
 func TestTrimMaxStepsKeepsNewest(t *testing.T) {
-	got := Trim([]v1.Trace{trace("trc_1", "att_1", 1, 1, 2, 3, 4)}, Policy{MaxStepsPerTrace: 2})
+	got := Trim([]v2.Trace{trace("trc_1", "att_1", 1, 1, 2, 3, 4)}, Policy{MaxStepsPerTrace: 2})
 	if len(got) != 1 {
 		t.Fatalf("len = %d", len(got))
 	}
@@ -51,7 +51,7 @@ func TestTrimMaxStepsKeepsNewest(t *testing.T) {
 }
 
 func TestTrimMaxTracesPerAttemptKeepsHighestRevision(t *testing.T) {
-	in := []v1.Trace{
+	in := []v2.Trace{
 		trace("trc_1", "att_1", 1, 0),
 		trace("trc_2", "att_1", 3, 0),
 		trace("trc_3", "att_1", 2, 0),
@@ -64,7 +64,7 @@ func TestTrimMaxTracesPerAttemptKeepsHighestRevision(t *testing.T) {
 }
 
 func TestTrimDoesNotMutateInput(t *testing.T) {
-	original := []v1.Trace{
+	original := []v2.Trace{
 		trace("trc_1", "att_1", 1, 1, 2, 3),
 		trace("trc_2", "att_1", 2, 1, 2, 3),
 	}
@@ -80,7 +80,7 @@ func TestTrimDoesNotMutateInput(t *testing.T) {
 }
 
 func TestTrimNoLimitReturnsAllSortedByID(t *testing.T) {
-	got := Trim([]v1.Trace{
+	got := Trim([]v2.Trace{
 		trace("trc_2", "att_1", 1, 0),
 		trace("trc_1", "att_1", 1, 0),
 	}, DefaultPolicy())

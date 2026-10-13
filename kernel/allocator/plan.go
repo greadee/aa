@@ -6,6 +6,8 @@ import v2 "github.com/greadee/aa/contracts/go/v2"
 // produces a WorkPlan; the allocators produce an ExecutionPlan consumed by the
 // scheduler and runtime.
 type (
-	WorkPlan      = v2.WorkPlan
-	ExecutionPlan = v2.ExecutionPlan
+	WorkPlan       = v2.WorkPlan
+	ExecutionPlan  = v2.ExecutionPlan
+	PlanAssignment = v2.PlanAssignment
+	Budget         = v2.Budget
 )

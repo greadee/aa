@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/joblearn"
 )
 
@@ -26,9 +26,9 @@ const DefaultSource = "aa-kernel.joblearn"
 type Sink interface {
 	// Propose stores a record in the CANDIDATE lifecycle and returns the
 	// stored revision.
-	Propose(record v1.MemoryRecord) (v1.MemoryRecord, error)
+	Propose(record v2.MemoryRecord) (v2.MemoryRecord, error)
 	// Transition applies a validated lifecycle transition to a stored record.
-	Transition(id string, to v1.MemoryLifecycle) (v1.MemoryRecord, error)
+	Transition(id string, to v2.MemoryLifecycle) (v2.MemoryRecord, error)
 }
 
 // Options configure a Promoter.
@@ -65,9 +65,9 @@ func New(sink Sink, opts Options) (*Promoter, error) {
 // Propose maps candidates to CANDIDATE memory records and persists them,
 // returning the stored records in first-seen order. Re-proposing a candidate is
 // idempotent because identity derives from its kind, level, scope, and title.
-func (p *Promoter) Propose(candidates []joblearn.Candidate) ([]v1.MemoryRecord, error) {
+func (p *Promoter) Propose(candidates []joblearn.Candidate) ([]v2.MemoryRecord, error) {
 	seen := make(map[string]bool, len(candidates))
-	out := make([]v1.MemoryRecord, 0, len(candidates))
+	out := make([]v2.MemoryRecord, 0, len(candidates))
 	for _, c := range candidates {
 		if err := c.Validate(); err != nil {
 			return nil, err
@@ -92,22 +92,22 @@ func (p *Promoter) Propose(candidates []joblearn.Candidate) ([]v1.MemoryRecord, 
 // Promote explicitly advances a stored record's lifecycle. It delegates the
 // transition to the Sink, so memory's state machine remains authoritative and
 // invalid or skipping transitions are rejected.
-func (p *Promoter) Promote(id string, to v1.MemoryLifecycle) (v1.MemoryRecord, error) {
+func (p *Promoter) Promote(id string, to v2.MemoryLifecycle) (v2.MemoryRecord, error) {
 	if id == "" {
-		return v1.MemoryRecord{}, invalid("record id is required")
+		return v2.MemoryRecord{}, invalid("record id is required")
 	}
 	if err := to.Validate(); err != nil {
-		return v1.MemoryRecord{}, invalid("target lifecycle: %v", err)
+		return v2.MemoryRecord{}, invalid("target lifecycle: %v", err)
 	}
 	return p.sink.Transition(id, to)
 }
 
 // record maps one candidate to a CANDIDATE memory record.
-func (p *Promoter) record(c joblearn.Candidate) (v1.MemoryRecord, error) {
+func (p *Promoter) record(c joblearn.Candidate) (v2.MemoryRecord, error) {
 	confidence := c.Confidence
-	record := v1.MemoryRecord{
-		Envelope: v1.Envelope{
-			ContractVersion: v1.Version,
+	record := v2.MemoryRecord{
+		Envelope: v2.Envelope{
+			ContractVersion: v2.Version,
 			Kind:            "memory_record",
 			ID:              identity(c),
 			ProjectID:       p.opts.ProjectID,
@@ -115,24 +115,24 @@ func (p *Promoter) record(c joblearn.Candidate) (v1.MemoryRecord, error) {
 			Provenance:      p.provenance(c),
 		},
 		Level:         string(c.Level),
-		Lifecycle:     v1.MemoryCandidate,
+		Lifecycle:     v2.MemoryCandidate,
 		Title:         c.Title,
-		Content:       v1.MemoryContent{Summary: c.Content, Tags: tags(c)},
+		Content:       v2.MemoryContent{Summary: c.Content, Tags: tags(c)},
 		Applicability: c.Applicability,
 		Evidence:      append([]joblearn.Reference(nil), c.Evidence...),
 		Confidence:    &confidence,
 	}
 	if err := record.Validate(); err != nil {
-		return v1.MemoryRecord{}, fmt.Errorf("promote: %w", err)
+		return v2.MemoryRecord{}, fmt.Errorf("promote: %w", err)
 	}
 	return record, nil
 }
 
 // provenance carries the candidate's provenance forward, normalizing the source
 // to the contract identifier form and defaulting missing fields.
-func (p *Promoter) provenance(c joblearn.Candidate) *v1.Provenance {
+func (p *Promoter) provenance(c joblearn.Candidate) *v2.Provenance {
 	if c.Provenance == nil {
-		return &v1.Provenance{Source: normalizeSource(p.opts.Source), ProducedAt: p.opts.Now().UTC().Format(time.RFC3339)}
+		return &v2.Provenance{Source: normalizeSource(p.opts.Source), ProducedAt: p.opts.Now().UTC().Format(time.RFC3339)}
 	}
 	prov := *c.Provenance
 	prov.Source = normalizeSource(prov.Source)
@@ -163,7 +163,7 @@ func normalizeSource(source string) string {
 	if source == "" {
 		return DefaultSource
 	}
-	if v1.RequireIdentifier("source", source) == nil {
+	if v2.RequireIdentifier("source", source) == nil {
 		return source
 	}
 	var b strings.Builder

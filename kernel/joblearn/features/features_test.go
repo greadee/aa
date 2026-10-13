@@ -3,35 +3,35 @@ package features
 import (
 	"testing"
 
-	v1 "github.com/greadee/aa/contracts/go/v2"
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 func intPtr(v int) *int         { return &v }
 func f64Ptr(v float64) *float64 { return &v }
 func boolPtr(v bool) *bool      { return &v }
 
-func step(seq int, phase v1.TracePhase, outcome v1.TraceOutcome) v1.TraceStep {
-	return v1.TraceStep{Sequence: intPtr(seq), Phase: phase, Outcome: outcome}
+func step(seq int, phase v2.TracePhase, outcome v2.TraceOutcome) v2.TraceStep {
+	return v2.TraceStep{Sequence: intPtr(seq), Phase: phase, Outcome: outcome}
 }
 
-func baseTrace() v1.Trace {
-	return v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: v1.Version, Kind: "trace", ID: "trc_1"},
+func baseTrace() v2.Trace {
+	return v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: v2.Version, Kind: "trace", ID: "trc_1"},
 		AttemptID: "att_1",
-		Steps: []v1.TraceStep{
+		Steps: []v2.TraceStep{
 			{
 				Sequence:   intPtr(0),
-				Phase:      v1.TraceModel,
+				Phase:      v2.TraceModel,
 				Operation:  "generate",
-				Outcome:    v1.TraceSucceeded,
+				Outcome:    v2.TraceSucceeded,
 				DurationMS: intPtr(120),
-				Tokens:     &v1.TokenCounts{Input: intPtr(100), Output: intPtr(50)},
+				Tokens:     &v2.TokenCounts{Input: intPtr(100), Output: intPtr(50)},
 				CostUSD:    f64Ptr(0.02),
 			},
 			{
 				Sequence:   intPtr(1),
-				Phase:      v1.TraceTest,
-				Outcome:    v1.TraceFailed,
+				Phase:      v2.TraceTest,
+				Outcome:    v2.TraceFailed,
 				ErrorClass: "assertion",
 				DurationMS: intPtr(30),
 			},
@@ -57,10 +57,10 @@ func TestExtractCountsAndTotals(t *testing.T) {
 }
 
 func TestExtractNilPointersAreZero(t *testing.T) {
-	trace := v1.Trace{
-		Envelope:  v1.Envelope{ContractVersion: v1.Version, Kind: "trace", ID: "trc_1"},
+	trace := v2.Trace{
+		Envelope:  v2.Envelope{ContractVersion: v2.Version, Kind: "trace", ID: "trc_1"},
 		AttemptID: "att_1",
-		Steps:     []v1.TraceStep{step(0, v1.TracePlan, v1.TraceSucceeded)},
+		Steps:     []v2.TraceStep{step(0, v2.TracePlan, v2.TraceSucceeded)},
 	}
 
 	set := Extract(trace)
@@ -87,7 +87,7 @@ func TestExtractIgnoresContentBearingFields(t *testing.T) {
 	withHash := baseTrace()
 	withHash.Steps[0].InputHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	withHash.Steps[0].OutputHash = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-	withHash.Steps[0].Target = &v1.Reference{Kind: "file", ID: "secret.txt"}
+	withHash.Steps[0].Target = &v2.Reference{Kind: "file", ID: "secret.txt"}
 
 	if Extract(original).Key() != Extract(withHash).Key() {
 		t.Fatalf("feature key changed with content-bearing fields")
@@ -104,13 +104,13 @@ func TestKeyIsStableAcrossPointerIdentity(t *testing.T) {
 }
 
 func TestExtractAllIsSorted(t *testing.T) {
-	makeTrace := func(id string) v1.Trace {
+	makeTrace := func(id string) v2.Trace {
 		trace := baseTrace()
 		trace.ID = id
 		return trace
 	}
 
-	sets := ExtractAll([]v1.Trace{makeTrace("trc_c"), makeTrace("trc_a"), makeTrace("trc_b")})
+	sets := ExtractAll([]v2.Trace{makeTrace("trc_c"), makeTrace("trc_a"), makeTrace("trc_b")})
 
 	if len(sets) != 3 || sets[0].TraceID != "trc_a" || sets[2].TraceID != "trc_c" {
 		t.Fatalf("expected sorted sets, got %+v", sets)

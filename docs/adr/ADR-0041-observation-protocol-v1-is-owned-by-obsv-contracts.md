@@ -19,7 +19,7 @@ Observation protocol v1 is owned by `obsv`; `contracts` orchestration events are
 
 ## Rationale
 
-`contracts/go/v1/event.go` already defers observation events to `aa-obsv`; one owner per vocabulary
+`~~contracts/go/v1/event.go~~` already defers observation events to `aa-obsv`; one owner per vocabulary
 
 ## Alternatives and consequences
 

@@ -30,6 +30,7 @@ jobs:
           - toolbox
           - visualizer
           - ui
+          - app
     steps:
       - uses: actions/checkout@v4
 
@@ -193,7 +194,7 @@ jobs:
         run: |
           python - <<'PY'
           import glob, json, sys
-          files = glob.glob("contracts/schemas/v1/*.json")
+          files = glob.glob("contracts/schemas/v2/*.json")
           assert files, "no schemas found"
           for f in files:
               d = json.load(open(f, encoding="utf-8"))
