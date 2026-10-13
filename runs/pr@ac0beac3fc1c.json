@@ -1,0 +1,34 @@
+{
+  "ID": "pr@ac0beac3fc1c",
+  "Profile": "pr",
+  "Repository": "greadee/aa",
+  "Ref": "ac0beac3fc1c98cfcc16671e305ca19aedeb7b5f",
+  "Base": "origin/main",
+  "Head": "ac0beac3fc1c98cfcc16671e305ca19aedeb7b5f",
+  "Generated": "2026-10-13T20:48:04.73457378Z",
+  "Findings": [
+    {
+      "id": "bb693aa98190fb4ab7c3c133c08537c1",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "ui/controlplane/fake.go",
+        "line": 22,
+        "snippet": "func NewFake"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "ui/controlplane",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewFake",
+      "status": "new",
+      "firstSeen": "pr@ac0beac3fc1c",
+      "lastSeen": "pr@ac0beac3fc1c",
+      "runId": "pr@ac0beac3fc1c"
+    }
+  ],
+  "Resolved": null,
+  "BlockThreshold": "P1",
+  "ArchiveURL": ""
+}
