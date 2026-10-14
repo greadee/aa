@@ -39,7 +39,7 @@ The plan is authored at the **start** of the phase. The summary is authored at t
 | 8 | `ph8-visualizer` | `aa-visualizer` completion |
 | 9 | `ph9-joblearn` | Job learning and optimization loop |
 | 10 | `phase10a-controlplane`, `phase10b-console` | Control plane & console — unified interface |
-| 11 | `p11-post-console` | Post-console implementations (deferred modules) |
+| 11 | `ph11-postreq` | console-postreq (post-console implementations) |
 | 12 | `p12-release` | Hardening, auth, security, release, docs, audits |
 
 The full phase plan with goals, deliverables, exit criteria, and testing is in the [architecture document](../architecture/README.md#11-end-to-end-phase-plan).

@@ -606,7 +606,7 @@ Each phase is a GitHub milestone with a tracking issue, a phase branch equal to 
 - **Exit:** end-to-end workflow usable from one surface over the control plane; control-plane integration + UI e2e; desktop surface addable (v2).
 - **Testing:** control-plane integration, UI e2e, accessibility/usability.
 
-### Phase 11 — Post-console implementations
+### Phase 11 — console-postreq (post-console implementations)
 - **Goal:** implement the modules deferred out of v1 so nothing ships half-baked.
 - **Deliverables:** `sync`; `obsv`; `visualizer`; `registry/{teams,routines,policies}`; `runtime/lifecycle`; the A8 routing/budget residual — composed and wired into the control plane (issues [#43](https://github.com/greadee/aa/issues/43)–[#48](https://github.com/greadee/aa/issues/48)).
 - **Exit:** every deferred module implemented (or removed) and composed in the daemon; repository audit clean.
