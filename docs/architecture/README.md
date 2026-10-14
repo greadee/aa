@@ -600,15 +600,21 @@ Each phase is a GitHub milestone with a tracking issue, a phase branch equal to 
 - **Exit:** each feature enables only after its evidence gate passes; backtests; deterministic fallbacks retained.
 - **Testing:** evidence gates, backtesting, golden fallbacks.
 
-### Phase 10 — `ph10-ui` — Unified interface
-- **Goal:** one entry point drives the whole workflow.
-- **Deliverables:** CLI/TUI; local web control plane; workflow configuration; plugin management; memory/issue/strategy/visualizer browsing; multi-machine status; approvals/gates.
-- **Exit:** end-to-end workflow usable from one surface; UI e2e; desktop surface addable.
-- **Testing:** UI e2e, integration, accessibility/usability.
+### Phase 10 — Control plane & console — Unified interface
+- **Goal:** a running host that serves the versioned HTTP/JSON control plane, and one entry point (the console) that drives and inspects the whole workflow through it.
+- **Deliverables:** the `app/` control-plane daemon (OpenAPI over loopback) — **10a** (`phase10a-controlplane`); the console (CLI + TUI + local web) as a client of that plane — **10b** (`phase10b-console`); read models; typed commands with idempotent, audited writes; approvals/gates.
+- **Exit:** end-to-end workflow usable from one surface over the control plane; control-plane integration + UI e2e; desktop surface addable (v2).
+- **Testing:** control-plane integration, UI e2e, accessibility/usability.
 
-### Phase 11 — `ph11-release` — Hardening & release
+### Phase 11 — console-postreq (post-console implementations)
+- **Goal:** implement the modules deferred out of v1 so nothing ships half-baked.
+- **Deliverables:** `sync`; `obsv`; `visualizer`; `registry/{teams,routines,policies}`; `runtime/lifecycle`; the A8 routing/budget residual — composed and wired into the control plane (issues [#43](https://github.com/greadee/aa/issues/43)–[#48](https://github.com/greadee/aa/issues/48)).
+- **Exit:** every deferred module implemented (or removed) and composed in the daemon; repository audit clean.
+- **Testing:** per-module suites + control-plane integration.
+
+### Phase 12 — Hardening, auth & release
 - **Goal:** a releasable v1.
-- **Deliverables:** threat model and security review; performance/load; chaos/recovery; packaging/installers; release gates and versioning; docs completion; repository audits; migration guides.
+- **Deliverables:** threat model and security review; real authn/authz (pairing, device keys, mTLS); performance/load; chaos/recovery; packaging/installers; release gates and versioning; docs completion; repository audits; migration guides.
 - **Exit:** release checklist complete; audits pass.
 - **Testing:** full matrix, security review, chaos, release-gate automation.
 

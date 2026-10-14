@@ -1,0 +1,33 @@
+@startuml
+title Phase 11 — console-postreq — plan
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:11.1 plan and scope (branch ph11-postreq -> dev; tracker milestone v1 - phases 11-12);
+
+partition "Deferred modules (one commit each)" {
+  :11.2 #43 wire sync (single-node scope);
+  :11.3 #44 compose obsv substrate;
+  :11.4 #45 compose visualizer;
+  :11.5 #46 registry teams/routines/policies;
+  :11.6 #47 runtime/lifecycle;
+  :11.7 #48 A8 routing/budget residual;
+}
+
+:11.8 summary + close out issues;
+
+stop
+
+note right
+  Compose into app/ (control plane) and ui/ (console).
+  Gates: gofmt/build/vet/test,
+  archtest, control-plane httptest,
+  revu (bot-authored, static-only).
+  Track phases 11 & 12 via the
+  "v1 - phases 11-12" milestone.
+end note
+
+@enduml
