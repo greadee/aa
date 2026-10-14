@@ -17,7 +17,7 @@ this phase **and** phase 12 is tracked through **[PR #42](https://github.com/gre
 - Deferred, test-only or uncomposed: `sync`, `obsv`, `visualizer`, `registry/{teams,routines,policies}`,
   `runtime/lifecycle`; the A8 routing/budget residual.
 - The single-node v1 posture (D6) and the reserved-package decisions come from
-  [`v1-readiness`](../updates/v1-readiness/plan.md).
+  [`v1-readiness`](../../updates/v1-readiness/plan.md).
 
 ## Scope
 
