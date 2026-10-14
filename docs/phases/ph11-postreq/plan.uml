@@ -6,7 +6,7 @@ skinparam defaultTextAlignment left
 
 start
 
-:11.1 plan and scope (branch ph11-postreq -> dev; tracker PR #42);
+:11.1 plan and scope (branch ph11-postreq -> dev; tracker milestone v1 - phases 11-12);
 
 partition "Deferred modules (one commit each)" {
   :11.2 #43 wire sync (single-node scope);
@@ -26,7 +26,8 @@ note right
   Gates: gofmt/build/vet/test,
   archtest, control-plane httptest,
   revu (bot-authored, static-only).
-  Track phases 11 & 12 via PR #42.
+  Track phases 11 & 12 via the
+  "v1 - phases 11-12" milestone.
 end note
 
 @enduml

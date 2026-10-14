@@ -1,6 +1,6 @@
 # Phase 11 — console-postreq — Plan
 
-> **Type:** phase (`ph11-postreq`). **Branch:** `ph11-postreq` → `dev`. **Tracker:** [PR #42](https://github.com/greadee/aa/pull/42).
+> **Type:** phase (`ph11-postreq`). **Branch:** `ph11-postreq` → `dev`. **Tracker:** milestone [`v1 — phases 11-12`](https://github.com/greadee/aa/milestone/2).
 > **Predecessor:** Phase 10 — control plane (10a) & console (10b) — merged (PR #11).
 > **Issues:** [#43](https://github.com/greadee/aa/issues/43)–[#48](https://github.com/greadee/aa/issues/48).
 > **Diagram:** [plan.uml](./plan.uml).
@@ -9,7 +9,8 @@
 
 Implement the modules **deferred out of v1** — so nothing ships half-baked — composing each into the
 control plane (`app/`, phase 10a) and, where relevant, the console (`ui/`, phase 10b). Progress for
-this phase **and** phase 12 is tracked through **[PR #42](https://github.com/greadee/aa/pull/42)**.
+this phase **and** phase 12 is tracked through the
+**[`v1 — phases 11-12` milestone](https://github.com/greadee/aa/milestone/2)**.
 
 ## Starting state
 
@@ -69,9 +70,10 @@ DoD per commit: affected module `gofmt`/build/vet/test green; `tools/archtest` c
 - [ ] All six issues implemented (or explicitly removed) and composed in the daemon.
 - [ ] Control-plane/console surfaces updated where the issue requires a read model.
 - [ ] `revu` clean on the phase PR; architecture boundaries hold.
-- [ ] Issues #43–#48 closed; **PR #42** updated.
+- [ ] Issues #43–#48 closed; the `v1 — phases 11-12` **milestone** updated.
 
 ## Tracking
 
-Progress for phases 11 and 12 is tracked through **[PR #42](https://github.com/greadee/aa/pull/42)**
-(`dev` → `main`). This phase's commits land on `dev`; PR #42 integrates them toward `main`.
+Progress for phases 11 and 12 is tracked through the
+**[`v1 — phases 11-12` milestone](https://github.com/greadee/aa/milestone/2)**.
+This phase's commits land on `dev`; the phase PR (and the milestone) reflect progress toward `main`.
