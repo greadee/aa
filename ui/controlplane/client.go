@@ -1,0 +1,210 @@
+// Package controlplane is the console's typed client for the aa control plane.
+//
+// The console never imports module internals: it speaks the external HTTP/JSON
+// control plane (contracts/openapi/control-plane-v1.yaml) through this client.
+package controlplane
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+)
+
+// Status is the aggregate host status.
+type Status struct {
+	Projects          int `json:"projects"`
+	ActiveAssignments int `json:"activeAssignments"`
+	Nodes             int `json:"nodes"`
+}
+
+// Project is a project summary.
+type Project struct {
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+}
+
+// WorkPackage is a work-package summary.
+type WorkPackage struct {
+	ID        string   `json:"id"`
+	Title     string   `json:"title,omitempty"`
+	State     string   `json:"state,omitempty"`
+	DependsOn []string `json:"dependsOn,omitempty"`
+}
+
+// Assignment is an assignment summary.
+type Assignment struct {
+	ID            string `json:"id"`
+	WorkPackageID string `json:"workPackageId"`
+	WorkerID      string `json:"workerId"`
+	State         string `json:"state"`
+	Attempt       int    `json:"attempt"`
+}
+
+// Node is a compute/sync node summary.
+type Node struct {
+	ID        string `json:"id"`
+	Authority bool   `json:"authority"`
+	State     string `json:"state"`
+}
+
+// Tool is a tool/plugin manifest summary.
+type Tool struct {
+	ID      string `json:"id"`
+	Name    string `json:"name,omitempty"`
+	Kind    string `json:"kind,omitempty"`
+	Sandbox bool   `json:"sandbox,omitempty"`
+}
+
+// Error is a governed control-plane error.
+type Error struct {
+	Status  int
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e *Error) Error() string { return fmt.Sprintf("%s (%d): %s", e.Code, e.Status, e.Message) }
+
+// Client is the console's view of the control plane.
+type Client interface {
+	Status(ctx context.Context) (Status, error)
+	Projects(ctx context.Context) ([]Project, error)
+	CreateProject(ctx context.Context, id, name string) error
+	WorkPackages(ctx context.Context, projectID string) ([]WorkPackage, error)
+	SubmitWork(ctx context.Context, projectID, title string, dependsOn []string) (string, error)
+	Assignments(ctx context.Context) ([]Assignment, error)
+	Approve(ctx context.Context, gateID string) error
+	Nodes(ctx context.Context) ([]Node, error)
+	Tools(ctx context.Context) ([]Tool, error)
+}
+
+// HTTPClient is an Client over the control plane's HTTP/JSON API.
+type HTTPClient struct {
+	base  string
+	token string
+	http  *http.Client
+}
+
+// NewHTTPClient returns a client for baseURL (including the /api/v1 prefix).
+func NewHTTPClient(baseURL, token string) *HTTPClient {
+	return &HTTPClient{
+		base:  strings.TrimRight(baseURL, "/"),
+		token: token,
+		http:  &http.Client{Timeout: 10 * time.Second},
+	}
+}
+
+func (c *HTTPClient) do(ctx context.Context, method, path string, in any, out any) error {
+	var body io.Reader
+	if in != nil {
+		data, err := json.Marshal(in)
+		if err != nil {
+			return err
+		}
+		body = bytes.NewReader(data)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, c.base+path, body)
+	if err != nil {
+		return err
+	}
+	if in != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		e := &Error{Status: resp.StatusCode}
+		var envelope struct {
+			Error struct {
+				Code    string `json:"code"`
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+		if json.Unmarshal(data, &envelope) == nil {
+			e.Code, e.Message = envelope.Error.Code, envelope.Error.Message
+		}
+		if e.Code == "" {
+			e.Code, e.Message = "aa.error", strings.TrimSpace(string(data))
+		}
+		return e
+	}
+	if out != nil {
+		return json.Unmarshal(data, out)
+	}
+	return nil
+}
+
+// Status implements Client.
+func (c *HTTPClient) Status(ctx context.Context) (Status, error) {
+	var s Status
+	err := c.do(ctx, http.MethodGet, "/status", nil, &s)
+	return s, err
+}
+
+// Projects implements Client.
+func (c *HTTPClient) Projects(ctx context.Context) ([]Project, error) {
+	var out []Project
+	err := c.do(ctx, http.MethodGet, "/projects", nil, &out)
+	return out, err
+}
+
+// CreateProject implements Client.
+func (c *HTTPClient) CreateProject(ctx context.Context, id, name string) error {
+	return c.do(ctx, http.MethodPost, "/projects", map[string]string{"id": id, "name": name}, nil)
+}
+
+// WorkPackages implements Client.
+func (c *HTTPClient) WorkPackages(ctx context.Context, projectID string) ([]WorkPackage, error) {
+	var out []WorkPackage
+	err := c.do(ctx, http.MethodGet, "/projects/"+projectID+"/work-packages", nil, &out)
+	return out, err
+}
+
+// SubmitWork implements Client.
+func (c *HTTPClient) SubmitWork(ctx context.Context, projectID, title string, dependsOn []string) (string, error) {
+	var out struct {
+		ID string `json:"id"`
+	}
+	err := c.do(ctx, http.MethodPost, "/projects/"+projectID+"/work-packages", map[string]any{"title": title, "dependsOn": dependsOn}, &out)
+	return out.ID, err
+}
+
+// Assignments implements Client.
+func (c *HTTPClient) Assignments(ctx context.Context) ([]Assignment, error) {
+	var out []Assignment
+	err := c.do(ctx, http.MethodGet, "/assignments", nil, &out)
+	return out, err
+}
+
+// Approve implements Client.
+func (c *HTTPClient) Approve(ctx context.Context, gateID string) error {
+	return c.do(ctx, http.MethodPost, "/approvals/"+gateID, map[string]string{"decision": "approve", "actor": "console"}, nil)
+}
+
+// Nodes implements Client.
+func (c *HTTPClient) Nodes(ctx context.Context) ([]Node, error) {
+	var out []Node
+	err := c.do(ctx, http.MethodGet, "/nodes", nil, &out)
+	return out, err
+}
+
+// Tools implements Client.
+func (c *HTTPClient) Tools(ctx context.Context) ([]Tool, error) {
+	var out []Tool
+	err := c.do(ctx, http.MethodGet, "/tools", nil, &out)
+	return out, err
+}

@@ -49,7 +49,7 @@ Phase 0 — Scaffold
 Phase 1 — Contracts
 Phase 2 — Memory
 Phase 5 — Forge
-Phase 10 — Console
+Phase 10 — Control plane & console
 ```
 
 ## Phase Tracking Issue

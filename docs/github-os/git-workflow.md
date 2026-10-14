@@ -46,7 +46,8 @@ ph1-contracts
 ph2-memory
 ph5-forge
 ph9-joblearn
-ph10-ui
+phase10a-controlplane
+phase10b-console
 ```
 
 Rules:

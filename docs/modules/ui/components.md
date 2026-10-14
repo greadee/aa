@@ -3,7 +3,7 @@
 > Project history for the `ui/components` submodule of [aa-ui](./README.md).
 
 **Responsibility** — Shared interface components used by the surfaces; no
-orchestration or module-internal logic. Scaffolded; delivered in ph10-ui.
+orchestration or module-internal logic. Scaffolded; delivered in phase10b-console.
 
 **Source** — [`ui/components/`](../../../ui/components/)
 

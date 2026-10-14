@@ -4,7 +4,7 @@
 
 **Responsibility** — Interface state (navigation, selection, connection). It is
 not canonical project state and never writes through anything but the
-control-plane API. Scaffolded; delivered in ph10-ui.
+control-plane API. Scaffolded; delivered in phase10b-console.
 
 **Source** — [`ui/state/`](../../../ui/state/)
 

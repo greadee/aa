@@ -1,0 +1,34 @@
+@startuml
+title Phase 10b — Console — summary
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+partition "Client + models" {
+  :ui/controlplane: HTTP client + fake + errors;
+  :ui/state: view model;
+  :ui/views: deterministic text renderer;
+}
+
+partition "Surfaces" {
+  :ui/surfaces/tui: dashboard + palette + keys;
+  :ui/surfaces/web: read-only inspector + /plain;
+}
+
+partition "Interaction" {
+  :ui/command: palette parse + idempotent audit;
+}
+
+:aa console (text | --web) over the control plane;
+
+stop
+
+note right
+  Console imports only contracts.
+  Deviations: line-oriented TUI (stdlib only);
+  web read-only; reports pending phase-9 model.
+end note
+
+@enduml

@@ -1,0 +1,40 @@
+@startuml
+title Phase 10a — Control Plane — summary
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:aa serve (app/ daemon) binds loopback;
+
+partition "Endpoints (control-plane-v1.yaml)" {
+  :health, status;
+  :projects, work-packages (+graph);
+  :issues, strategies, events;
+  :assignments, nodes, tools, approvals;
+}
+
+partition "Composition" {
+  :kernel scheduler (planner.Graph + role_allocator);
+  :kernel/api in-process service;
+  :memory records;
+  :toolbox registry (computeruse manifest);
+  :execution disabled (no model, no worker);
+}
+
+partition "Hardening" {
+  :aa.* error codes (rpc-v1 vocabulary);
+  :bearer-token carrying; JSON errors incl. 404;
+}
+
+:integration tests (httptest) + archtest green;
+
+stop
+
+note right
+  Deviations: /events = JSON (SSE deferred);
+  single project; authn = phase 12.
+end note
+
+@enduml
