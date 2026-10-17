@@ -42,6 +42,8 @@ type Config struct {
 	Visualizer VisualizerBackend
 	// Registry supplies the durable definition stores. Optional.
 	Registry RegistryBackend
+	// Lifecycle supplies the runtime worker lifecycle read model. Optional.
+	Lifecycle LifecycleBackend
 }
 
 // Server is the control-plane HTTP handler.
@@ -85,6 +87,8 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/policies", s.auth(s.policiesList))
 	s.mux.Handle("POST "+APIPrefix+"/policies", s.auth(s.policyAdd))
 	s.mux.Handle("GET "+APIPrefix+"/policies/{policyId}", s.auth(s.policyGet))
+	s.mux.Handle("GET "+APIPrefix+"/workers", s.auth(s.workers))
+	s.mux.Handle("GET "+APIPrefix+"/workers/events", s.auth(s.workerEvents))
 	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
 	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
 	// Anything else under the prefix is not found (JSON, same error vocabulary).

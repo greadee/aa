@@ -20,6 +20,7 @@ tags:
   - name: observations
   - name: visualizer
   - name: registry
+  - name: runtime
   - name: tools
 paths:
   /health:
@@ -512,6 +513,32 @@ paths:
                 $ref: "#/components/schemas/PolicyDefinition"
         "404":
           description: Not found
+  /workers:
+    get:
+      tags: [runtime]
+      summary: List runtime worker lifecycle instances
+      responses:
+        "200":
+          description: Workers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkerLifecycle"
+  /workers/events:
+    get:
+      tags: [runtime]
+      summary: List retained worker lifecycle events
+      responses:
+        "200":
+          description: Lifecycle events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkerLifecycleEvent"
   /tools:
     get:
       tags: [tools]
@@ -913,6 +940,55 @@ components:
           type: string
         description:
           type: string
+    WorkerLifecycle:
+      type: object
+      required: [id, state]
+      properties:
+        id:
+          type: string
+        selectedWorker:
+          type: string
+        assignmentId:
+          type: string
+        workPackageId:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        state:
+          type: string
+          enum: [created, starting, running, stopping, stopped, terminated, failed]
+        createdAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        summary:
+          type: string
+        error:
+          type: string
+    WorkerLifecycleEvent:
+      type: object
+      required: [workerId, state]
+      properties:
+        workerId:
+          type: string
+        assignmentId:
+          type: string
+        workPackageId:
+          type: string
+        state:
+          type: string
+          enum: [created, starting, running, stopping, stopped, terminated, failed]
+        reason:
+          type: string
+        at:
+          type: string
+          format: date-time
     ToolManifest:
       type: object
       required: [contractVersion, kind, id, name, toolKind, version, capabilities]

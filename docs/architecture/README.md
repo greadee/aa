@@ -183,20 +183,12 @@ flowchart TB
 `aa-registry` holds reusable durable definitions (roles, models, teams,
 capabilities, routines, policies) and no runtime instances.
 
-**Reserved boundaries — no consumers yet (R10).** The packages below are
-deliberate placeholders introduced by the architecture refactor. They compile
-and carry documentation, but **no behavior and no callers**; they must not be
-mistaken for live code. Each is delivered by a later stage of the
-[ten-issue sprint](../updates/issue-impl-sep28/plan.md).
-
-| Reserved package | Delivered by |
-|---|---|
-| `registry/teams`, `registry/routines` | allocation/learning definitions (later) |
-| `registry/policies` | policy engine (later) |
-| `runtime/lifecycle` | worker lifecycle (later) |
-
-Issue 7 delivered `kernel/allocator/{model,compute}_allocator` and populated
-`registry/models`; they are live and no longer reserved.
+**Former reserved boundaries (R10).** Packages introduced as deliberate
+placeholders by the architecture refactor are now live. `registry/teams`,
+`registry/routines`, `registry/policies`, and `runtime/lifecycle` gained
+behavior, stores, tests, and control-plane surfaces in
+[phase 11](../phases/ph11-postreq/plan.md); `kernel/allocator/{model,compute}_allocator`
+and `registry/models` were delivered in the [ten-issue sprint](../updates/issue-impl-sep28/plan.md).
 
 ### 4.2 Layering and dependency rules
 
@@ -411,11 +403,11 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.6 aa-runtime
 
 - **Purpose:** own execution mechanics for allocated work and provide local and cloud model inference behind the inter-module RPC boundary.
-- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (`sandbox`); result intake (`intake`, validating and deduplicating untrusted result envelopes); the model provider/execution service boundary (`inference`) with its provider abstraction (Ollama/OpenAI-compatible/DeepSeek), model catalog, and low-level `generate`.
+- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (`runtime/lifecycle`); the execution-isolation boundary (`sandbox`); result intake (`intake`, validating and deduplicating untrusted result envelopes); the model provider/execution service boundary (`inference`) with its provider abstraction (Ollama/OpenAI-compatible/DeepSeek), model catalog, and low-level `generate`.
 - **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own project state, durable definitions (`registry`), or canonical history (`memory`).
 - **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the `sandbox`; the `intake` service; the `inference` RPC service (`inference.generate`, `inference.health`, `inference.route`, `inference.recommend`).
 - **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject at `runtime/inference` (the former `aa-sifter`).
-- **Status:** introduced by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)); `runtime/worker` carries the moved kernel runtime; `runtime/sandbox` implements execution isolation ([ADR-0147](../adr/ADR-0147-runtime-sandbox-isolation.md)); `runtime/intake` validates result envelopes ([ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md)); the `inference` service retains provider/execution and verification. Model-locality/tier routing and budget policy are owned by the control plane (`kernel/allocator/routing`, [ADR-0151](../adr/ADR-0151-routing-and-budget-policy-in-the-allocator.md)); control-plane context is `kernel/context` ([ADR-0146](../adr/ADR-0146-context-compilation-and-a8-extraction.md)). `lifecycle` remains for later.
+- **Status:** introduced by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)); `runtime/worker` carries the moved kernel runtime; `runtime/sandbox` implements execution isolation ([ADR-0147](../adr/ADR-0147-runtime-sandbox-isolation.md)); `runtime/intake` validates result envelopes ([ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md)); the `inference` service retains provider/execution and verification. Model-locality/tier routing and budget policy are owned by the control plane (`kernel/allocator/routing`, [ADR-0151](../adr/ADR-0151-routing-and-budget-policy-in-the-allocator.md)); control-plane context is `kernel/context` ([ADR-0146](../adr/ADR-0146-context-compilation-and-a8-extraction.md)). `lifecycle` owns typed worker states, cancellation, cleanup, and lifecycle events on the scheduler dispatch path.
 
 ### 5.7 aa-forge
 

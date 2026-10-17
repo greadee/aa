@@ -55,6 +55,7 @@ import (
 	"github.com/greadee/aa/registry/policies"
 	"github.com/greadee/aa/registry/routines"
 	"github.com/greadee/aa/registry/teams"
+	"github.com/greadee/aa/runtime/lifecycle"
 	"github.com/greadee/aa/runtime/sandbox"
 	"github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/computeruse"
@@ -123,6 +124,7 @@ func serve(args []string) error {
 		Observations: observationBackend{plane: g.obs},
 		Visualizer:   visualizerBackend{plane: g.vis},
 		Registry:     definitionsBackend{g: g},
+		Lifecycle:    lifecycleBackend{manager: g.life},
 	})
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
@@ -215,6 +217,7 @@ type runtime struct {
 	syncer     *syncplane.Plane
 	obs        *obsplane.Plane
 	vis        *visplane.Plane
+	life       *lifecycle.Manager
 	teams      *teams.Registry
 	routines   *routines.Registry
 	policies   *policies.Registry
@@ -498,18 +501,6 @@ func build(root string) (*runtime, error) {
 		return nil, fmt.Errorf("runtime/sandbox: %w", err)
 	}
 
-	// Kernel control path: one project graph + scheduler, exposed in-process by
-	// kernel/api. Execution stays disabled on the core path (no model, no worker).
-	graph := planner.NewGraph("default", "plan-main")
-	sched, err := scheduler.New(graph, scheduler.Config{Registry: role_allocator.New()})
-	if err != nil {
-		return nil, fmt.Errorf("kernel/scheduler: %w", err)
-	}
-	apiSvc, err := api.New(api.Config{Scheduler: sched})
-	if err != nil {
-		return nil, fmt.Errorf("kernel/api: %w", err)
-	}
-
 	// Sync: one local node identity plus the composed transport seam. v1 is
 	// single-node (D6); the console's nodes read model is served from here and
 	// no remote execution is exposed.
@@ -542,6 +533,27 @@ func build(root string) (*runtime, error) {
 		return nil, err
 	}
 
+	// Worker lifecycle: instantiated and observed on the scheduler dispatch
+	// path. Execution stays disabled, so dispatch still runs worker.Disabled.
+	lifecycleManager := lifecycle.New(lifecycle.Config{
+		Sink: lifecycleObserver{plane: observations},
+	})
+
+	// Kernel control path: one project graph + scheduler, exposed in-process by
+	// kernel/api. Execution stays disabled on the core path (no model, no worker).
+	graph := planner.NewGraph("default", "plan-main")
+	sched, err := scheduler.New(graph, scheduler.Config{
+		Registry:  role_allocator.New(),
+		Lifecycle: lifecycleManager,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("kernel/scheduler: %w", err)
+	}
+	apiSvc, err := api.New(api.Config{Scheduler: sched})
+	if err != nil {
+		return nil, fmt.Errorf("kernel/api: %w", err)
+	}
+
 	return &runtime{
 		recorder:   recorder,
 		models:     modelRegistry,
@@ -563,6 +575,7 @@ func build(root string) (*runtime, error) {
 		syncer:     syncer,
 		obs:        observations,
 		vis:        visualizerPlane,
+		life:       lifecycleManager,
 		teams:      teamRegistry,
 		routines:   routineRegistry,
 		policies:   policyRegistry,
@@ -701,6 +714,7 @@ func selfcheck() error {
 	fmt.Printf("aa selfcheck (%s)\n", version)
 	fmt.Printf("  models registered:   %d\n", g.models.Count())
 	fmt.Printf("  registry:            teams=%d routines=%d policies=%d\n", g.teams.Count(), g.routines.Count(), g.policies.Count())
+	fmt.Printf("  lifecycle:           workers=%d events=%d\n", len(g.life.Workers()), len(g.life.Events()))
 	fmt.Printf("  sync:                node=%s nodes=%d\n", g.syncer.LocalID(), len(g.syncer.Nodes()))
 	fmt.Printf("  observability:       %d event(s), %d account(s)\n", len(g.recorder.Events()), len(accounts))
 	fmt.Printf("  routing decision:    locality=%s tier=%s blocked=%v\n", decision.Locality, decision.Tier, decision.Blocked)

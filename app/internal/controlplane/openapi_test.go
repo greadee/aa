@@ -19,6 +19,7 @@ func TestOpenAPIPaths(t *testing.T) {
 		Observations: fakeObservations{},
 		Visualizer:   fakeVisualizer{},
 		Registry:     fakeRegistry{},
+		Lifecycle:    fakeLifecycle{},
 	})
 	cases := []struct {
 		method, path, body string
@@ -52,6 +53,8 @@ func TestOpenAPIPaths(t *testing.T) {
 		{http.MethodGet, APIPrefix + "/policies", "", http.StatusOK},
 		{http.MethodPost, APIPrefix + "/policies", `{"id":"policy_new"}`, http.StatusCreated},
 		{http.MethodGet, APIPrefix + "/policies/policy_budget", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/workers", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/workers/events", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/tools", "", http.StatusOK},
 		{http.MethodPost, APIPrefix + "/approvals/g1", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/nope", "", http.StatusNotFound},
