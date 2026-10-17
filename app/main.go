@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/greadee/aa/app/internal/controlplane"
+	"github.com/greadee/aa/app/internal/syncplane"
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge/memsync"
 	"github.com/greadee/aa/kernel/allocator/planner"
@@ -200,6 +201,7 @@ type runtime struct {
 	graph      *planner.Graph
 	sched      *scheduler.Scheduler
 	api        *api.Service
+	syncer     *syncplane.Plane
 }
 
 // status reports the aggregate host status for the control plane.
@@ -208,7 +210,11 @@ func (g *runtime) status() controlplane.Status {
 	if recs, err := g.store.ListRecords("project_record"); err == nil {
 		projects = len(recs)
 	}
-	return controlplane.Status{Projects: projects, ActiveAssignments: 0, Nodes: 1}
+	nodes := 0
+	if g.syncer != nil {
+		nodes = len(g.syncer.Nodes())
+	}
+	return controlplane.Status{Projects: projects, ActiveAssignments: 0, Nodes: nodes}
 }
 
 // backend implements controlplane.Backend over the composed graph.
@@ -325,7 +331,54 @@ func (b *backend) Events(string) []json.RawMessage {
 }
 
 func (b *backend) Nodes() []controlplane.Node {
-	return []controlplane.Node{{ID: "local", Authority: true, State: "ready"}}
+	if b.g.syncer == nil {
+		return nil
+	}
+	nodes := b.g.syncer.Nodes()
+	out := make([]controlplane.Node, 0, len(nodes))
+	for _, n := range nodes {
+		out = append(out, controlplane.Node{
+			ID:        string(n.ID),
+			Name:      n.Name,
+			Authority: n.Local,
+			State:     n.State,
+		})
+	}
+	return out
+}
+
+func (b *backend) SyncStatus() controlplane.SyncStatus {
+	st := controlplane.SyncStatus{
+		Nodes:     []controlplane.SyncNode{},
+		Transfers: []controlplane.SyncTransfer{},
+	}
+	if b.g.syncer == nil {
+		return st
+	}
+	syncStatus := b.g.syncer.Status(context.Background())
+	st.LocalNode = string(syncStatus.LocalNode)
+	for _, n := range syncStatus.Nodes {
+		st.Nodes = append(st.Nodes, controlplane.SyncNode{
+			ID: string(n.ID), Name: n.Name, Local: n.Local, State: n.State,
+		})
+	}
+	for _, t := range syncStatus.Transfers {
+		created := ""
+		if !t.CreatedAt.IsZero() {
+			created = t.CreatedAt.UTC().Format(time.RFC3339Nano)
+		}
+		st.Transfers = append(st.Transfers, controlplane.SyncTransfer{
+			TransferID:    string(t.TransferID),
+			NodeID:        string(t.NodeID),
+			WorkPackageID: t.WorkPackageID,
+			ArtifactID:    t.ArtifactID,
+			State:         string(t.State),
+			Hash:          t.Hash,
+			Bytes:         t.Bytes,
+			CreatedAt:     created,
+		})
+	}
+	return st
 }
 
 func (b *backend) Tools() []controlplane.Tool {
@@ -409,6 +462,15 @@ func build(root string) (*runtime, error) {
 		return nil, fmt.Errorf("kernel/api: %w", err)
 	}
 
+	// Sync: one local node identity plus the composed transport seam. v1 is
+	// single-node (D6); the console's nodes read model is served from here and
+	// no remote execution is exposed.
+	seed, err := syncplane.SeedFromRoot(root)
+	if err != nil {
+		return nil, err
+	}
+	syncer := syncplane.New(syncplane.Config{Name: localNodeName(), Seed: seed})
+
 	return &runtime{
 		recorder:   recorder,
 		models:     modelRegistry,
@@ -427,7 +489,15 @@ func build(root string) (*runtime, error) {
 		graph:      graph,
 		sched:      sched,
 		api:        apiSvc,
+		syncer:     syncer,
 	}, nil
+}
+
+func localNodeName() string {
+	if h, err := os.Hostname(); err == nil && h != "" {
+		return h
+	}
+	return "local"
 }
 
 // allowlist is a fail-closed sandbox policy: a capability is granted only when
@@ -530,6 +600,7 @@ func selfcheck() error {
 
 	fmt.Printf("aa selfcheck (%s)\n", version)
 	fmt.Printf("  models registered:   %d\n", g.models.Count())
+	fmt.Printf("  sync:                node=%s nodes=%d\n", g.syncer.LocalID(), len(g.syncer.Nodes()))
 	fmt.Printf("  observability:       %d event(s), %d account(s)\n", len(g.recorder.Events()), len(accounts))
 	fmt.Printf("  routing decision:    locality=%s tier=%s blocked=%v\n", decision.Locality, decision.Tier, decision.Blocked)
 	fmt.Printf("  context bundle:      %d section(s), %d/%d tokens\n", len(bundle.Sections), bundle.TokensUsed, bundle.TokenBudget)

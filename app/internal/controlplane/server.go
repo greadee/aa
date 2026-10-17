@@ -61,6 +61,7 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/events", s.auth(s.events))
 	s.mux.Handle("GET "+APIPrefix+"/assignments", s.auth(s.assignments))
 	s.mux.Handle("GET "+APIPrefix+"/nodes", s.auth(s.nodes))
+	s.mux.Handle("GET "+APIPrefix+"/sync/status", s.auth(s.syncStatus))
 	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
 	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
 	// Anything else under the prefix is not found (JSON, same error vocabulary).
@@ -196,6 +197,14 @@ func (s *Server) nodes(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, s.cfg.Backend.Nodes())
+}
+
+func (s *Server) syncStatus(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, SyncStatus{Nodes: []SyncNode{}, Transfers: []SyncTransfer{}})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.SyncStatus())
 }
 
 func (s *Server) tools(w http.ResponseWriter, _ *http.Request) {

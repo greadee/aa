@@ -241,14 +241,18 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    authority:
-                      type: boolean
-                    state:
-                      type: string
+                  $ref: "#/components/schemas/NodeRecord"
+  /sync/status:
+    get:
+      tags: [nodes]
+      summary: Sync node registry and transfer status
+      responses:
+        "200":
+          description: Sync status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncStatus"
   /tools:
     get:
       tags: [tools]
@@ -367,6 +371,65 @@ components:
           type: string
         guidance:
           type: string
+    NodeRecord:
+      type: object
+      required: [id, authority, state]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        authority:
+          type: boolean
+        state:
+          type: string
+    SyncStatus:
+      type: object
+      required: [localNode, nodes, transfers]
+      properties:
+        localNode:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncNode"
+        transfers:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncTransfer"
+    SyncNode:
+      type: object
+      required: [id, local, state]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        local:
+          type: boolean
+        state:
+          type: string
+    SyncTransfer:
+      type: object
+      required: [transferId, state, bytes]
+      properties:
+        transferId:
+          type: string
+        nodeId:
+          type: string
+        workPackageId:
+          type: string
+        artifactId:
+          type: string
+        state:
+          type: string
+        hash:
+          type: string
+        bytes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
     ToolManifest:
       type: object
       required: [contractVersion, kind, id, name, toolKind, version, capabilities]

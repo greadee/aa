@@ -28,8 +28,36 @@ type AssignmentView struct {
 // Node is a compute/sync node summary.
 type Node struct {
 	ID        string `json:"id"`
+	Name      string `json:"name,omitempty"`
 	Authority bool   `json:"authority"`
 	State     string `json:"state"`
+}
+
+// SyncNode is one node in the sync read model.
+type SyncNode struct {
+	ID    string `json:"id"`
+	Name  string `json:"name,omitempty"`
+	Local bool   `json:"local"`
+	State string `json:"state"`
+}
+
+// SyncTransfer is a completed sync transfer.
+type SyncTransfer struct {
+	TransferID    string `json:"transferId"`
+	NodeID        string `json:"nodeId,omitempty"`
+	WorkPackageID string `json:"workPackageId,omitempty"`
+	ArtifactID    string `json:"artifactId,omitempty"`
+	State         string `json:"state"`
+	Hash          string `json:"hash,omitempty"`
+	Bytes         int64  `json:"bytes"`
+	CreatedAt     string `json:"createdAt,omitempty"`
+}
+
+// SyncStatus is the sync read model served on /sync/status.
+type SyncStatus struct {
+	LocalNode string         `json:"localNode"`
+	Nodes     []SyncNode     `json:"nodes"`
+	Transfers []SyncTransfer `json:"transfers"`
 }
 
 // Tool is a registered tool/plugin manifest summary.
@@ -54,5 +82,6 @@ type Backend interface {
 	Strategies(projectID string) []json.RawMessage
 	Events(projectID string) []json.RawMessage
 	Nodes() []Node
+	SyncStatus() SyncStatus
 	Tools() []Tool
 }

@@ -33,6 +33,7 @@ func TestOpenAPIPaths(t *testing.T) {
 		{http.MethodGet, APIPrefix + "/projects/p1/events", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/assignments", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/nodes", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/sync/status", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/tools", "", http.StatusOK},
 		{http.MethodPost, APIPrefix + "/approvals/g1", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/nope", "", http.StatusNotFound},
