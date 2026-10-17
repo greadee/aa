@@ -40,6 +40,8 @@ type Config struct {
 	Observations ObservationBackend
 	// Visualizer supplies the composed visualizer read model. Optional.
 	Visualizer VisualizerBackend
+	// Registry supplies the durable definition stores. Optional.
+	Registry RegistryBackend
 }
 
 // Server is the control-plane HTTP handler.
@@ -74,6 +76,15 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/timeline", s.auth(s.visualizerTimeline))
 	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/graph", s.auth(s.visualizerGraph))
 	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/stream", s.auth(s.visualizerStream))
+	s.mux.Handle("GET "+APIPrefix+"/teams", s.auth(s.teamsList))
+	s.mux.Handle("POST "+APIPrefix+"/teams", s.auth(s.teamAdd))
+	s.mux.Handle("GET "+APIPrefix+"/teams/{teamId}", s.auth(s.teamGet))
+	s.mux.Handle("GET "+APIPrefix+"/routines", s.auth(s.routinesList))
+	s.mux.Handle("POST "+APIPrefix+"/routines", s.auth(s.routineAdd))
+	s.mux.Handle("GET "+APIPrefix+"/routines/{routineId}", s.auth(s.routineGet))
+	s.mux.Handle("GET "+APIPrefix+"/policies", s.auth(s.policiesList))
+	s.mux.Handle("POST "+APIPrefix+"/policies", s.auth(s.policyAdd))
+	s.mux.Handle("GET "+APIPrefix+"/policies/{policyId}", s.auth(s.policyGet))
 	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
 	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
 	// Anything else under the prefix is not found (JSON, same error vocabulary).

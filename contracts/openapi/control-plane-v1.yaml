@@ -19,6 +19,7 @@ tags:
   - name: nodes
   - name: observations
   - name: visualizer
+  - name: registry
   - name: tools
 paths:
   /health:
@@ -379,6 +380,138 @@ paths:
             text/event-stream:
               schema:
                 type: string
+  /teams:
+    get:
+      tags: [registry]
+      summary: List team definitions
+      responses:
+        "200":
+          description: Teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamSpec"
+    post:
+      tags: [registry]
+      summary: Register a team definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamSpec"
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Invalid definition
+        "409":
+          description: Already defined
+  /teams/{teamId}:
+    get:
+      tags: [registry]
+      summary: Get a team definition
+      parameters:
+        - $ref: "#/components/parameters/teamId"
+      responses:
+        "200":
+          description: Team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamSpec"
+        "404":
+          description: Not found
+  /routines:
+    get:
+      tags: [registry]
+      summary: List routine definitions
+      responses:
+        "200":
+          description: Routines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Routine"
+    post:
+      tags: [registry]
+      summary: Register a routine definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Routine"
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Invalid definition
+        "409":
+          description: Already defined
+  /routines/{routineId}:
+    get:
+      tags: [registry]
+      summary: Get a routine definition
+      parameters:
+        - $ref: "#/components/parameters/routineId"
+      responses:
+        "200":
+          description: Routine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Routine"
+        "404":
+          description: Not found
+  /policies:
+    get:
+      tags: [registry]
+      summary: List policy definitions
+      responses:
+        "200":
+          description: Policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PolicyDefinition"
+    post:
+      tags: [registry]
+      summary: Register a policy definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyDefinition"
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Invalid definition
+        "409":
+          description: Already defined
+  /policies/{policyId}:
+    get:
+      tags: [registry]
+      summary: Get a policy definition
+      parameters:
+        - $ref: "#/components/parameters/policyId"
+      responses:
+        "200":
+          description: Policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyDefinition"
+        "404":
+          description: Not found
   /tools:
     get:
       tags: [tools]
@@ -407,6 +540,24 @@ components:
         type: string
     sessionId:
       name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+    teamId:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: string
+    routineId:
+      name: routineId
+      in: path
+      required: true
+      schema:
+        type: string
+    policyId:
+      name: policyId
       in: path
       required: true
       schema:
@@ -732,6 +883,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/VisualizerFrame"
+    TeamSpec:
+      $ref: "../schemas/v2/team-spec.schema.json"
+    Routine:
+      $ref: "../schemas/v2/routine.schema.json"
+    PolicyDefinition:
+      type: object
+      required: [contractVersion, kind, id, title, policyKind, version]
+      properties:
+        contractVersion:
+          type: string
+        kind:
+          const: policy_definition
+        id:
+          type: string
+        projectId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        revision:
+          type: integer
+        title:
+          type: string
+        policyKind:
+          type: string
+          enum: [approval, budget, routing, gate]
+        version:
+          type: string
+        description:
+          type: string
     ToolManifest:
       type: object
       required: [contractVersion, kind, id, name, toolKind, version, capabilities]

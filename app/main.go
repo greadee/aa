@@ -52,6 +52,9 @@ import (
 	"github.com/greadee/aa/obsv/journal"
 	"github.com/greadee/aa/obsv/protocol"
 	"github.com/greadee/aa/registry/models"
+	"github.com/greadee/aa/registry/policies"
+	"github.com/greadee/aa/registry/routines"
+	"github.com/greadee/aa/registry/teams"
 	"github.com/greadee/aa/runtime/sandbox"
 	"github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/computeruse"
@@ -119,6 +122,7 @@ func serve(args []string) error {
 		Backend:      &backend{g: g},
 		Observations: observationBackend{plane: g.obs},
 		Visualizer:   visualizerBackend{plane: g.vis},
+		Registry:     definitionsBackend{g: g},
 	})
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
@@ -211,6 +215,9 @@ type runtime struct {
 	syncer     *syncplane.Plane
 	obs        *obsplane.Plane
 	vis        *visplane.Plane
+	teams      *teams.Registry
+	routines   *routines.Registry
+	policies   *policies.Registry
 }
 
 // status reports the aggregate host status for the control plane.
@@ -444,6 +451,13 @@ func build(root string) (*runtime, error) {
 	proj := projection.NewMem()
 	query := retrieval.New(proj, st)
 
+	teamRegistry := teams.NewRegistry()
+	routineRegistry := routines.NewRegistry()
+	policyRegistry := policies.NewRegistry()
+	if err := loadDefinitions(st, teamRegistry, routineRegistry, policyRegistry); err != nil {
+		return nil, err
+	}
+
 	traces := repo.NewTraceRepository(st, proj)
 	memories := repo.NewMemoryRecordRepository(st, proj)
 
@@ -549,6 +563,9 @@ func build(root string) (*runtime, error) {
 		syncer:     syncer,
 		obs:        observations,
 		vis:        visualizerPlane,
+		teams:      teamRegistry,
+		routines:   routineRegistry,
+		policies:   policyRegistry,
 	}, nil
 }
 
@@ -683,6 +700,7 @@ func selfcheck() error {
 
 	fmt.Printf("aa selfcheck (%s)\n", version)
 	fmt.Printf("  models registered:   %d\n", g.models.Count())
+	fmt.Printf("  registry:            teams=%d routines=%d policies=%d\n", g.teams.Count(), g.routines.Count(), g.policies.Count())
 	fmt.Printf("  sync:                node=%s nodes=%d\n", g.syncer.LocalID(), len(g.syncer.Nodes()))
 	fmt.Printf("  observability:       %d event(s), %d account(s)\n", len(g.recorder.Events()), len(accounts))
 	fmt.Printf("  routing decision:    locality=%s tier=%s blocked=%v\n", decision.Locality, decision.Tier, decision.Blocked)
