@@ -36,6 +36,8 @@ type Config struct {
 	Status func() Status
 	// Backend supplies projects/work/assignments/approvals. Optional.
 	Backend Backend
+	// Observations supplies the composed obsv journal. Optional.
+	Observations ObservationBackend
 }
 
 // Server is the control-plane HTTP handler.
@@ -62,6 +64,10 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/assignments", s.auth(s.assignments))
 	s.mux.Handle("GET "+APIPrefix+"/nodes", s.auth(s.nodes))
 	s.mux.Handle("GET "+APIPrefix+"/sync/status", s.auth(s.syncStatus))
+	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}", s.auth(s.observations))
+	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}/stream", s.auth(s.observationStream))
+	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}/report", s.auth(s.observationReport))
+	s.mux.Handle("POST "+APIPrefix+"/observations/{sessionId}/codex", s.auth(s.observationCodex))
 	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
 	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
 	// Anything else under the prefix is not found (JSON, same error vocabulary).

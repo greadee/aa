@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/greadee/aa/app/internal/controlplane"
+	"github.com/greadee/aa/app/internal/obsplane"
 	"github.com/greadee/aa/app/internal/syncplane"
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge/memsync"
@@ -47,6 +48,8 @@ import (
 	"github.com/greadee/aa/memory/retention"
 	"github.com/greadee/aa/memory/retrieval"
 	"github.com/greadee/aa/memory/store"
+	"github.com/greadee/aa/obsv/journal"
+	"github.com/greadee/aa/obsv/protocol"
 	"github.com/greadee/aa/registry/models"
 	"github.com/greadee/aa/runtime/sandbox"
 	"github.com/greadee/aa/toolbox"
@@ -108,10 +111,11 @@ func serve(args []string) error {
 		return err
 	}
 	handler := controlplane.New(controlplane.Config{
-		Version: version,
-		Token:   *token,
-		Status:  g.status,
-		Backend: &backend{g: g},
+		Version:      version,
+		Token:        *token,
+		Status:       g.status,
+		Backend:      &backend{g: g},
+		Observations: observationBackend{plane: g.obs},
 	})
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
@@ -202,6 +206,7 @@ type runtime struct {
 	sched      *scheduler.Scheduler
 	api        *api.Service
 	syncer     *syncplane.Plane
+	obs        *obsplane.Plane
 }
 
 // status reports the aggregate host status for the control plane.
@@ -259,8 +264,17 @@ func (b *backend) CreateProject(id, name string) error {
 	if err != nil {
 		return err
 	}
-	_, err = b.g.store.PutRecord(rec)
-	return err
+	if _, err = b.g.store.PutRecord(rec); err != nil {
+		return err
+	}
+	b.emit("project:"+id, protocol.Event{
+		SourceType: protocol.SourceSession,
+		Confidence: protocol.ConfidenceObserved,
+		Action:     "project.create",
+		Actor:      "control-plane",
+		Metadata:   map[string]string{"status": "created"},
+	})
+	return nil
 }
 
 func (b *backend) WorkPackages(projectID string) []controlplane.WorkPackageView {
@@ -286,6 +300,14 @@ func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (strin
 	if err := b.g.graph.Add(planner.WorkPackage{ID: id, Title: title, DependsOn: dependsOn}); err != nil {
 		return "", err
 	}
+	b.emit("project:"+projectID, protocol.Event{
+		SourceType:    protocol.SourceWorkDelta,
+		Confidence:    protocol.ConfidenceExact,
+		Action:        "work.submit",
+		Actor:         "control-plane",
+		WorkPackageID: id,
+		Metadata:      map[string]string{"status": "submitted"},
+	})
 	return id, nil
 }
 
@@ -300,6 +322,14 @@ func (b *backend) Assignments() []controlplane.AssignmentView {
 
 func (b *backend) Approve(gateID string) error {
 	b.g.api.Approve(gateID)
+	b.emit("control-plane", protocol.Event{
+		SourceType:    protocol.SourceSession,
+		Confidence:    protocol.ConfidenceObserved,
+		Action:        "gate.approve",
+		Actor:         "console",
+		WorkPackageID: gateID,
+		Metadata:      map[string]string{"status": "approved"},
+	})
 	return nil
 }
 
@@ -471,6 +501,17 @@ func build(root string) (*runtime, error) {
 	}
 	syncer := syncplane.New(syncplane.Config{Name: localNodeName(), Seed: seed})
 
+	// Observation: one owner, durable per-session journals under the state
+	// root. Retention bounds only the projected report view.
+	observations, err := obsplane.New(obsplane.Config{
+		Owner:     "app",
+		Dir:       filepath.Join(root, "obsv"),
+		Retention: journal.Policy{MaxEvents: 1000},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &runtime{
 		recorder:   recorder,
 		models:     modelRegistry,
@@ -490,6 +531,7 @@ func build(root string) (*runtime, error) {
 		sched:      sched,
 		api:        apiSvc,
 		syncer:     syncer,
+		obs:        observations,
 	}, nil
 }
 
@@ -524,6 +566,7 @@ func selfcheck() error {
 	if err != nil {
 		return err
 	}
+	defer g.obs.Close()
 
 	// Observability: record and account an event with a valid identity chain.
 	event := observability.Event{
@@ -562,6 +605,21 @@ func selfcheck() error {
 	run, err := g.sandbox.Run(context.Background(), sandbox.Spec{Command: []string{"echo", "aa"}})
 	if err != nil {
 		return fmt.Errorf("sandbox: %w", err)
+	}
+
+	// Observation: journal a sandbox seam event and derive its report.
+	if !g.obs.Emit("selfcheck", protocol.Event{
+		SourceType: protocol.SourceTool,
+		Confidence: protocol.ConfidenceExact,
+		Action:     "sandbox.run",
+		Actor:      "aa",
+		Metadata:   map[string]string{"tool": "sandbox", "status": "ok"},
+	}) {
+		return fmt.Errorf("obsv: emit was rejected")
+	}
+	obsReport, err := g.obs.Report("selfcheck")
+	if err != nil {
+		return fmt.Errorf("obsv: %w", err)
 	}
 
 	// Job learning: default policies and in-memory seams.
@@ -606,6 +664,7 @@ func selfcheck() error {
 	fmt.Printf("  context bundle:      %d section(s), %d/%d tokens\n", len(bundle.Sections), bundle.TokensUsed, bundle.TokenBudget)
 	fmt.Printf("  context needs:       %d kind(s), %d term(s)\n", len(needs.Kinds), len(needs.Terms))
 	fmt.Printf("  sandbox run:         exit=%d stdout=%q\n", run.ExitCode, string(run.Stdout))
+	fmt.Printf("  observation:         events=%d lastSeq=%d sources=%d\n", obsReport.Events, obsReport.LastSequence, len(obsReport.BySourceType))
 	fmt.Printf("  joblearn:            gatePolicy.minOutcomes=%d bounds=%+v expPolicy=%+v featureSets=%d\n",
 		gatePolicy.MinOutcomes, bounds, expPolicy, len(featureSets))
 	fmt.Printf("  experience store:    %T\n", expStore)

@@ -17,6 +17,7 @@ tags:
   - name: work
   - name: memory
   - name: nodes
+  - name: observations
   - name: tools
 paths:
   /health:
@@ -253,6 +254,74 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SyncStatus"
+  /observations/{sessionId}:
+    get:
+      tags: [observations]
+      summary: Replay observation events for a session
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+        - name: after
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Observation events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ObservationEvent"
+  /observations/{sessionId}/report:
+    get:
+      tags: [observations]
+      summary: Deterministic work report for a session
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      responses:
+        "200":
+          description: Work report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservationReport"
+  /observations/{sessionId}/stream:
+    get:
+      tags: [observations]
+      summary: Subscribe to live observations (server-sent events)
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+        - name: after
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Observation stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /observations/{sessionId}/codex:
+    post:
+      tags: [observations]
+      summary: Translate Codex exec JSONL into observations
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Ingested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodexIngest"
   /tools:
     get:
       tags: [tools]
@@ -275,6 +344,12 @@ components:
   parameters:
     projectId:
       name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    sessionId:
+      name: sessionId
       in: path
       required: true
       schema:
@@ -430,6 +505,82 @@ components:
         createdAt:
           type: string
           format: date-time
+    ObservationEvent:
+      type: object
+      required: [version, sessionId, sequence, sourceType, sourceConfidence]
+      properties:
+        version:
+          type: string
+        sessionId:
+          type: string
+        sequence:
+          type: integer
+        occurredAt:
+          type: string
+        sourceType:
+          type: string
+          enum: [session, tool, file, work_delta]
+        source:
+          type: string
+        action:
+          type: string
+        sourceConfidence:
+          type: string
+          enum: [exact, correlated, observed, inferred]
+        actor:
+          type: string
+        workPackageId:
+          type: string
+        attemptId:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    ObservationCount:
+      type: object
+      required: [label, count]
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+    ObservationReport:
+      type: object
+      required: [sessionId, events, firstSequence, lastSequence]
+      properties:
+        sessionId:
+          type: string
+        events:
+          type: integer
+        firstSequence:
+          type: integer
+        lastSequence:
+          type: integer
+        bySourceType:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObservationCount"
+        byConfidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObservationCount"
+        workPackages:
+          type: array
+          items:
+            type: string
+        actors:
+          type: array
+          items:
+            type: string
+    CodexIngest:
+      type: object
+      required: [accepted, dropped]
+      properties:
+        accepted:
+          type: integer
+        dropped:
+          type: integer
     ToolManifest:
       type: object
       required: [contractVersion, kind, id, name, toolKind, version, capabilities]
