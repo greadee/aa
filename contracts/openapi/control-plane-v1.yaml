@@ -18,6 +18,7 @@ tags:
   - name: memory
   - name: nodes
   - name: observations
+  - name: visualizer
   - name: tools
 paths:
   /health:
@@ -322,6 +323,62 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CodexIngest"
+  /visualizer/sessions:
+    get:
+      tags: [visualizer]
+      summary: Browse observed and canonical sessions
+      responses:
+        "200":
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VisualizerSession"
+  /visualizer/sessions/{sessionId}/timeline:
+    get:
+      tags: [visualizer]
+      summary: Retained replay frame metadata for a session
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      responses:
+        "200":
+          description: Timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisualizerTimeline"
+        "404":
+          description: Unknown session
+  /visualizer/sessions/{sessionId}/graph:
+    get:
+      tags: [visualizer]
+      summary: Deterministic projected graph for a session
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      responses:
+        "200":
+          description: Graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisualizerGraph"
+        "404":
+          description: Unknown session
+  /visualizer/sessions/{sessionId}/stream:
+    get:
+      tags: [visualizer]
+      summary: Live projected events (server-sent events)
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
   /tools:
     get:
       tags: [tools]
@@ -581,6 +638,100 @@ components:
           type: integer
         dropped:
           type: integer
+    VisualizerSession:
+      type: object
+      required: [id, startSequence, endSequence, eventCount]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        actors:
+          type: array
+          items:
+            type: string
+        startSequence:
+          type: integer
+        endSequence:
+          type: integer
+        eventCount:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+    VisualizerNode:
+      type: object
+      required: [id, kind, sequence]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        label:
+          type: string
+        ref:
+          type: string
+        sequence:
+          type: integer
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    VisualizerEdge:
+      type: object
+      required: [from, to, kind, sequence]
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        kind:
+          type: string
+        sequence:
+          type: integer
+    VisualizerGraph:
+      type: object
+      required: [sessionId, nodes, edges]
+      properties:
+        sessionId:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisualizerNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisualizerEdge"
+    VisualizerFrame:
+      type: object
+      required: [index, sequence, nodes, edges]
+      properties:
+        index:
+          type: integer
+        sequence:
+          type: integer
+        eventId:
+          type: string
+        type:
+          type: string
+        nodes:
+          type: integer
+        edges:
+          type: integer
+    VisualizerTimeline:
+      type: object
+      required: [sessionId, frames]
+      properties:
+        sessionId:
+          type: string
+        frames:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisualizerFrame"
     ToolManifest:
       type: object
       required: [contractVersion, kind, id, name, toolKind, version, capabilities]

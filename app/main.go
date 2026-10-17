@@ -28,6 +28,7 @@ import (
 	"github.com/greadee/aa/app/internal/controlplane"
 	"github.com/greadee/aa/app/internal/obsplane"
 	"github.com/greadee/aa/app/internal/syncplane"
+	"github.com/greadee/aa/app/internal/visplane"
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge/memsync"
 	"github.com/greadee/aa/kernel/allocator/planner"
@@ -59,6 +60,7 @@ import (
 	uicp "github.com/greadee/aa/ui/controlplane"
 	"github.com/greadee/aa/ui/surfaces/tui"
 	wsurface "github.com/greadee/aa/ui/surfaces/web"
+	visretention "github.com/greadee/aa/visualizer/retention"
 )
 
 const version = "0.1.0"
@@ -116,6 +118,7 @@ func serve(args []string) error {
 		Status:       g.status,
 		Backend:      &backend{g: g},
 		Observations: observationBackend{plane: g.obs},
+		Visualizer:   visualizerBackend{plane: g.vis},
 	})
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
@@ -207,6 +210,7 @@ type runtime struct {
 	api        *api.Service
 	syncer     *syncplane.Plane
 	obs        *obsplane.Plane
+	vis        *visplane.Plane
 }
 
 // status reports the aggregate host status for the control plane.
@@ -512,6 +516,18 @@ func build(root string) (*runtime, error) {
 		return nil, err
 	}
 
+	// Visualizer: replay/live over the same obsv transport, canonical session
+	// browsing over memory, and a retained projected trail.
+	visualizerPlane, err := visplane.New(visplane.Config{
+		Observations:     observations.Server(),
+		ObservedSessions: observations.Sessions,
+		Memory:           query,
+		Retention:        visretention.Policy{MaxFrames: 500},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &runtime{
 		recorder:   recorder,
 		models:     modelRegistry,
@@ -532,6 +548,7 @@ func build(root string) (*runtime, error) {
 		api:        apiSvc,
 		syncer:     syncer,
 		obs:        observations,
+		vis:        visualizerPlane,
 	}, nil
 }
 
@@ -621,6 +638,14 @@ func selfcheck() error {
 	if err != nil {
 		return fmt.Errorf("obsv: %w", err)
 	}
+	visSessions, err := g.vis.Sessions(context.Background())
+	if err != nil {
+		return fmt.Errorf("visualizer sessions: %w", err)
+	}
+	visGraph, err := g.vis.Graph(context.Background(), "selfcheck")
+	if err != nil {
+		return fmt.Errorf("visualizer graph: %w", err)
+	}
 
 	// Job learning: default policies and in-memory seams.
 	gatePolicy := joblearn.DefaultGatePolicy()
@@ -665,6 +690,7 @@ func selfcheck() error {
 	fmt.Printf("  context needs:       %d kind(s), %d term(s)\n", len(needs.Kinds), len(needs.Terms))
 	fmt.Printf("  sandbox run:         exit=%d stdout=%q\n", run.ExitCode, string(run.Stdout))
 	fmt.Printf("  observation:         events=%d lastSeq=%d sources=%d\n", obsReport.Events, obsReport.LastSequence, len(obsReport.BySourceType))
+	fmt.Printf("  visualizer:          sessions=%d graphNodes=%d graphEdges=%d\n", len(visSessions), len(visGraph.Nodes), len(visGraph.Edges))
 	fmt.Printf("  joblearn:            gatePolicy.minOutcomes=%d bounds=%+v expPolicy=%+v featureSets=%d\n",
 		gatePolicy.MinOutcomes, bounds, expPolicy, len(featureSets))
 	fmt.Printf("  experience store:    %T\n", expStore)

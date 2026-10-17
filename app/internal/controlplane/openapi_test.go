@@ -17,6 +17,7 @@ func TestOpenAPIPaths(t *testing.T) {
 		Status:       func() Status { return Status{Nodes: 1} },
 		Backend:      fakeBackend{},
 		Observations: fakeObservations{},
+		Visualizer:   fakeVisualizer{},
 	})
 	cases := []struct {
 		method, path, body string
@@ -38,6 +39,9 @@ func TestOpenAPIPaths(t *testing.T) {
 		{http.MethodGet, APIPrefix + "/observations/s1", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/observations/s1/report", "", http.StatusOK},
 		{http.MethodPost, APIPrefix + "/observations/s1/codex", `{"type":"tool_call"}`, http.StatusOK},
+		{http.MethodGet, APIPrefix + "/visualizer/sessions", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/visualizer/sessions/s1/timeline", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/visualizer/sessions/s1/graph", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/tools", "", http.StatusOK},
 		{http.MethodPost, APIPrefix + "/approvals/g1", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/nope", "", http.StatusNotFound},

@@ -38,6 +38,8 @@ type Config struct {
 	Backend Backend
 	// Observations supplies the composed obsv journal. Optional.
 	Observations ObservationBackend
+	// Visualizer supplies the composed visualizer read model. Optional.
+	Visualizer VisualizerBackend
 }
 
 // Server is the control-plane HTTP handler.
@@ -68,6 +70,10 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}/stream", s.auth(s.observationStream))
 	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}/report", s.auth(s.observationReport))
 	s.mux.Handle("POST "+APIPrefix+"/observations/{sessionId}/codex", s.auth(s.observationCodex))
+	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions", s.auth(s.visualizerSessions))
+	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/timeline", s.auth(s.visualizerTimeline))
+	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/graph", s.auth(s.visualizerGraph))
+	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/stream", s.auth(s.visualizerStream))
 	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
 	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
 	// Anything else under the prefix is not found (JSON, same error vocabulary).

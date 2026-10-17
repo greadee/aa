@@ -14,6 +14,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"sync"
 
 	"github.com/greadee/aa/obsv"
 	"github.com/greadee/aa/obsv/codex"
@@ -45,6 +47,9 @@ type Ingested struct {
 type Plane struct {
 	manager   *obsv.Manager
 	retention journal.Policy
+
+	mu       sync.Mutex
+	sessions map[string]bool
 }
 
 // New composes an observation plane. It returns an error only when the durable
@@ -64,11 +69,35 @@ func New(cfg Config) (*Plane, error) {
 	return &Plane{
 		manager:   obsv.NewManager(cfg.Owner, cfg.Journals),
 		retention: cfg.Retention,
+		sessions:  map[string]bool{},
 	}, nil
 }
 
 // Close closes the transport and every owned session journal.
 func (p *Plane) Close() error { return p.manager.Close() }
+
+// Server returns the shared obsv transport. The visualizer attaches to this
+// surface, so there is exactly one observation transport and journal per
+// session.
+func (p *Plane) Server() transport.Server { return p.manager.Server() }
+
+// Sessions returns the session ids this plane has opened, sorted.
+func (p *Plane) Sessions() []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	out := make([]string, 0, len(p.sessions))
+	for id := range p.sessions {
+		out = append(out, id)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (p *Plane) mark(sessionID string) {
+	p.mu.Lock()
+	p.sessions[sessionID] = true
+	p.mu.Unlock()
+}
 
 // Emit sends one observation. It is failure-open: a missing session, an
 // invalid event, a full journal, or a panicking observer returns false and
@@ -87,6 +116,7 @@ func (p *Plane) Emit(sessionID string, ev protocol.Event) bool {
 	if err != nil {
 		return false
 	}
+	p.mark(sessionID)
 	return runtime.Send(ev)
 }
 
@@ -96,6 +126,7 @@ func (p *Plane) Replay(sessionID string, from int) ([]protocol.Event, error) {
 	if err != nil {
 		return nil, err
 	}
+	p.mark(sessionID)
 	return runtime.Replay(from)
 }
 
@@ -105,6 +136,7 @@ func (p *Plane) Subscribe(sessionID string, from int) (*journal.Subscription, er
 	if err != nil {
 		return nil, err
 	}
+	p.mark(sessionID)
 	return runtime.Subscribe(from)
 }
 

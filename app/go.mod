@@ -13,4 +13,5 @@ require (
 	github.com/greadee/aa/sync v0.0.0
 	github.com/greadee/aa/toolbox v0.0.0
 	github.com/greadee/aa/ui v0.0.0
+	github.com/greadee/aa/visualizer v0.0.0
 )
