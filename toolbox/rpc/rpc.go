@@ -61,6 +61,42 @@ type Request struct {
 	AA      *AA            `json:"aa,omitempty"`
 }
 
+// InvokeRequest is the typed payload for toolbox.invoke.
+type InvokeRequest struct {
+	ToolID              string         `json:"toolId"`
+	ExecutionContractID string         `json:"executionContractId"`
+	Input               map[string]any `json:"input,omitempty"`
+	IdempotencyKey      string         `json:"idempotencyKey,omitempty"`
+}
+
+// InvokeOutput is the output envelope returned by toolbox.invoke.
+type InvokeOutput struct {
+	Output map[string]any `json:"output"`
+}
+
+// CompileWorkflowRequest is the typed payload for toolbox.compileWorkflow.
+type CompileWorkflowRequest struct {
+	Workflow WorkflowParam `json:"workflow"`
+}
+
+// WorkflowParam wraps the workflow object (flat or nested).
+type WorkflowParam map[string]any
+
+// CompileWorkflowResponse wraps the compiled plan.
+type CompileWorkflowResponse struct {
+	Plan workflow.Plan `json:"plan"`
+}
+
+// ListRegistryRequest is the optional filter for toolbox.registry.
+type ListRegistryRequest struct {
+	ToolKind string `json:"toolKind,omitempty"`
+}
+
+// ListRegistryResponse wraps the returned tool manifests.
+type ListRegistryResponse struct {
+	Tools []toolbox.Manifest `json:"tools"`
+}
+
 // Error is a JSON-RPC 2.0 error object. Governed codes carry data.retryable.
 type Error struct {
 	Code    any            `json:"code"`
@@ -207,50 +243,84 @@ func (s *Service) dispatch(ctx context.Context, req Request) Response {
 }
 
 func (s *Service) invoke(ctx context.Context, req Request) (any, error) {
-	toolID, err := stringField(req.Params, "toolId")
-	if err != nil {
-		return nil, err
-	}
-	contractID := ""
-	if v, ok := req.Params["executionContractId"].(string); ok {
-		contractID = v
-	}
-	if contractID == "" {
-		return nil, fmt.Errorf("%w: executionContractId is required", toolbox.ErrInvalid)
+	var typed InvokeRequest
+	if err := json.Unmarshal(mapToJSON(req.Params), &typed); err != nil {
+		// fall back to manual parsing for backward compatibility.
+		toolID, err := stringField(req.Params, "toolId")
+		if err != nil {
+			return nil, err
+		}
+		contractID := ""
+		if v, ok := req.Params["executionContractId"].(string); ok {
+			contractID = v
+		}
+		if contractID == "" {
+			return nil, fmt.Errorf("%w: executionContractId is required", toolbox.ErrInvalid)
+		}
+		if s.contracts == nil {
+			return nil, fmt.Errorf("%w: no execution contract for %q", toolbox.ErrDenied, contractID)
+		}
+		contract, ok := s.contracts.Resolve(contractID)
+		if !ok {
+			return nil, fmt.Errorf("%w: execution contract %q", toolbox.ErrNotFound, contractID)
+		}
+		input := map[string]any{}
+		if raw, ok := req.Params["input"]; ok && raw != nil {
+			if m, ok := raw.(map[string]any); ok {
+				input = m
+			}
+		}
+		idem := ""
+		if v, ok := req.Params["idempotencyKey"].(string); ok {
+			idem = v
+		}
+		result, err := s.host.Invoke(ctx, toolbox.Invocation{
+			ToolID:              toolbox.ToolID(toolID),
+			Input:               input,
+			ExecutionContractID: contractID,
+			IdempotencyKey:      idem,
+		}, contract)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"output": result.Output}, nil
 	}
 	if s.contracts == nil {
-		return nil, fmt.Errorf("%w: no execution contract for %q", toolbox.ErrDenied, contractID)
+		return nil, fmt.Errorf("%w: no execution contract for %q", toolbox.ErrDenied, typed.ExecutionContractID)
 	}
-	contract, ok := s.contracts.Resolve(contractID)
+	contract, ok := s.contracts.Resolve(typed.ExecutionContractID)
 	if !ok {
-		return nil, fmt.Errorf("%w: execution contract %q", toolbox.ErrNotFound, contractID)
-	}
-	input := map[string]any{}
-	if raw, ok := req.Params["input"]; ok && raw != nil {
-		m, ok := raw.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("%w: input must be an object", toolbox.ErrInvalid)
-		}
-		input = m
-	}
-	idem := ""
-	if v, ok := req.Params["idempotencyKey"].(string); ok {
-		idem = v
+		return nil, fmt.Errorf("%w: execution contract %q", toolbox.ErrNotFound, typed.ExecutionContractID)
 	}
 	result, err := s.host.Invoke(ctx, toolbox.Invocation{
-		ToolID:              toolbox.ToolID(toolID),
-		Input:               input,
-		ExecutionContractID: contractID,
-		IdempotencyKey:      idem,
+		ToolID:              toolbox.ToolID(typed.ToolID),
+		Input:               typed.Input,
+		ExecutionContractID: typed.ExecutionContractID,
+		IdempotencyKey:      typed.IdempotencyKey,
 	}, contract)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"output": result.Output}, nil
+	return InvokeOutput{Output: result.Output}, nil
 }
 
 func (s *Service) compileWorkflow(req Request) (any, error) {
-	wf, err := workflowParams(req.Params)
+	var typed CompileWorkflowRequest
+	if req.Params != nil {
+		if err := json.Unmarshal(mapToJSON(req.Params), &typed); err != nil {
+			// fall back to manual parsing for backward compatibility.
+			wf, err := workflowParams(req.Params)
+			if err != nil {
+				return nil, err
+			}
+			plan, err := workflow.Compile(wf)
+			if err != nil {
+				return nil, err
+			}
+			return CompileWorkflowResponse{Plan: plan}, nil
+		}
+	}
+	wf, err := workflowParams(map[string]any(typed.Workflow))
 	if err != nil {
 		return nil, err
 	}
@@ -258,17 +328,27 @@ func (s *Service) compileWorkflow(req Request) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"plan": plan}, nil
+	return CompileWorkflowResponse{Plan: plan}, nil
 }
 
 func (s *Service) listRegistry(req Request) (any, error) {
-	kind := ""
+	var typed ListRegistryRequest
 	if req.Params != nil {
-		if v, ok := req.Params["toolKind"].(string); ok {
-			kind = v
+		if err := json.Unmarshal(mapToJSON(req.Params), &typed); err != nil {
+			// fall back to manual parsing.
+			kind := ""
+			if v, ok := req.Params["toolKind"].(string); ok {
+				kind = v
+			}
+			return ListRegistryResponse{Tools: s.host.ListTools(kind)}, nil
 		}
 	}
-	return map[string]any{"tools": s.host.ListTools(kind)}, nil
+	return ListRegistryResponse{Tools: s.host.ListTools(typed.ToolKind)}, nil
+}
+
+func mapToJSON(m map[string]any) []byte {
+	b, _ := json.Marshal(m)
+	return b
 }
 
 func workflowParams(params map[string]any) (toolbox.Workflow, error) {

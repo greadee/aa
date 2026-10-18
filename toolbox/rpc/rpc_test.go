@@ -8,7 +8,6 @@ import (
 	"github.com/greadee/aa/toolbox/host"
 	"github.com/greadee/aa/toolbox/policy"
 	"github.com/greadee/aa/toolbox/registry"
-	"github.com/greadee/aa/toolbox/workflow"
 )
 
 type resolver map[string]toolbox.ExecutionContract
@@ -55,10 +54,18 @@ func TestInvokeSuccess(t *testing.T) {
 	if resp.Error != nil {
 		t.Fatalf("error = %+v", resp.Error)
 	}
-	result := resp.Result.(map[string]any)
-	output := result["output"].(map[string]any)
-	if output["tool"] != "tool_a" || output["x"] != 1 {
-		t.Fatalf("output = %v", output)
+	// Result is now a typed InvokeOutput.
+	out, ok := resp.Result.(InvokeOutput)
+	if !ok {
+		t.Fatalf("result type = %T, want InvokeOutput", resp.Result)
+	}
+	output := out.Output
+	if output["tool"] != "tool_a" {
+		t.Fatalf("output[tool] = %v, want tool_a", output["tool"])
+	}
+	x := output["x"]
+	if f, ok := x.(float64); !ok || f != 1 {
+		t.Fatalf("output[x] = %v (%T), want 1", x, x)
 	}
 }
 
@@ -115,10 +122,12 @@ func TestCompileWorkflow(t *testing.T) {
 	if resp.Error != nil {
 		t.Fatalf("error = %+v", resp.Error)
 	}
-	plan, ok := resp.Result.(map[string]any)["plan"].(workflow.Plan)
+	// Result is now a typed CompileWorkflowResponse.
+	wr, ok := resp.Result.(CompileWorkflowResponse)
 	if !ok {
-		t.Fatalf("plan type = %T", resp.Result.(map[string]any)["plan"])
+		t.Fatalf("result type = %T, want CompileWorkflowResponse", resp.Result)
 	}
+	plan := wr.Plan
 	if len(plan.Order) != 2 || plan.Order[0] != "a" || plan.Order[1] != "b" {
 		t.Fatalf("order = %v", plan.Order)
 	}
@@ -146,12 +155,21 @@ func TestRegistry(t *testing.T) {
 	if resp.Error != nil {
 		t.Fatalf("error = %+v", resp.Error)
 	}
-	tools := resp.Result.(map[string]any)["tools"].([]toolbox.Manifest)
+	// Result is now a typed ListRegistryResponse.
+	lr, ok := resp.Result.(ListRegistryResponse)
+	if !ok {
+		t.Fatalf("result type = %T, want ListRegistryResponse", resp.Result)
+	}
+	tools := lr.Tools
 	if len(tools) != 1 || tools[0].ID != "tool_a" {
 		t.Fatalf("tools = %+v", tools)
 	}
 	resp2 := s.Handle(context.Background(), req(MethodRegistry, map[string]any{"toolKind": toolbox.KindPlugin}))
-	tools2 := resp2.Result.(map[string]any)["tools"].([]toolbox.Manifest)
+	lr2, ok := resp2.Result.(ListRegistryResponse)
+	if !ok {
+		t.Fatalf("result2 type = %T, want ListRegistryResponse", resp2.Result)
+	}
+	tools2 := lr2.Tools
 	if len(tools2) != 0 {
 		t.Fatalf("filtered tools = %+v", tools2)
 	}
