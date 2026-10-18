@@ -27,7 +27,7 @@ budgets → allocator/contract").
   `routingDecision` field on `route_request` and `inference.generate`. Inference
   executes the decided locality/tier/budget and **fails closed** when the
   decision is absent, inconsistent, or blocked (`aa.invalid_params` /
-  `aa.budget_exceeded`). The duplicate Python policy engine (`routing/policy.py`)
+  `aa.budget_exceeded`). The duplicate Python policy engine (~~routing/policy.py~~)
   is retired; preflight assessment, cloud budget accounting, and escalation
   evaluation remain execution-time helpers only.
 - **Capital/contract.** `v2.RoutingDecision` is the wire form; route

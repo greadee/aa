@@ -4,7 +4,7 @@
 
 **Responsibility** — Execution-time helpers: preflight assessment, cloud budget
 > accounting, and escalation evaluation. The duplicate routing policy engine
-> (`policy.py`) was retired in phase 11.
+> (~~policy.py~~) was retired in phase 11.
 
 > **Ownership.** Model-locality/tier routing **policy** and the budget gate are
 > owned by the control plane (`kernel/allocator/routing`, [ADR-0151](../../../adr/ADR-0151-routing-and-budget-policy-in-the-allocator.md)).
