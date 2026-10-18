@@ -130,3 +130,71 @@ func TestCompileNormalizesDependencies(t *testing.T) {
 		t.Fatalf("deps = %v", plan.Dependencies("c"))
 	}
 }
+
+func stepWithConfig(id, kind string, config map[string]any, deps ...string) toolbox.WorkflowStep {
+	s := step(id, kind, deps...)
+	s.Config = config
+	return s
+}
+
+func TestCompileParallelWithoutConcurrencyFails(t *testing.T) {
+	_, err := Compile(wf("wf", stepWithConfig("a", "parallel", map[string]any{})))
+	if !errors.Is(err, toolbox.ErrInvalid) {
+		t.Fatalf("err = %v, want ErrInvalid", err)
+	}
+}
+
+func TestCompileParallelWithNegativeConcurrencyFails(t *testing.T) {
+	_, err := Compile(wf("wf", stepWithConfig("a", "parallel", map[string]any{"concurrency": -1})))
+	if !errors.Is(err, toolbox.ErrInvalid) {
+		t.Fatalf("err = %v, want ErrInvalid", err)
+	}
+}
+
+func TestCompileParallelWithFloatConcurrencyFails(t *testing.T) {
+	_, err := Compile(wf("wf", stepWithConfig("a", "parallel", map[string]any{"concurrency": 1.5})))
+	if !errors.Is(err, toolbox.ErrInvalid) {
+		t.Fatalf("err = %v, want ErrInvalid", err)
+	}
+}
+
+func TestCompileParallelWithNonIntConcurrencyFails(t *testing.T) {
+	_, err := Compile(wf("wf", stepWithConfig("a", "parallel", map[string]any{"concurrency": "fast"})))
+	if !errors.Is(err, toolbox.ErrInvalid) {
+		t.Fatalf("err = %v, want ErrInvalid", err)
+	}
+}
+
+func TestCompileParallelWithValidConcurrencySucceeds(t *testing.T) {
+	plan, err := Compile(wf("wf", stepWithConfig("a", "parallel", map[string]any{"concurrency": 3})))
+	if err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+	if plan.Order[0] != "a" {
+		t.Fatalf("order = %v, want [a]", plan.Order)
+	}
+}
+
+func TestCompileConditionalWithoutConditionFails(t *testing.T) {
+	_, err := Compile(wf("wf", stepWithConfig("a", "conditional", map[string]any{})))
+	if !errors.Is(err, toolbox.ErrInvalid) {
+		t.Fatalf("err = %v, want ErrInvalid", err)
+	}
+}
+
+func TestCompileConditionalWithNonStringConditionFails(t *testing.T) {
+	_, err := Compile(wf("wf", stepWithConfig("a", "conditional", map[string]any{"condition": 42})))
+	if !errors.Is(err, toolbox.ErrInvalid) {
+		t.Fatalf("err = %v, want ErrInvalid", err)
+	}
+}
+
+func TestCompileConditionalWithValidConditionSucceeds(t *testing.T) {
+	plan, err := Compile(wf("wf", stepWithConfig("a", "conditional", map[string]any{"condition": "user.approved"})))
+	if err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+	if plan.Order[0] != "a" {
+		t.Fatalf("order = %v, want [a]", plan.Order)
+	}
+}
