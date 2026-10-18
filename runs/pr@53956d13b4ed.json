@@ -1,0 +1,40 @@
+{
+  "ID": "pr@53956d13b4ed",
+  "Profile": "pr",
+  "Repository": "greadee/aa",
+  "Ref": "53956d13b4ed6d322075749ab451206fca257e33",
+  "Base": "origin/main",
+  "Head": "53956d13b4ed6d322075749ab451206fca257e33",
+  "Generated": "2026-10-18T20:48:54.488853834Z",
+  "Findings": [
+    {
+      "id": "fa00efbb75363485aa3ba97ac529d1ce",
+      "title": "Documentation references a path that does not exist",
+      "classification": "Documentation",
+      "severity": "P3",
+      "evidence": {
+        "file": "docs/updates/toolbox-pre-hardening/plan.md",
+        "snippet": "toolbox/metrics.go"
+      },
+      "impact": "Stale reference misleads readers and tools.",
+      "recommendation": "Mark the superseded reference deprecated in place with ~~strikethrough~~ and a note; records are never deleted.",
+      "detector": "detector.stale-reference",
+      "anchor": "stale:toolbox/metrics.go",
+      "status": "new",
+      "firstSeen": "pr@53956d13b4ed",
+      "lastSeen": "pr@53956d13b4ed",
+      "runId": "pr@53956d13b4ed",
+      "unverified": true
+    }
+  ],
+  "Resolved": null,
+  "BlockThreshold": "P1",
+  "ArchiveURL": "",
+  "Coverage": {
+    "selected": 105,
+    "analyzed": 105,
+    "skipped": 45,
+    "truncated": 0,
+    "threshold": 1
+  }
+}
