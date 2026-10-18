@@ -138,6 +138,7 @@ def _service(config, provider=None, idempotency=None) -> InferenceService:
 def _params(key: str, text: str = "hello") -> dict:
     return {
         "tier": "local",
+        "routingDecision": {"locality": "local", "tier": "local"},
         "messages": [{"role": "user", "content": text}],
         "idempotencyKey": key,
     }

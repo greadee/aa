@@ -718,6 +718,7 @@ func selfcheck() error {
 	fmt.Printf("  sync:                node=%s nodes=%d\n", g.syncer.LocalID(), len(g.syncer.Nodes()))
 	fmt.Printf("  observability:       %d event(s), %d account(s)\n", len(g.recorder.Events()), len(accounts))
 	fmt.Printf("  routing decision:    locality=%s tier=%s blocked=%v\n", decision.Locality, decision.Tier, decision.Blocked)
+	fmt.Printf("  routing contract:    %+v\n", decision.Contract())
 	fmt.Printf("  context bundle:      %d section(s), %d/%d tokens\n", len(bundle.Sections), bundle.TokensUsed, bundle.TokenBudget)
 	fmt.Printf("  context needs:       %d kind(s), %d term(s)\n", len(needs.Kinds), len(needs.Terms))
 	fmt.Printf("  sandbox run:         exit=%d stdout=%q\n", run.ExitCode, string(run.Stdout))

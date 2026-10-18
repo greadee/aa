@@ -2,13 +2,15 @@
 
 > Project history for the Python `routing` submodule of [aa-runtime](../README.md).
 
-**Responsibility** — Deterministic routing policies, preflight assessment, cloud budgets, and escalation evaluation.
+**Responsibility** — Execution-time helpers: preflight assessment, cloud budget
+> accounting, and escalation evaluation. The duplicate routing policy engine
+> (`policy.py`) was retired in phase 11.
 
 > **Ownership.** Model-locality/tier routing **policy** and the budget gate are
 > owned by the control plane (`kernel/allocator/routing`, [ADR-0151](../../../adr/ADR-0151-routing-and-budget-policy-in-the-allocator.md)).
-> This Python package remains the inference service's execution surface; when the
-> execution path is wired it consumes the allocator's decision. Inference is
-> provider/execution plus verification.
+> The RPC execution path consumes the allocator's `routingDecision` and fails
+> closed when it is absent or inconsistent. Inference is provider/execution
+> plus verification.
 
 **Source** — [`inference/src/aa_inference/routing/`](../../../../runtime/inference/src/aa_inference/routing/)
 

@@ -64,6 +64,8 @@ type Decision struct {
 	EstimatedCostUSD float64
 	// Escalate marks a decision that hands work to the expert/cloud tier.
 	Escalate bool
+	// Significance is the classified significance of the work.
+	Significance Significance
 }
 
 // Decide applies the policy and budget gate deterministically.
@@ -78,7 +80,7 @@ func Decide(req Request) (Decision, error) {
 	wantsExpert := preferExpert(req.Policy, req.Significance)
 	cost := estimateCost(req)
 
-	decision := Decision{EstimatedCostUSD: cost}
+	decision := Decision{EstimatedCostUSD: cost, Significance: req.Significance}
 	if wantsExpert {
 		decision.Locality, decision.Tier, decision.Escalate = "cloud", "expert", true
 		decision.Reason = "policy selects the expert tier"
@@ -102,6 +104,21 @@ func Decide(req Request) (Decision, error) {
 		}
 	}
 	return decision, nil
+}
+
+// Contract returns the wire form passed to the inference execution path. It
+// carries the decided locality, tier, budget gate, and significance so
+// inference executes the allocator's decision instead of re-deciding.
+func (d Decision) Contract() v2.RoutingDecision {
+	return v2.RoutingDecision{
+		Locality:              d.Locality,
+		Tier:                  d.Tier,
+		Blocked:               d.Blocked,
+		Reason:                d.Reason,
+		EstimatedCostUSD:      d.EstimatedCostUSD,
+		DecisionLevel:         string(d.Significance),
+		RequiresHumanApproval: false,
+	}
 }
 
 // preferExpert resolves the policy and significance into a tier preference,
