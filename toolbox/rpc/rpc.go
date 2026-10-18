@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	toolbox "github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/host"
@@ -163,6 +164,12 @@ func (s *Service) Handle(ctx context.Context, req Request) Response {
 	}
 	if !compatible(req.AA) {
 		return errResponseData(req.ID, CodeIncompatible, "unsupported RPC or contract major", retryable(false))
+	}
+	// apply timeout from aa envelope if specified.
+	if req.AA != nil && req.AA.TimeoutMS > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(req.AA.TimeoutMS)*time.Millisecond)
+		defer cancel()
 	}
 	if key, ok := idempotencyKey(req); ok {
 		return s.handleWithDedup(ctx, req, key)
