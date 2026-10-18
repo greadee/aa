@@ -26,7 +26,7 @@ func newService(t *testing.T) (*Service, *host.FakeProvider) {
 		t.Fatalf("RegisterProvider: %v", err)
 	}
 	m := toolbox.Manifest{
-		Envelope:     toolbox.Envelope{ContractVersion: "1.0", Kind: "tool_manifest", ID: "tool_a"},
+		Envelope:     toolbox.Envelope{ContractVersion: "2.0", Kind: "tool_manifest", ID: "tool_a"},
 		Name:         "tool_a",
 		ToolKind:     toolbox.KindTool,
 		Version:      "1.0",
@@ -105,7 +105,7 @@ func TestCompileWorkflow(t *testing.T) {
 	s, _ := newService(t)
 	resp := s.Handle(context.Background(), req(MethodCompileWorkflow, map[string]any{
 		"workflow": map[string]any{
-			"contractVersion": "1.0", "kind": "workflow", "id": "wf_1", "version": "1.0",
+			"contractVersion": "2.0", "kind": "workflow", "id": "wf_1", "version": "1.0",
 			"steps": []any{
 				map[string]any{"id": "a", "kind": "task"},
 				map[string]any{"id": "b", "kind": "task", "dependsOn": []any{"a"}},
@@ -128,7 +128,7 @@ func TestCompileWorkflowCycleIsInvalidParams(t *testing.T) {
 	s, _ := newService(t)
 	resp := s.Handle(context.Background(), req(MethodCompileWorkflow, map[string]any{
 		"workflow": map[string]any{
-			"contractVersion": "1.0", "kind": "workflow", "id": "wf", "version": "1.0",
+			"contractVersion": "2.0", "kind": "workflow", "id": "wf", "version": "1.0",
 			"steps": []any{
 				map[string]any{"id": "a", "kind": "task", "dependsOn": []any{"b"}},
 				map[string]any{"id": "b", "kind": "task", "dependsOn": []any{"a"}},

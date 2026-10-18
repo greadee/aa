@@ -10,7 +10,7 @@ import (
 
 func wf(id string, steps ...toolbox.WorkflowStep) toolbox.Workflow {
 	return toolbox.Workflow{
-		Envelope: toolbox.Envelope{ContractVersion: "1.0", Kind: "workflow", ID: id},
+		Envelope: toolbox.Envelope{ContractVersion: "2.0", Kind: "workflow", ID: id},
 		Name:     id,
 		Version:  "1.0",
 		Steps:    steps,

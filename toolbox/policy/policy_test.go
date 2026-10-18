@@ -12,7 +12,7 @@ func (e enforcer) CanEnforce(kind string) bool { return e[kind] }
 
 func manifest(id string, caps ...string) toolbox.Manifest {
 	return toolbox.Manifest{
-		Envelope:     toolbox.Envelope{ContractVersion: "1.0", Kind: "tool_manifest", ID: id},
+		Envelope:     toolbox.Envelope{ContractVersion: "2.0", Kind: "tool_manifest", ID: id},
 		Name:         id,
 		ToolKind:     toolbox.KindTool,
 		Version:      "1.0",
@@ -22,7 +22,7 @@ func manifest(id string, caps ...string) toolbox.Manifest {
 
 func contract(caps ...toolbox.Capability) toolbox.ExecutionContract {
 	return toolbox.ExecutionContract{
-		Envelope:      toolbox.Envelope{ContractVersion: "1.0", Kind: "execution_contract", ID: "ec_1"},
+		Envelope:      toolbox.Envelope{ContractVersion: "2.0", Kind: "execution_contract", ID: "ec_1"},
 		WorkPackageID: "wp_1",
 		AssignmentID:  "as_1",
 		Capabilities:  caps,
