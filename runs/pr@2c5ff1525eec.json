@@ -1,0 +1,20 @@
+{
+  "ID": "pr@2c5ff1525eec",
+  "Profile": "pr",
+  "Repository": "greadee/aa",
+  "Ref": "2c5ff1525eec3f6c5e214df7edee9460e4cb3a4d",
+  "Base": "origin/main",
+  "Head": "2c5ff1525eec3f6c5e214df7edee9460e4cb3a4d",
+  "Generated": "2026-10-18T19:18:58.512884029Z",
+  "Findings": [],
+  "Resolved": null,
+  "BlockThreshold": "P1",
+  "ArchiveURL": "",
+  "Coverage": {
+    "selected": 105,
+    "analyzed": 105,
+    "skipped": 45,
+    "truncated": 0,
+    "threshold": 1
+  }
+}
