@@ -428,6 +428,8 @@ func retryable(v bool) map[string]any { return map[string]any{"retryable": v} }
 
 func errResponseFrom(id any, err error) Response {
 	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		return errResponseData(id, CodeUnavailable, "request timed out", retryable(true))
 	case errors.Is(err, toolbox.ErrInvalid), errors.Is(err, toolbox.ErrCycle):
 		return errResponseData(id, CodeInvalidParams, err.Error(), retryable(false))
 	case errors.Is(err, toolbox.ErrNotFound):
