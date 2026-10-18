@@ -87,13 +87,20 @@ type Service struct {
 	host      *host.Host
 	contracts ContractResolver
 
-	mu    sync.Mutex
-	cache map[string]any
+	mu       sync.Mutex
+	cache    map[string]any
+	inflight map[string]*cacheResult
+}
+
+// cacheResult holds the result of an in-flight request for deduplication.
+type cacheResult struct {
+	respCh chan struct{} // closed when the first caller finishes
+	resp   Response      // result set by the first caller
 }
 
 // New returns a service over an invocation host and contract resolver.
 func New(h *host.Host, contracts ContractResolver) *Service {
-	return &Service{host: h, contracts: contracts, cache: map[string]any{}}
+	return &Service{host: h, contracts: contracts, cache: map[string]any{}, inflight: map[string]*cacheResult{}}
 }
 
 // Capabilities reports the RPC/contract versions and methods this adapter speaks,
@@ -122,13 +129,63 @@ func (s *Service) Handle(ctx context.Context, req Request) Response {
 		return errResponseData(req.ID, CodeIncompatible, "unsupported RPC or contract major", retryable(false))
 	}
 	if key, ok := idempotencyKey(req); ok {
-		s.mu.Lock()
-		if cached, found := s.cache[req.Method+"|"+key]; found {
-			s.mu.Unlock()
-			return Response{JSONRPC: "2.0", ID: req.ID, Result: cached}
-		}
-		s.mu.Unlock()
+		return s.handleWithDedup(ctx, req, key)
 	}
+	return s.handleSingle(ctx, req)
+}
+
+// handleWithDedup deduplicates in-flight requests sharing the same idempotency
+// key: only the first caller executes the method; others wait and reuse the result.
+func (s *Service) handleWithDedup(ctx context.Context, req Request, key string) Response {
+	s.mu.Lock()
+	if cr, exists := s.inflight[req.Method+"|"+key]; exists {
+		// another caller is already executing this request; wait for its result.
+		ch := cr.respCh
+		s.mu.Unlock()
+		<-ch // blocks until the first caller closes it
+		s.mu.Lock()
+		resp := cr.resp
+		s.cache[req.Method+"|"+key] = resp.Result
+		delete(s.inflight, req.Method+"|"+key)
+		s.mu.Unlock()
+		return resp
+	}
+	// first caller: create a result holder and proceed to execute.
+	cr := &cacheResult{respCh: make(chan struct{})}
+	s.inflight[req.Method+"|"+key] = cr
+	s.mu.Unlock()
+
+	// execute the method outside the lock.
+	resp := s.dispatch(ctx, req)
+
+	// signal all waiters and clean up.
+	s.mu.Lock()
+	cr.resp = resp
+	s.cache[req.Method+"|"+key] = resp.Result
+	delete(s.inflight, req.Method+"|"+key)
+	close(cr.respCh) // unblocks all waiters
+	s.mu.Unlock()
+	return resp
+}
+
+// handleSingle processes a non-idempotent request.
+func (s *Service) handleSingle(ctx context.Context, req Request) Response {
+	s.mu.Lock()
+	if key, ok := idempotencyKey(req); ok {
+		s.mu.Unlock()
+		// idempotency key present but not used for dedup—still cache the result.
+		result := s.dispatch(ctx, req)
+		s.mu.Lock()
+		s.cache[req.Method+"|"+key] = result.Result
+		s.mu.Unlock()
+		return result
+	}
+	s.mu.Unlock()
+	return s.dispatch(ctx, req)
+}
+
+// dispatch executes the requested method and returns the response.
+func (s *Service) dispatch(ctx context.Context, req Request) Response {
 	var (
 		result any
 		err    error
@@ -145,11 +202,6 @@ func (s *Service) Handle(ctx context.Context, req Request) Response {
 	}
 	if err != nil {
 		return errResponseFrom(req.ID, err)
-	}
-	if key, ok := idempotencyKey(req); ok {
-		s.mu.Lock()
-		s.cache[req.Method+"|"+key] = result
-		s.mu.Unlock()
 	}
 	return Response{JSONRPC: "2.0", ID: req.ID, Result: result}
 }
