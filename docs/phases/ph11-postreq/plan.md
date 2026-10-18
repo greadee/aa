@@ -67,10 +67,12 @@ DoD per commit: affected module `gofmt`/build/vet/test green; `tools/archtest` c
 
 ## Exit criteria
 
-- [ ] All six issues implemented (or explicitly removed) and composed in the daemon.
-- [ ] Control-plane/console surfaces updated where the issue requires a read model.
-- [ ] `revu` clean on the phase PR; architecture boundaries hold.
-- [ ] Issues #43–#48 closed; the `v1 — phases 11-12` **milestone** updated.
+- [x] All six issues implemented (or explicitly removed) and composed in the daemon.
+- [x] Control-plane/console surfaces updated where the issue requires a read model.
+- [x] `revu` clean on the phase PR; architecture boundaries hold.
+- [x] Issues #43–#48 closed; the `v1 — phases 11-12` **milestone** updated.
+
+See [summary.md](./summary.md) for the as-built record.
 
 ## Tracking
 
