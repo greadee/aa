@@ -123,10 +123,37 @@ type ContractResolver interface {
 type Service struct {
 	host      *host.Host
 	contracts ContractResolver
+	metrics   *Metrics
 
 	mu       sync.Mutex
 	cache    map[string]any
 	inflight map[string]*cacheResult
+}
+
+// Metrics collects invocation statistics.
+type Metrics struct {
+	mu           sync.Mutex
+	invocations  int64
+	denials      int64
+	totalLatency time.Duration
+}
+
+// Snapshot returns a point-in-time copy of the metrics.
+func (m *Metrics) Snapshot() MetricsSnapshot {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return MetricsSnapshot{
+		Invocations:  m.invocations,
+		Denials:      m.denials,
+		AvgLatencyMS: int64(float64(m.totalLatency) / float64(m.invocations) / float64(time.Millisecond)),
+	}
+}
+
+// MetricsSnapshot is an immutable point-in-time copy of Metrics.
+type MetricsSnapshot struct {
+	Invocations  int64
+	Denials      int64
+	AvgLatencyMS int64
 }
 
 // cacheResult holds the result of an in-flight request for deduplication.
@@ -136,8 +163,12 @@ type cacheResult struct {
 }
 
 // New returns a service over an invocation host and contract resolver.
-func New(h *host.Host, contracts ContractResolver) *Service {
-	return &Service{host: h, contracts: contracts, cache: map[string]any{}, inflight: map[string]*cacheResult{}}
+// Optionally pass a *Metrics to collect invocation statistics.
+func New(h *host.Host, contracts ContractResolver, m *Metrics) *Service {
+	if m == nil {
+		m = &Metrics{}
+	}
+	return &Service{host: h, contracts: contracts, metrics: m, cache: map[string]any{}, inflight: map[string]*cacheResult{}}
 }
 
 // Capabilities reports the RPC/contract versions and methods this adapter speaks,
@@ -150,6 +181,11 @@ func (s *Service) Capabilities() Capabilities {
 	}
 }
 
+// Metrics returns a snapshot of invocation statistics.
+func (s *Service) Metrics() MetricsSnapshot {
+	return s.metrics.Snapshot()
+}
+
 // Capabilities is the advertised version and method set of an adapter.
 type Capabilities struct {
 	RPCVersion      string   `json:"rpcVersion"`
@@ -159,6 +195,23 @@ type Capabilities struct {
 
 // Handle validates the envelope and dispatches one request.
 func (s *Service) Handle(ctx context.Context, req Request) Response {
+	start := time.Now()
+	resp := s.doHandle(ctx, req)
+	// record metrics after the full response is ready.
+	s.metrics.mu.Lock()
+	s.metrics.invocations++
+	s.metrics.totalLatency += time.Since(start)
+	if resp.Error != nil {
+		if resp.Error.Code == CodeUnauthorized || resp.Error.Code == CodeIncompatible {
+			s.metrics.denials++
+		}
+	}
+	s.metrics.mu.Unlock()
+	return resp
+}
+
+// doHandle is the internal handle logic (without metrics recording).
+func (s *Service) doHandle(ctx context.Context, req Request) Response {
 	if req.JSONRPC != "" && req.JSONRPC != "2.0" {
 		return errResponse(req.ID, CodeInvalidRequest, "jsonrpc must be \"2.0\"")
 	}

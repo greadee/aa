@@ -39,7 +39,7 @@ func newService(t *testing.T) (*Service, *host.FakeProvider) {
 		"ec_ok": {Capabilities: []toolbox.Capability{"read_project"}},
 		"ec_no": {Capabilities: []toolbox.Capability{"run_tests"}},
 	}
-	return New(h, contracts), p
+	return New(h, contracts, nil), p
 }
 
 func req(method string, params map[string]any) Request {
