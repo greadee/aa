@@ -18,6 +18,9 @@ from aa_inference.models.provider import ModelProvider
 
 from .providers import FakeProvider
 
+LOCAL_DECISION = {"locality": "local", "tier": "local"}
+EXPERT_DECISION = {"locality": "cloud", "tier": "expert"}
+
 # ---------------------------------------------------------------------------
 # Task fixtures
 # ---------------------------------------------------------------------------

@@ -16,8 +16,9 @@ from ..contracts import (
     make_route_response,
     route_request_kwargs,
 )
+from ..decision import RoutingBlockedError, parse_routing_decision
 from ..model_defaults import DEFAULT_EXPERT_MAX_OUTPUT
-from ..models.provider import Message, Role, Tier
+from ..models.provider import Message, Role
 from .envelope import (
     INCOMPATIBLE,
     METHOD_NOT_FOUND,
@@ -34,10 +35,6 @@ _ROUTE_METHOD = "inference.route"
 _GENERATE_METHOD = "inference.generate"
 _HEALTH_METHOD = "inference.health"
 _RECOMMEND_METHOD = "inference.recommend"
-
-
-def _tier_name(tier: Tier | None) -> str:
-    return "none" if tier is None else tier.value
 
 
 class InferenceService:
@@ -87,36 +84,30 @@ class InferenceService:
 
     # -- methods -----------------------------------------------------------
     def route(self, request: dict[str, Any]) -> dict[str, Any]:
-        kwargs = route_request_kwargs(request)
+        route_request_kwargs(request)
+        decision = parse_routing_decision(request.get("routingDecision"))
         config = self.inference.config
-        effective = kwargs["policy"] or config.routing_policy
-        if not config.cloud_allowed:
-            effective = "local_only"
-
-        classification = self.inference.classifier.classify(kwargs["prompt"])
-        assessment = self.inference.assessor.assess(
-            kwargs["prompt"], kwargs["context"], classification=classification
-        )
-        decision = self.inference.policy_engine.decide(assessment, policy=effective)
-
-        route = decision.kind.value
         blocked_reason: str | None = None
-        if decision.uses_cloud and not config.cloud_allowed:
+        route: str = decision.locality
+        if decision.blocked:
+            route = "blocked"
+            blocked_reason = decision.reason or "blocked by the allocator"
+        elif decision.locality == "cloud" and not config.cloud_allowed:
             route = "blocked"
             blocked_reason = "cloud is disabled by the active profile"
 
-        reasons = [*decision.reasons, *classification.reasons]
+        reasons = [decision.reason] if decision.reason else []
         return make_route_response(
             request,
             route=route,
-            decision_level=classification.level.value,
-            requires_human_approval=classification.requires_human_approval,
+            decision_level=decision.decision_level,
+            requires_human_approval=decision.requires_human_approval,
             reasons=reasons,
-            planner_tier=_tier_name(decision.planner_tier),
-            executor_tier=_tier_name(decision.executor_tier),
-            review_tier=_tier_name(decision.review_tier),
+            planner_tier=decision.tier,
+            executor_tier=decision.tier,
+            review_tier=decision.tier if decision.locality == "cloud" else "none",
             blocked_reason=blocked_reason,
-            estimated_cost_usd=self._estimate_cost(assessment.context_requirement),
+            estimated_cost_usd=decision.estimated_cost_usd,
         )
 
     async def generate(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -126,12 +117,20 @@ class InferenceService:
             cached = self.idempotency.resolve(str(key), fingerprint)
             if cached is not None:
                 return cached
+        decision = parse_routing_decision(params.get("routingDecision"))
+        if decision.blocked:
+            raise RoutingBlockedError(decision)
+        requested_tier = params.get("tier")
+        if requested_tier is not None and str(requested_tier) != decision.tier:
+            raise ContractError(
+                f"tier: {requested_tier!r} conflicts with the routing decision "
+                f"tier {decision.tier!r}"
+            )
         raw_messages = params.get("messages")
         if not isinstance(raw_messages, list) or not raw_messages:
             raise ContractError("messages: at least one message is required")
         messages = [self._message(item) for item in raw_messages]
-        tier = str(params.get("tier", "local"))
-        result = await self.inference.generate(messages, tier=tier)
+        result = await self.inference.generate(messages, tier=decision.provider_tier)
         payload = {
             "text": result.text,
             "usage": {

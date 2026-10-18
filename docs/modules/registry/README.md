@@ -28,6 +28,6 @@ no allocation, scheduling, or execution.
 | [`roles`](./roles.md) | Durable role definitions and the deterministic capability-to-role mapping |
 | [`capabilities`](./capabilities.md) | The closed execution-capability vocabulary |
 | [`models`](./models.md) | Model definition registry (contracts v2 `ModelSpec`) with a mirrored default catalog |
-| [`teams`](./teams.md) | Reserved: team (durable role grouping) specification |
-| [`routines`](./routines.md) | Reserved: organization routine specification |
-| [`policies`](./policies.md) | Reserved: policy-definition catalogue (definitions, not applicability) |
+| [`teams`](./teams.md) | Durable team (role grouping) definition registry |
+| [`routines`](./routines.md) | Durable organization routine definition registry |
+| [`policies`](./policies.md) | Durable policy-definition catalogue (definitions, not applicability) |

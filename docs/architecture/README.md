@@ -183,20 +183,12 @@ flowchart TB
 `aa-registry` holds reusable durable definitions (roles, models, teams,
 capabilities, routines, policies) and no runtime instances.
 
-**Reserved boundaries — no consumers yet (R10).** The packages below are
-deliberate placeholders introduced by the architecture refactor. They compile
-and carry documentation, but **no behavior and no callers**; they must not be
-mistaken for live code. Each is delivered by a later stage of the
-[ten-issue sprint](../updates/issue-impl-sep28/plan.md).
-
-| Reserved package | Delivered by |
-|---|---|
-| `registry/teams`, `registry/routines` | allocation/learning definitions (later) |
-| `registry/policies` | policy engine (later) |
-| `runtime/lifecycle` | worker lifecycle (later) |
-
-Issue 7 delivered `kernel/allocator/{model,compute}_allocator` and populated
-`registry/models`; they are live and no longer reserved.
+**Former reserved boundaries (R10).** Packages introduced as deliberate
+placeholders by the architecture refactor are now live. `registry/teams`,
+`registry/routines`, `registry/policies`, and `runtime/lifecycle` gained
+behavior, stores, tests, and control-plane surfaces in
+[phase 11](../phases/ph11-postreq/plan.md); `kernel/allocator/{model,compute}_allocator`
+and `registry/models` were delivered in the [ten-issue sprint](../updates/issue-impl-sep28/plan.md).
 
 ### 4.2 Layering and dependency rules
 
@@ -411,11 +403,11 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 ### 5.6 aa-runtime
 
 - **Purpose:** own execution mechanics for allocated work and provide local and cloud model inference behind the inter-module RPC boundary.
-- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (reserved); the execution-isolation boundary (`sandbox`); result intake (`intake`, validating and deduplicating untrusted result envelopes); the model provider/execution service boundary (`inference`) with its provider abstraction (Ollama/OpenAI-compatible/DeepSeek), model catalog, and low-level `generate`.
+- **Owns:** worker instances (`Worker`, the runtime instantiation the allocator selects); worker execution (the provider-neutral adapter seam); worker lifecycle (`runtime/lifecycle`); the execution-isolation boundary (`sandbox`); result intake (`intake`, validating and deduplicating untrusted result envelopes); the model provider/execution service boundary (`inference`) with its provider abstraction (Ollama/OpenAI-compatible/DeepSeek), model catalog, and low-level `generate`.
 - **Must not:** decide allocation or scheduling (`kernel/allocator`, `kernel/scheduler`); own project state, durable definitions (`registry`), or canonical history (`memory`).
 - **Interfaces:** the worker adapter consumed by `kernel/scheduler`; the `sandbox`; the `intake` service; the `inference` RPC service (`inference.generate`, `inference.health`, `inference.route`, `inference.recommend`).
 - **Language:** Go (worker, lifecycle, sandbox) with a nested Python `inference` subproject at `runtime/inference` (the former `aa-sifter`).
-- **Status:** introduced by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)); `runtime/worker` carries the moved kernel runtime; `runtime/sandbox` implements execution isolation ([ADR-0147](../adr/ADR-0147-runtime-sandbox-isolation.md)); `runtime/intake` validates result envelopes ([ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md)); the `inference` service retains provider/execution and verification. Model-locality/tier routing and budget policy are owned by the control plane (`kernel/allocator/routing`, [ADR-0151](../adr/ADR-0151-routing-and-budget-policy-in-the-allocator.md)); control-plane context is `kernel/context` ([ADR-0146](../adr/ADR-0146-context-compilation-and-a8-extraction.md)). `lifecycle` remains for later.
+- **Status:** introduced by the architecture refactor ([ADR-0140](../adr/ADR-0140-rename-sifter-to-inference-under-runtime.md)); `runtime/worker` carries the moved kernel runtime; `runtime/sandbox` implements execution isolation ([ADR-0147](../adr/ADR-0147-runtime-sandbox-isolation.md)); `runtime/intake` validates result envelopes ([ADR-0143](../adr/ADR-0143-decide-intake-and-contract-ownership.md)); the `inference` service retains provider/execution and verification. Model-locality/tier routing and budget policy are owned by the control plane (`kernel/allocator/routing`, [ADR-0151](../adr/ADR-0151-routing-and-budget-policy-in-the-allocator.md)); control-plane context is `kernel/context` ([ADR-0146](../adr/ADR-0146-context-compilation-and-a8-extraction.md)). `lifecycle` owns typed worker states, cancellation, cleanup, and lifecycle events on the scheduler dispatch path.
 
 ### 5.7 aa-forge
 
@@ -463,7 +455,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Must not:** hold runtime instances (workers, crews, assignments, executions, projects, workflows), or execute/schedule/allocate; own cross-module wire schemas (that is `contracts`).
 - **Interfaces:** definition lookups consumed by `kernel` (allocation) and `contracts` (specification schemas, contracts v2).
 - **Language:** Go.
-- **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models` is a populated registry (contracts v2 `ModelSpec`, mirrored default catalog); `teams`, `routines`, and `policies` remain reserved boundaries. Consumers use contracts v2.
+- **Status:** introduced by the architecture refactor. `roles` and `capabilities` carry existing vocabularies; `models` is a populated registry (contracts v2 `ModelSpec`, mirrored default catalog); `teams`, `routines`, and `policies` are implemented definition stores served by the control plane and persisted through `memory`. Consumers use contracts v2.
 
 ---
 
@@ -600,15 +592,21 @@ Each phase is a GitHub milestone with a tracking issue, a phase branch equal to 
 - **Exit:** each feature enables only after its evidence gate passes; backtests; deterministic fallbacks retained.
 - **Testing:** evidence gates, backtesting, golden fallbacks.
 
-### Phase 10 — `ph10-ui` — Unified interface
-- **Goal:** one entry point drives the whole workflow.
-- **Deliverables:** CLI/TUI; local web control plane; workflow configuration; plugin management; memory/issue/strategy/visualizer browsing; multi-machine status; approvals/gates.
-- **Exit:** end-to-end workflow usable from one surface; UI e2e; desktop surface addable.
-- **Testing:** UI e2e, integration, accessibility/usability.
+### Phase 10 — Control plane & console — Unified interface
+- **Goal:** a running host that serves the versioned HTTP/JSON control plane, and one entry point (the console) that drives and inspects the whole workflow through it.
+- **Deliverables:** the `app/` control-plane daemon (OpenAPI over loopback) — **10a** (`phase10a-controlplane`); the console (CLI + TUI + local web) as a client of that plane — **10b** (`phase10b-console`); read models; typed commands with idempotent, audited writes; approvals/gates.
+- **Exit:** end-to-end workflow usable from one surface over the control plane; control-plane integration + UI e2e; desktop surface addable (v2).
+- **Testing:** control-plane integration, UI e2e, accessibility/usability.
 
-### Phase 11 — `ph11-release` — Hardening & release
+### Phase 11 — console-postreq (post-console implementations)
+- **Goal:** implement the modules deferred out of v1 so nothing ships half-baked.
+- **Deliverables:** `sync`; `obsv`; `visualizer`; `registry/{teams,routines,policies}`; `runtime/lifecycle`; the A8 routing/budget residual — composed and wired into the control plane (issues [#43](https://github.com/greadee/aa/issues/43)–[#48](https://github.com/greadee/aa/issues/48)).
+- **Exit:** every deferred module implemented (or removed) and composed in the daemon; repository audit clean.
+- **Testing:** per-module suites + control-plane integration.
+
+### Phase 12 — Hardening, auth & release
 - **Goal:** a releasable v1.
-- **Deliverables:** threat model and security review; performance/load; chaos/recovery; packaging/installers; release gates and versioning; docs completion; repository audits; migration guides.
+- **Deliverables:** threat model and security review; real authn/authz (pairing, device keys, mTLS); performance/load; chaos/recovery; packaging/installers; release gates and versioning; docs completion; repository audits; migration guides.
 - **Exit:** release checklist complete; audits pass.
 - **Testing:** full matrix, security review, chaos, release-gate automation.
 

@@ -148,7 +148,11 @@ def _generate_message() -> dict:
         "jsonrpc": "2.0",
         "id": "rpc_e",
         "method": "inference.generate",
-        "params": {"tier": "local", "messages": [{"role": "user", "content": "hi"}]},
+        "params": {
+            "tier": "local",
+            "routingDecision": {"locality": "local", "tier": "local"},
+            "messages": [{"role": "user", "content": "hi"}],
+        },
     }
 
 

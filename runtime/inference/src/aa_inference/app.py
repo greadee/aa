@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from .context.compression import estimate_tokens, fit_messages
 from .context.handoff import HandoffBuilder, SecretRedactor
 from .context.packet import EscalationPacket
+from .decision import RoutingDecision
 from .decisions.approval import (
     ApprovalAction,
     ApprovalOption,
@@ -46,7 +47,6 @@ from .routing.escalation import (
     EscalationPolicy,
     EscalationRequest,
 )
-from .routing.policy import PolicyEngine, RouteDecision, RouteKind
 from .routing.preflight import PreflightAssessment, PreflightAssessor
 from .verification.verifier import NullVerifier, VerificationResult, Verifier
 
@@ -139,7 +139,6 @@ class ComputeInference:
         self.assessor = PreflightAssessor(
             self.config, classifier=self.classifier, redactor=self.redactor
         )
-        self.policy_engine = PolicyEngine(self.config)
         self.escalation_policy = EscalationPolicy(self.config)
         self.verifier = verifier or NullVerifier()
         self.trace_sink = trace_sink
@@ -168,6 +167,7 @@ class ComputeInference:
         max_cloud_cost: float | None = None,
         metadata: dict[str, Any] | None = None,
         progress: ProgressCallback | None = None,
+        decision: RoutingDecision | None = None,
     ) -> InferenceResult:
         token = _PROGRESS.set(progress)
         try:
@@ -177,6 +177,7 @@ class ComputeInference:
                 policy=policy,
                 max_cloud_cost=max_cloud_cost,
                 metadata=metadata,
+                decision=decision,
             )
         finally:
             _PROGRESS.reset(token)
@@ -188,6 +189,7 @@ class ComputeInference:
         policy: str | None = None,
         max_cloud_cost: float | None = None,
         metadata: dict[str, Any] | None = None,
+        decision: RoutingDecision | None = None,
     ) -> InferenceResult:
         start = time.perf_counter()
         metadata = dict(metadata or {})
@@ -267,36 +269,94 @@ class ComputeInference:
                     classification=classification,
                 )
 
-            effective_policy = "local_only" if force_local else policy
-            if not self.config.cloud_allowed:
-                effective_policy = "local_only"
-            route_decision = self.policy_engine.decide(
-                assessment,
-                policy=effective_policy,
-                cloud_budget_available=budget.remaining_calls > 0 and not budget.exhausted,
-            )
-            trace.log("router", f"route={route_decision.kind.value}", reason=route_decision.reasons)
+            supplied_decision = decision is not None
+            if decision is None:
+                decision = RoutingDecision(
+                    locality="local",
+                    tier="local",
+                    reason="standalone local execution; no allocator decision supplied",
+                )
+            if decision.blocked:
+                return self._finish(
+                    trace,
+                    status="blocked",
+                    answer=decision.reason or "blocked by the allocator",
+                    classification=classification,
+                    assessment=assessment,
+                    usage=usage,
+                    approvals=approvals,
+                    metadata=metadata,
+                    blocked_reason=decision.reason or "blocked by the allocator",
+                    start=start,
+                    route="blocked",
+                )
+            if not self.config.cloud_allowed and decision.locality == "cloud":
+                return self._finish(
+                    trace,
+                    status="blocked",
+                    answer="cloud execution is disabled; the routing decision cannot run",
+                    classification=classification,
+                    assessment=assessment,
+                    usage=usage,
+                    approvals=approvals,
+                    metadata=metadata,
+                    blocked_reason="cloud is disabled by the active profile",
+                    start=start,
+                    route="blocked",
+                )
+            if force_local and decision.locality == "cloud":
+                return self._finish(
+                    trace,
+                    status="blocked",
+                    answer="the human gate requires local execution; the routing decision requests cloud",
+                    classification=classification,
+                    assessment=assessment,
+                    usage=usage,
+                    approvals=approvals,
+                    metadata=metadata,
+                    blocked_reason="local execution required by the human gate",
+                    start=start,
+                    route="blocked",
+                )
+            trace.log("router", f"route={decision.locality}", reason=decision.reason)
             _emit_progress(
                 "routing",
-                route=route_decision.kind.value,
-                executor=route_decision.executor_tier.value,
-                uses_cloud=route_decision.uses_cloud,
+                route=decision.locality,
+                executor=decision.tier,
+                uses_cloud=decision.locality == "cloud",
             )
-            cloud_permitted = (effective_policy or self.config.routing_policy) != "local_only"
+            cloud_permitted = self.config.cloud_allowed and (
+                decision.locality == "cloud" or not supplied_decision
+            )
 
-            answer, verification, failed_attempts = await self._execute_route(
-                prompt=prompt,
-                context=context,
-                route=route_decision,
-                assessment=assessment,
-                classification=classification,
-                human_constraints=human_constraints,
-                approved_decisions=approved_decisions,
-                trace=trace,
-                usage=usage,
-                tracker=tracker,
-                budget=budget,
-            )
+            try:
+                answer, verification, failed_attempts = await self._execute_route(
+                    prompt=prompt,
+                    context=context,
+                    route=decision,
+                    assessment=assessment,
+                    classification=classification,
+                    human_constraints=human_constraints,
+                    approved_decisions=approved_decisions,
+                    trace=trace,
+                    usage=usage,
+                    tracker=tracker,
+                    budget=budget,
+                )
+            except BudgetExceeded as exc:
+                return self._finish(
+                    trace,
+                    status="blocked",
+                    answer=str(exc),
+                    classification=classification,
+                    assessment=assessment,
+                    usage=usage,
+                    approvals=approvals,
+                    metadata=metadata,
+                    blocked_reason=str(exc),
+                    start=start,
+                    route=decision.locality,
+                )
 
             status = "completed" if verification.passed else "failed"
             if not verification.passed:
@@ -335,7 +395,7 @@ class ComputeInference:
                 },
                 blocked_reason=None,
                 start=start,
-                route=route_decision.kind.value,
+                route=decision.locality,
             )
         except asyncio.CancelledError:
             trace.log("aa_inference", "cancelled", level="warning")
@@ -534,7 +594,7 @@ class ComputeInference:
         *,
         prompt: str,
         context: str | None,
-        route: RouteDecision,
+        route: RoutingDecision,
         assessment: PreflightAssessment,
         classification: DecisionClassification,
         human_constraints: list[str],
@@ -549,7 +609,7 @@ class ComputeInference:
         )
         failed_attempts = 0
 
-        if route.kind == RouteKind.CLOUD:
+        if route.locality == "cloud":
             answer, _ = await self._call_tier(
                 Tier.EXPERT,
                 base_messages,
@@ -561,61 +621,6 @@ class ComputeInference:
             )
             verification = await self.verifier.verify(answer=answer)
             _emit_progress("verifying", passed=verification.passed, stage="cloud")
-            return answer, verification, failed_attempts
-
-        if route.kind == RouteKind.HYBRID:
-            plan_messages = [
-                Message.system(
-                    "Produce a concise implementation plan with acceptance criteria and "
-                    "likely files. Do NOT write the final answer yet. Respect human constraints."
-                ),
-                Message.user(prompt),
-            ]
-            plan, _ = await self._call_tier(
-                Tier.EXPERT,
-                plan_messages,
-                trace=trace,
-                usage=usage,
-                tracker=tracker,
-                budget=budget,
-                purpose="cloud_plan",
-            )
-            exec_messages = self._execution_messages(
-                prompt, context, human_constraints, approved_decisions + [f"Plan: {plan}"]
-            )
-            answer, _ = await self._call_tier(
-                Tier.LOCAL,
-                exec_messages,
-                trace=trace,
-                usage=usage,
-                tracker=tracker,
-                budget=budget,
-                purpose="local_execute",
-            )
-            verification = await self.verifier.verify(answer=answer)
-            _emit_progress("verifying", passed=verification.passed, stage="hybrid")
-            if not verification.passed:
-                failed_attempts += 1
-            else:
-                review_messages = [
-                    Message.system(
-                        "Review the implementation against the plan. Point out concrete issues only."
-                    ),
-                    Message.user(f"Plan:\n{plan}\n\nImplementation:\n{answer}"),
-                ]
-                try:
-                    review, _ = await self._call_tier(
-                        Tier.EXPERT,
-                        review_messages,
-                        trace=trace,
-                        usage=usage,
-                        tracker=tracker,
-                        budget=budget,
-                        purpose="cloud_review",
-                    )
-                    answer = f"{answer}\n\n---\nExpert review:\n{review}"
-                except BudgetExceeded:
-                    trace.log("budget", "skipping expert review", level="warning")
             return answer, verification, failed_attempts
 
         # LOCAL with bounded retries and repair.
@@ -940,7 +945,7 @@ class ComputeInference:
             trace_id=trace.trace_id,
             status=status,
             answer=answer,
-            route=route or (assessment.recommended_route if assessment else "local"),
+            route=route or "local",
             decision_level=classification.level if classification else DecisionLevel.ROUTINE,
             requires_human_approval=bool(classification and classification.requires_human_approval),
             blocked_reason=blocked_reason,

@@ -1,0 +1,34 @@
+@startuml
+title Phase 10a — Control Plane — plan
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:10a.1 plan;
+partition "Server" {
+  :10a.2 app/ daemon serving kernel/api over loopback HTTP;
+  :health/ready;
+}
+partition "Resources" {
+  :10a.3 projects + work (memory + kernel planner/scheduler/allocator);
+  :10a.4 memory + retrieval;
+  :10a.5 tools (toolbox host/policy) + nodes (single-node);
+}
+partition "Hardening" {
+  :10a.6 rpc-v1 envelope/errors; bearer carrying; fake/no-model path;
+}
+:10a.7 httptest integration + docs + summary;
+
+stop
+
+note right
+  Spec: contracts/openapi/control-plane-v1.yaml.
+  Loopback only; authn = phase 12.
+  Core path deterministic (no model).
+  Budget: ~7 commits (phase 10 total 10-15).
+  Console TUI/UI design: decided separately (phase 10b).
+end note
+
+@enduml

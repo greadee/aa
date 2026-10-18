@@ -17,6 +17,10 @@ tags:
   - name: work
   - name: memory
   - name: nodes
+  - name: observations
+  - name: visualizer
+  - name: registry
+  - name: runtime
   - name: tools
 paths:
   /health:
@@ -241,14 +245,300 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    authority:
-                      type: boolean
-                    state:
-                      type: string
+                  $ref: "#/components/schemas/NodeRecord"
+  /sync/status:
+    get:
+      tags: [nodes]
+      summary: Sync node registry and transfer status
+      responses:
+        "200":
+          description: Sync status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncStatus"
+  /observations/{sessionId}:
+    get:
+      tags: [observations]
+      summary: Replay observation events for a session
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+        - name: after
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Observation events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ObservationEvent"
+  /observations/{sessionId}/report:
+    get:
+      tags: [observations]
+      summary: Deterministic work report for a session
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      responses:
+        "200":
+          description: Work report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservationReport"
+  /observations/{sessionId}/stream:
+    get:
+      tags: [observations]
+      summary: Subscribe to live observations (server-sent events)
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+        - name: after
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Observation stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /observations/{sessionId}/codex:
+    post:
+      tags: [observations]
+      summary: Translate Codex exec JSONL into observations
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Ingested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodexIngest"
+  /visualizer/sessions:
+    get:
+      tags: [visualizer]
+      summary: Browse observed and canonical sessions
+      responses:
+        "200":
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VisualizerSession"
+  /visualizer/sessions/{sessionId}/timeline:
+    get:
+      tags: [visualizer]
+      summary: Retained replay frame metadata for a session
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      responses:
+        "200":
+          description: Timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisualizerTimeline"
+        "404":
+          description: Unknown session
+  /visualizer/sessions/{sessionId}/graph:
+    get:
+      tags: [visualizer]
+      summary: Deterministic projected graph for a session
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      responses:
+        "200":
+          description: Graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisualizerGraph"
+        "404":
+          description: Unknown session
+  /visualizer/sessions/{sessionId}/stream:
+    get:
+      tags: [visualizer]
+      summary: Live projected events (server-sent events)
+      parameters:
+        - $ref: "#/components/parameters/sessionId"
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /teams:
+    get:
+      tags: [registry]
+      summary: List team definitions
+      responses:
+        "200":
+          description: Teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamSpec"
+    post:
+      tags: [registry]
+      summary: Register a team definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamSpec"
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Invalid definition
+        "409":
+          description: Already defined
+  /teams/{teamId}:
+    get:
+      tags: [registry]
+      summary: Get a team definition
+      parameters:
+        - $ref: "#/components/parameters/teamId"
+      responses:
+        "200":
+          description: Team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamSpec"
+        "404":
+          description: Not found
+  /routines:
+    get:
+      tags: [registry]
+      summary: List routine definitions
+      responses:
+        "200":
+          description: Routines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Routine"
+    post:
+      tags: [registry]
+      summary: Register a routine definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Routine"
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Invalid definition
+        "409":
+          description: Already defined
+  /routines/{routineId}:
+    get:
+      tags: [registry]
+      summary: Get a routine definition
+      parameters:
+        - $ref: "#/components/parameters/routineId"
+      responses:
+        "200":
+          description: Routine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Routine"
+        "404":
+          description: Not found
+  /policies:
+    get:
+      tags: [registry]
+      summary: List policy definitions
+      responses:
+        "200":
+          description: Policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PolicyDefinition"
+    post:
+      tags: [registry]
+      summary: Register a policy definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyDefinition"
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Invalid definition
+        "409":
+          description: Already defined
+  /policies/{policyId}:
+    get:
+      tags: [registry]
+      summary: Get a policy definition
+      parameters:
+        - $ref: "#/components/parameters/policyId"
+      responses:
+        "200":
+          description: Policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyDefinition"
+        "404":
+          description: Not found
+  /workers:
+    get:
+      tags: [runtime]
+      summary: List runtime worker lifecycle instances
+      responses:
+        "200":
+          description: Workers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkerLifecycle"
+  /workers/events:
+    get:
+      tags: [runtime]
+      summary: List retained worker lifecycle events
+      responses:
+        "200":
+          description: Lifecycle events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkerLifecycleEvent"
   /tools:
     get:
       tags: [tools]
@@ -271,6 +561,30 @@ components:
   parameters:
     projectId:
       name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+    teamId:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: string
+    routineId:
+      name: routineId
+      in: path
+      required: true
+      schema:
+        type: string
+    policyId:
+      name: policyId
       in: path
       required: true
       schema:
@@ -367,6 +681,314 @@ components:
           type: string
         guidance:
           type: string
+    NodeRecord:
+      type: object
+      required: [id, authority, state]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        authority:
+          type: boolean
+        state:
+          type: string
+    SyncStatus:
+      type: object
+      required: [localNode, nodes, transfers]
+      properties:
+        localNode:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncNode"
+        transfers:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncTransfer"
+    SyncNode:
+      type: object
+      required: [id, local, state]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        local:
+          type: boolean
+        state:
+          type: string
+    SyncTransfer:
+      type: object
+      required: [transferId, state, bytes]
+      properties:
+        transferId:
+          type: string
+        nodeId:
+          type: string
+        workPackageId:
+          type: string
+        artifactId:
+          type: string
+        state:
+          type: string
+        hash:
+          type: string
+        bytes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+    ObservationEvent:
+      type: object
+      required: [version, sessionId, sequence, sourceType, sourceConfidence]
+      properties:
+        version:
+          type: string
+        sessionId:
+          type: string
+        sequence:
+          type: integer
+        occurredAt:
+          type: string
+        sourceType:
+          type: string
+          enum: [session, tool, file, work_delta]
+        source:
+          type: string
+        action:
+          type: string
+        sourceConfidence:
+          type: string
+          enum: [exact, correlated, observed, inferred]
+        actor:
+          type: string
+        workPackageId:
+          type: string
+        attemptId:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    ObservationCount:
+      type: object
+      required: [label, count]
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+    ObservationReport:
+      type: object
+      required: [sessionId, events, firstSequence, lastSequence]
+      properties:
+        sessionId:
+          type: string
+        events:
+          type: integer
+        firstSequence:
+          type: integer
+        lastSequence:
+          type: integer
+        bySourceType:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObservationCount"
+        byConfidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObservationCount"
+        workPackages:
+          type: array
+          items:
+            type: string
+        actors:
+          type: array
+          items:
+            type: string
+    CodexIngest:
+      type: object
+      required: [accepted, dropped]
+      properties:
+        accepted:
+          type: integer
+        dropped:
+          type: integer
+    VisualizerSession:
+      type: object
+      required: [id, startSequence, endSequence, eventCount]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        actors:
+          type: array
+          items:
+            type: string
+        startSequence:
+          type: integer
+        endSequence:
+          type: integer
+        eventCount:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+    VisualizerNode:
+      type: object
+      required: [id, kind, sequence]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        label:
+          type: string
+        ref:
+          type: string
+        sequence:
+          type: integer
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    VisualizerEdge:
+      type: object
+      required: [from, to, kind, sequence]
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        kind:
+          type: string
+        sequence:
+          type: integer
+    VisualizerGraph:
+      type: object
+      required: [sessionId, nodes, edges]
+      properties:
+        sessionId:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisualizerNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisualizerEdge"
+    VisualizerFrame:
+      type: object
+      required: [index, sequence, nodes, edges]
+      properties:
+        index:
+          type: integer
+        sequence:
+          type: integer
+        eventId:
+          type: string
+        type:
+          type: string
+        nodes:
+          type: integer
+        edges:
+          type: integer
+    VisualizerTimeline:
+      type: object
+      required: [sessionId, frames]
+      properties:
+        sessionId:
+          type: string
+        frames:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisualizerFrame"
+    TeamSpec:
+      $ref: "../schemas/v2/team-spec.schema.json"
+    Routine:
+      $ref: "../schemas/v2/routine.schema.json"
+    PolicyDefinition:
+      type: object
+      required: [contractVersion, kind, id, title, policyKind, version]
+      properties:
+        contractVersion:
+          type: string
+        kind:
+          const: policy_definition
+        id:
+          type: string
+        projectId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        revision:
+          type: integer
+        title:
+          type: string
+        policyKind:
+          type: string
+          enum: [approval, budget, routing, gate]
+        version:
+          type: string
+        description:
+          type: string
+    WorkerLifecycle:
+      type: object
+      required: [id, state]
+      properties:
+        id:
+          type: string
+        selectedWorker:
+          type: string
+        assignmentId:
+          type: string
+        workPackageId:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        state:
+          type: string
+          enum: [created, starting, running, stopping, stopped, terminated, failed]
+        createdAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        summary:
+          type: string
+        error:
+          type: string
+    WorkerLifecycleEvent:
+      type: object
+      required: [workerId, state]
+      properties:
+        workerId:
+          type: string
+        assignmentId:
+          type: string
+        workPackageId:
+          type: string
+        state:
+          type: string
+          enum: [created, starting, running, stopping, stopped, terminated, failed]
+        reason:
+          type: string
+        at:
+          type: string
+          format: date-time
     ToolManifest:
       type: object
       required: [contractVersion, kind, id, name, toolKind, version, capabilities]

@@ -3,7 +3,7 @@
 > Project history for the `ui/surfaces/tui` submodule of [aa-ui](./README.md).
 
 **Responsibility** — The terminal-UI surface, driving the platform through the
-control-plane API. Scaffolded; delivered in ph10-ui.
+control-plane API. Scaffolded; delivered in phase10b-console.
 
 **Source** — [`ui/surfaces/tui/`](../../../ui/surfaces/tui/)
 

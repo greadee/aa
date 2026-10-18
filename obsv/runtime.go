@@ -108,6 +108,13 @@ func (m *Manager) Ensure(sessionID string) (*Runtime, error) {
 	return r, nil
 }
 
+// Server returns the in-process observation transport the manager owns.
+//
+// Consumers attach to this shared surface instead of opening a second
+// observation transport or journal. It carries observations only and grants no
+// execution authority.
+func (m *Manager) Server() transport.Server { return m.host }
+
 // Close closes the transport and every owned session journal.
 func (m *Manager) Close() error {
 	m.mu.Lock()

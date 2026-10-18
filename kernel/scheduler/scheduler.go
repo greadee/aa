@@ -30,6 +30,15 @@ type Sink interface {
 	Record(kind, id string, data []byte) error
 }
 
+// WorkerLifecycle observes the dispatch path: Begin marks a worker instance
+// running before the adapter is invoked and returns the instance id; End
+// records the terminal state after the adapter returns. Implementations must
+// not block or alter the result.
+type WorkerLifecycle interface {
+	Begin(assignmentID, workPackageID, workerID string, capabilities []string) string
+	End(workerID string, result worker.Result, err error)
+}
+
 // NopSink discards everything.
 type NopSink struct{}
 
@@ -46,6 +55,7 @@ type Config struct {
 	Gates         []gate.Gate
 	Compiler      kcontext.Compiler
 	Sink          Sink
+	Lifecycle     WorkerLifecycle
 	Permitted     []string
 	Enabled       bool
 	LeaseTTL      time.Duration
@@ -193,6 +203,10 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 	})
 	o.mu.Unlock()
 
+	var instanceID string
+	if o.cfg.Lifecycle != nil {
+		instanceID = o.cfg.Lifecycle.Begin(assignmentID, workPackageID, string(selected.ID), executionContract.Capabilities)
+	}
 	result, err := o.cfg.Runtime.Run(ctx, worker.Request{
 		AssignmentID:   assignmentID,
 		WorkPackageID:  workPackageID,
@@ -201,6 +215,9 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 		ContextDigest:  bundle.Digest,
 		Capabilities:   executionContract.Capabilities,
 	})
+	if o.cfg.Lifecycle != nil {
+		o.cfg.Lifecycle.End(instanceID, result, err)
+	}
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			o.mu.Lock()

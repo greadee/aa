@@ -134,6 +134,7 @@ async def test_expert_generate_redacts_secret_over_transport(config, runtime_dir
             result = await client.generate(
                 {
                     "tier": "expert",
+                    "routingDecision": {"locality": "cloud", "tier": "expert"},
                     "messages": [{"role": "user", "content": SECRET}],
                 }
             )
@@ -157,6 +158,7 @@ async def test_local_only_profile_yields_zero_expert_traffic(config, runtime_dir
                 await client.generate(
                     {
                         "tier": "expert",
+                        "routingDecision": {"locality": "cloud", "tier": "expert"},
                         "messages": [{"role": "user", "content": "deploy the thing"}],
                     }
                 )
@@ -175,6 +177,7 @@ async def test_local_generate_does_not_leak_or_redact_locally(config, runtime_di
             await client.generate(
                 {
                     "tier": "local",
+                    "routingDecision": {"locality": "local", "tier": "local"},
                     "messages": [{"role": "user", "content": SECRET}],
                 }
             )

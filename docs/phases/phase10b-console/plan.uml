@@ -1,0 +1,37 @@
+@startuml
+title Phase 10b — Console — plan
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:10b.1 plan;
+
+partition "Client" {
+  :10b.2 control-plane client (contracts) + fake + httptest;
+  :10b.3 read models / view models;
+}
+
+partition "Surfaces (one view-model layer)" {
+  :10b.4 Surface interface + text (TUI) surface;
+  :10b.5 local web surface (HTML + plain-text alt);
+}
+
+partition "Interaction" {
+  :10b.6 typed commands + idempotency + audit + approvals;
+}
+
+:10b.7 entry point + tests + docs + summary;
+
+stop
+
+note right
+  Console imports only contracts.
+  Metadata-only rendering.
+  Go stdlib only; no desktop (v2).
+  Budget: ~7 commits (phase 10 total 10-15).
+  TUI appearance/components: decided with maintainer.
+end note
+
+@enduml
