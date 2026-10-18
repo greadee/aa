@@ -55,6 +55,19 @@
     "docs/updates/architecture-refactor-1/plan.md",
     "docs/updates/architecture-refactor-1/summary.md",
     "docs/updates/issue-impl-sep28/plan.md",
-    "docs/updates/issue-impl-sep28/summary.md"
+    "docs/updates/issue-impl-sep28/summary.md",
+    "docs/issues/toolbox-pre-hardening.md",
+    "docs/issues/toolbox-rpc-toctou-race.md",
+    "docs/issues/toolbox-stale-contract-version.md",
+    "docs/issues/toolbox-rpc-typed-requests.md",
+    "docs/issues/toolbox-rpc-timeout.md",
+    "docs/issues/toolbox-rpc-error-structure.md",
+    "docs/issues/toolbox-workflow-config-validation.md",
+    "docs/issues/toolbox-metrics-observability.md",
+    "docs/issues/toolbox-contract-file-split.md",
+    "docs/issues/toolbox-contracts-parity-review.md",
+    "docs/updates/toolbox-pre-hardening/plan.md",
+    "docs/updates/toolbox-pre-hardening/pr-body.md",
+    "docs/updates/toolbox-pre-hardening/milestone.md"
   ]
 }

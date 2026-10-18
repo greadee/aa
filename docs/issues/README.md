@@ -27,3 +27,13 @@ Durable issue documentation. GitHub issues are the execution record; these docum
 | [imp-8-scheduling-multi-agent-execution.md](imp-8-scheduling-multi-agent-execution.md) | ISS-IMP-8 (#30) | `kernel/scheduler`, `runtime`: scheduling & multi-agent execution | `dev` |
 | [imp-9-learning-experience-feedback.md](imp-9-learning-experience-feedback.md) | ISS-IMP-9 (#31) | `kernel/joblearn`, `memory`: learning / experience feedback | `dev` |
 | [imp-10-observability-hardening-e2e.md](imp-10-observability-hardening-e2e.md) | ISS-IMP-10 (#32) | `obsv` + all: observability, hardening & e2e validation | `dev` |
+| [toolbox-pre-hardening.md](toolbox-pre-hardening.md) | (umbrella) | Pre-hardening sprint: TOCTOU race, stale contracts, RPC fragility, missing timeouts, untyped config, observability, file split, binding parity | `dev` |
+| [toolbox-rpc-toctou-race.md](toolbox-rpc-toctou-race.md) | (P0) | RPC TOCTOU race in `Service.Handle` — concurrent identical requests can execute provider twice | `dev` |
+| [toolbox-stale-contract-version.md](toolbox-stale-contract-version.md) | (P1) | Test fixtures use stale `ContractVersion: "1.0"` instead of active `"2.0"` | `dev` |
+| [toolbox-rpc-typed-requests.md](toolbox-rpc-typed-requests.md) | (P1) | RPC layer uses `map[string]any` — no compile-time safety | `dev` |
+| [toolbox-rpc-timeout.md](toolbox-rpc-timeout.md) | (P2) | `TimeoutMS` field on `AA` struct is never honored | `dev` |
+| [toolbox-rpc-error-structure.md](toolbox-rpc-error-structure.md) | (P2) | RPC error responses lack structured diagnostic data | `dev` |
+| [toolbox-workflow-config-validation.md](toolbox-workflow-config-validation.md) | (P2) | `WorkflowStep.Config` is untyped — no per-step-kind validation | `dev` |
+| [toolbox-metrics-observability.md](toolbox-metrics-observability.md) | (P2) | No metrics or observability beyond in-memory audit log | `dev` |
+| [toolbox-contract-file-split.md](toolbox-contract-file-split.md) | (P3) | Large contract files should be split into domain-specific units | `dev` |
+| [toolbox-contracts-parity-review.md](toolbox-contracts-parity-review.md) | (P3) | Python/TypeScript bindings not reviewed for parity with Go | `dev` |
