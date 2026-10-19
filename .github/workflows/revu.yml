@@ -39,7 +39,7 @@ jobs:
         with:
           profile: pr
           semantic: "false"
-          base: origin/${{ github.base_ref }}
+          base: origin/${{ github.base_ref || 'main' }}
           head: ${{ github.event.pull_request.head.sha || github.sha }}
           pr: ${{ github.event.pull_request.number || inputs.pr }}
           repository: ${{ github.repository }}
