@@ -33,9 +33,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - env:
+        env:
           GITHUB_TOKEN: ${{ secrets.REVU_GITHUB_TOKEN }}
-        uses: greadee/review-engine@main
+      - uses: greadee/review-engine@main
         with:
           profile: pr
           semantic: "false"
@@ -49,3 +49,5 @@ jobs:
           provider: openai-compatible
           model: qwen/qwen3.6-35b-a3b:4bit
           base-url: http://localhost:1234
+        env:
+          GITHUB_TOKEN: ${{ secrets.REVU_GITHUB_TOKEN }}
