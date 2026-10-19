@@ -24,6 +24,8 @@ jobs:
     name: revu (pr review)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.REVU_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
