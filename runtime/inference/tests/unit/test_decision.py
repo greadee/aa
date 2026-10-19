@@ -10,9 +10,7 @@ from aa_inference.models.provider import Tier
 def test_parses_local_and_cloud_decisions():
     local = parse_routing_decision({"locality": "local", "tier": "local"})
     assert local.provider_tier == Tier.LOCAL
-    cloud = parse_routing_decision(
-        {"locality": "cloud", "tier": "expert", "estimatedCostUsd": 0.2}
-    )
+    cloud = parse_routing_decision({"locality": "cloud", "tier": "expert", "estimatedCostUsd": 0.2})
     assert cloud.provider_tier == Tier.EXPERT
     assert cloud.estimated_cost_usd == 0.2
 

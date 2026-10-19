@@ -51,9 +51,7 @@ class RoutingDecision(BaseModel):
         if self.estimated_cost_usd is not None and self.estimated_cost_usd < 0:
             raise ContractError("routingDecision: estimatedCostUsd must be >= 0")
         if self.decision_level not in _DECISION_LEVELS:
-            raise ContractError(
-                f"routingDecision: unknown decisionLevel {self.decision_level!r}"
-            )
+            raise ContractError(f"routingDecision: unknown decisionLevel {self.decision_level!r}")
 
 
 def parse_routing_decision(payload: Any) -> RoutingDecision:
