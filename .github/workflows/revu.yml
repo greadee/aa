@@ -29,13 +29,13 @@ jobs:
     name: revu (pr review)
     if: github.event_name == 'pull_request' || inputs.pr != ''
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.REVU_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: greadee/review-engine@main
+      - env:
+          GITHUB_TOKEN: ${{ secrets.REVU_GITHUB_TOKEN }}
+        uses: greadee/review-engine@main
         with:
           profile: pr
           semantic: "false"
