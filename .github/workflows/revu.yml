@@ -39,3 +39,6 @@ jobs:
           publish: "true"
           comment: "true"
           block: "true"
+          provider: openai-compatible
+          model: qwen/qwen3.6-35b-a3b:4bit
+          base-url: http://localhost:1234
