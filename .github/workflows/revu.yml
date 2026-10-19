@@ -9,6 +9,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      pr:
+        description: "Pull request number to review"
+        required: true
+        type: number
 
 permissions:
   contents: write
@@ -16,13 +21,13 @@ permissions:
   issues: write
 
 concurrency:
-  group: revu-${{ github.event.pull_request.number || github.ref }}
+  group: revu-${{ github.event.pull_request.number || inputs.pr || github.ref }}
   cancel-in-progress: true
 
 jobs:
   review:
     name: revu (pr review)
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || inputs.pr != ''
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.REVU_GITHUB_TOKEN }}
@@ -35,8 +40,8 @@ jobs:
           profile: pr
           semantic: "false"
           base: origin/${{ github.base_ref }}
-          head: ${{ github.event.pull_request.head.sha }}
-          pr: ${{ github.event.pull_request.number }}
+          head: ${{ github.event.pull_request.head.sha || github.sha }}
+          pr: ${{ github.event.pull_request.number || inputs.pr }}
           repository: ${{ github.repository }}
           publish: "true"
           comment: "true"
