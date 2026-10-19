@@ -1,0 +1,61 @@
+{
+  "ID": "pr@7aaff6481924",
+  "Profile": "pr",
+  "Repository": "greadee/aa",
+  "Ref": "7aaff6481924f481cb9be66b3250874c4b8b2ed2",
+  "Base": "origin/main",
+  "Head": "7aaff6481924f481cb9be66b3250874c4b8b2ed2",
+  "Generated": "2026-10-19T01:28:33.325914171Z",
+  "Findings": [
+    {
+      "id": "90997f65042ad76bb488fd65e2057db1",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/rpc/rpc.go",
+        "line": 222,
+        "snippet": "if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {",
+      "status": "new",
+      "firstSeen": "pr@7aaff6481924",
+      "lastSeen": "pr@7aaff6481924",
+      "runId": "pr@7aaff6481924",
+      "unverified": true
+    },
+    {
+      "id": "0ea80a868c3e0502043df4791f8621bf",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/workflow/compile.go",
+        "line": 48,
+        "snippet": "if s.Retries != nil \u0026\u0026 *s.Retries \u003c 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if s.Retries != nil \u0026\u0026 *s.Retries \u003c 0 {",
+      "status": "new",
+      "firstSeen": "pr@7aaff6481924",
+      "lastSeen": "pr@7aaff6481924",
+      "runId": "pr@7aaff6481924",
+      "unverified": true
+    }
+  ],
+  "Resolved": null,
+  "BlockThreshold": "P1",
+  "ArchiveURL": "",
+  "Coverage": {
+    "selected": 97,
+    "analyzed": 97,
+    "skipped": 37,
+    "truncated": 0,
+    "threshold": 1
+  }
+}
