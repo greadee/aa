@@ -12,10 +12,14 @@ import (
 // against the handler with a deterministic backend.
 func TestOpenAPIPaths(t *testing.T) {
 	s := New(Config{
-		Version: "0.1.0",
-		Token:   "t",
-		Status:  func() Status { return Status{Nodes: 1} },
-		Backend: fakeBackend{},
+		Version:      "0.1.0",
+		Token:        "t",
+		Status:       func() Status { return Status{Nodes: 1} },
+		Backend:      fakeBackend{},
+		Observations: fakeObservations{},
+		Visualizer:   fakeVisualizer{},
+		Registry:     fakeRegistry{},
+		Lifecycle:    fakeLifecycle{},
 	})
 	cases := []struct {
 		method, path, body string
@@ -33,6 +37,24 @@ func TestOpenAPIPaths(t *testing.T) {
 		{http.MethodGet, APIPrefix + "/projects/p1/events", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/assignments", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/nodes", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/sync/status", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/observations/s1", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/observations/s1/report", "", http.StatusOK},
+		{http.MethodPost, APIPrefix + "/observations/s1/codex", `{"type":"tool_call"}`, http.StatusOK},
+		{http.MethodGet, APIPrefix + "/visualizer/sessions", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/visualizer/sessions/s1/timeline", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/visualizer/sessions/s1/graph", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/teams", "", http.StatusOK},
+		{http.MethodPost, APIPrefix + "/teams", `{"id":"team_new"}`, http.StatusCreated},
+		{http.MethodGet, APIPrefix + "/teams/team_eng", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/routines", "", http.StatusOK},
+		{http.MethodPost, APIPrefix + "/routines", `{"id":"routine_new"}`, http.StatusCreated},
+		{http.MethodGet, APIPrefix + "/routines/routine_feature", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/policies", "", http.StatusOK},
+		{http.MethodPost, APIPrefix + "/policies", `{"id":"policy_new"}`, http.StatusCreated},
+		{http.MethodGet, APIPrefix + "/policies/policy_budget", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/workers", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/workers/events", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/tools", "", http.StatusOK},
 		{http.MethodPost, APIPrefix + "/approvals/g1", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/nope", "", http.StatusNotFound},

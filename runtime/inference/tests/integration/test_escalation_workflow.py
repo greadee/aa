@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from aa_inference.decision import RoutingDecision
 from aa_inference.models.config import InferenceConfig
 from aa_inference.models.provider import ProviderError
 from tests.fixtures.helpers import HARD_DEBUGGING_TASK, make_inference
@@ -79,7 +80,11 @@ async def test_scripted_cloud_recovery_preserves_local_context(config: Inference
 async def test_local_only_policy_never_touches_cloud(config: InferenceConfig, store):
     provider = FakeProvider(fail_local=True, fail_local_times=100)
     aa_inference = make_inference(config, provider, store=store)
-    result = await aa_inference.run(HARD_DEBUGGING_TASK, policy="local_only")
+    result = await aa_inference.run(
+        HARD_DEBUGGING_TASK,
+        policy="local_only",
+        decision=RoutingDecision(locality="local", tier="local"),
+    )
 
     assert provider.cloud_calls == 0
     assert result.status == "failed"

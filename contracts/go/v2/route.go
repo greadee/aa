@@ -5,12 +5,13 @@ import "fmt"
 // RouteRequest asks aa-inference to route a prompt.
 type RouteRequest struct {
 	Envelope
-	AttemptID string         `json:"attemptId,omitempty"`
-	Prompt    string         `json:"prompt"`
-	Context   string         `json:"context,omitempty"`
-	Policy    string         `json:"policy,omitempty"`
-	Budget    *Budget        `json:"budget,omitempty"`
-	Metadata  map[string]any `json:"metadata,omitempty"`
+	AttemptID       string           `json:"attemptId,omitempty"`
+	Prompt          string           `json:"prompt"`
+	Context         string           `json:"context,omitempty"`
+	Policy          string           `json:"policy,omitempty"`
+	Budget          *Budget          `json:"budget,omitempty"`
+	RoutingDecision *RoutingDecision `json:"routingDecision,omitempty"`
+	Metadata        map[string]any   `json:"metadata,omitempty"`
 }
 
 // Validate checks the route-request contract.
@@ -27,6 +28,11 @@ func (r RouteRequest) Validate() error {
 	if r.Policy != "" {
 		if err := RequireEnum("policy", r.Policy,
 			"local_only", "cloud_only", "local_first", "expert_first", "adaptive", "budget_constrained"); err != nil {
+			return err
+		}
+	}
+	if r.RoutingDecision != nil {
+		if err := r.RoutingDecision.Validate(); err != nil {
 			return err
 		}
 	}

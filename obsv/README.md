@@ -4,7 +4,7 @@ Product-neutral work observation: protocol, durable emitter, local transport, jo
 
 - **Owns:** observation protocol v1, `Durable` projection, bounded failure-open emitter, attach-or-own local transport, journal with replay/subscribe/retention, work reports, Codex `exec` translator.
 - **Must not:** call models, own graph state or canonical project history, or require a runtime.
-- **Status:** implemented. The kernel host wiring (an `obsv`-backed sink) is a follow-up.
+- **Status:** implemented and composed into the `app/` control plane in phase 11 (durable per-session journals, replay/subscribe, deterministic reports, Codex translation). The kernel host wiring (an `obsv`-backed sink inside kernel seams) is a follow-up.
 - **Directive:** [aa-obsrv.md](aa-obsrv.md)
 - **Architecture:** [../docs/architecture/README.md](../docs/architecture/README.md)
 - **Module update:** [plan.md](../docs/modules/obsv/updates/observation-substrate/plan.md) · [summary.md](../docs/modules/obsv/updates/observation-substrate/summary.md)

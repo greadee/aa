@@ -2,7 +2,7 @@
 
 Decode a prompt and route it to the appropriate local or cloud model under budget and approval.
 
-- **Owns:** classification, human approval gate, preflight, policy routing, budgets, escalation, provider abstraction (Ollama/OpenAI-compatible), verification, context compression/handoff, compute orchestration across local/cloud.
+- **Owns:** classification, human approval gate, preflight, budget accounting, escalation, provider abstraction (Ollama/OpenAI-compatible), verification, context compression/handoff, and executing the allocator's routing decision across local/cloud. Routing policy and the budget gate are owned by `kernel/allocator/routing`.
 - **Must not:** hold project state or perform orchestration.
 - **Status:** implemented (phase 4); production RPC wiring implemented (module update).
 - **Directive:** [aa-inference.md](aa-inference.md)

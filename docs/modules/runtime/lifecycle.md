@@ -2,9 +2,12 @@
 
 > Project history for the `runtime/lifecycle` submodule of [aa-runtime](./README.md).
 
-**Responsibility** — Reserved boundary for worker lifecycle: instantiation,
-start/stop, termination, and lifecycle events. Behavior lands with later issues;
-the refactor only reserves the boundary.
+**Responsibility** — Worker lifecycle: instantiation, start/run/stop,
+termination, cancellation, cleanup, and lifecycle events. The manager implements
+the provider-neutral `worker.Adapter` seam (`Run`) and the scheduler's
+`WorkerLifecycle` hook (`Begin`/`End`). Events are failure-open and are wired to
+`obsv` in the composition root; the manager holds no durable definitions or
+canonical history.
 
 **Source** — [`runtime/lifecycle/`](../../../runtime/lifecycle/)
 

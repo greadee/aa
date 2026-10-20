@@ -74,3 +74,17 @@ func TestUnknownPolicyIsInvalid(t *testing.T) {
 		t.Fatalf("negative tokens: %v", err)
 	}
 }
+
+func TestDecisionContract(t *testing.T) {
+	decision, err := Decide(Request{Policy: CloudOnly, Significance: Major, CloudAllowed: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wire := decision.Contract()
+	if err := wire.Validate(); err != nil {
+		t.Fatalf("contract is invalid: %v", err)
+	}
+	if wire.Locality != "cloud" || wire.Tier != "expert" || wire.DecisionLevel != "major" {
+		t.Fatalf("contract = %+v", wire)
+	}
+}

@@ -1,0 +1,34 @@
+@startuml
+title Phase 11 — console-postreq — summary
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:11.1 plan and scope (branch ph11-postreq -> dev; tracker milestone v1 - phases 11-12);
+
+partition "Deferred modules delivered" {
+  :#43 sync: single-node node registry, /nodes + /sync/status (ADR-0154);
+  :#44 obsv: durable journals, sanitize, replay/subscribe, reports, codex;
+  :#45 visualizer: replay/live over obsv, memory browse, /visualizer/*;
+  :#46 registry: teams/routines/policies stores, memory-backed, /teams|/routines|/policies;
+  :#47 lifecycle: typed states, cancellation, events, /workers;
+  :#48 A8: routingDecision over RPC, python policy retired (ADR-0151);
+}
+
+:11.8 summary + close out issues;
+:revu --profile pr (static-only): 0 findings; archtest clean;
+
+stop
+
+note right
+  Compose into app/ (control plane).
+  Gates: gofmt/build/vet/test,
+  python pytest/ruff/mypy,
+  archtest, control-plane httptest,
+  revu (bot-authored, static-only).
+  Deferred: multi-machine sync, desktop.
+end note
+
+@enduml

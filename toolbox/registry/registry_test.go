@@ -14,7 +14,7 @@ func manifest(id, kind string, caps ...string) toolbox.Manifest {
 	}
 	return toolbox.Manifest{
 		Envelope: toolbox.Envelope{
-			ContractVersion: "1.0",
+			ContractVersion: "2.0",
 			Kind:            "tool_manifest",
 			ID:              id,
 		},

@@ -79,6 +79,13 @@ func (fakeBackend) Events(string) []json.RawMessage     { return nil }
 func (fakeBackend) Nodes() []Node {
 	return []Node{{ID: "local", Authority: true, State: "ready"}}
 }
+func (fakeBackend) SyncStatus() SyncStatus {
+	return SyncStatus{
+		LocalNode: "local",
+		Nodes:     []SyncNode{{ID: "local", Local: true, State: "ready"}},
+		Transfers: []SyncTransfer{},
+	}
+}
 func (fakeBackend) Tools() []Tool {
 	return []Tool{{ID: "tool_screen", Kind: "builtin"}}
 }
@@ -122,6 +129,11 @@ func TestResourcesRequireTokenAndServe(t *testing.T) {
 	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/nodes", nil)))
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "local") {
 		t.Fatalf("nodes = %d %s", rec.Code, rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/sync/status", nil)))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "localNode") {
+		t.Fatalf("sync status = %d %s", rec.Code, rec.Body.String())
 	}
 	rec = httptest.NewRecorder()
 	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/tools", nil)))

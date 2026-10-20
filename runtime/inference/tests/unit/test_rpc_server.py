@@ -116,6 +116,7 @@ async def test_server_round_trips_route(config, runtime_dir: Path) -> None:
                     "kind": "route_request",
                     "id": "req_1",
                     "prompt": "Write unit tests for a small utility function.",
+                    "routingDecision": {"locality": "local", "tier": "local"},
                 },
             }
         )
@@ -198,6 +199,7 @@ async def test_server_enforces_deadline(config, runtime_dir: Path) -> None:
                 "method": "inference.generate",
                 "params": {
                     "tier": "local",
+                    "routingDecision": {"locality": "local", "tier": "local"},
                     "messages": [{"role": "user", "content": "hi"}],
                     "idempotencyKey": "gen-1",
                 },
