@@ -1,0 +1,80 @@
+{
+  "id": "pr@a7752ec86ae0",
+  "profile": "pr",
+  "repository": "greadee/aa",
+  "ref": "a7752ec86ae07a050e8454e5d38888a2a69c8165",
+  "base": "origin/main",
+  "head": "a7752ec86ae07a050e8454e5d38888a2a69c8165",
+  "generated": "2026-10-20T17:41:12.590276087Z",
+  "findings": [
+    {
+      "id": "999027a7863285ec33043d70e0e9c695",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "contracts/go/v2/records.go",
+        "line": 86,
+        "snippet": "if m.Confidence != nil \u0026\u0026 (*m.Confidence \u003c 0 || *m.Confidence \u003e 1) {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if m.Confidence != nil \u0026\u0026 (*m.Confidence \u003c 0 || *m.Confidence \u003e 1) {",
+      "status": "new",
+      "firstSeen": "pr@a7752ec86ae0",
+      "lastSeen": "pr@a7752ec86ae0",
+      "runId": "pr@a7752ec86ae0"
+    },
+    {
+      "id": "90997f65042ad76bb488fd65e2057db1",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/rpc/rpc.go",
+        "line": 222,
+        "snippet": "if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {",
+      "status": "new",
+      "firstSeen": "pr@a7752ec86ae0",
+      "lastSeen": "pr@a7752ec86ae0",
+      "runId": "pr@a7752ec86ae0",
+      "unverified": true
+    },
+    {
+      "id": "0ea80a868c3e0502043df4791f8621bf",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/workflow/compile.go",
+        "line": 48,
+        "snippet": "if s.Retries != nil \u0026\u0026 *s.Retries \u003c 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if s.Retries != nil \u0026\u0026 *s.Retries \u003c 0 {",
+      "status": "new",
+      "firstSeen": "pr@a7752ec86ae0",
+      "lastSeen": "pr@a7752ec86ae0",
+      "runId": "pr@a7752ec86ae0",
+      "unverified": true
+    }
+  ],
+  "resolved": null,
+  "blockThreshold": "P1",
+  "archiveURL": "",
+  "coverage": {
+    "selected": 103,
+    "analyzed": 103,
+    "skipped": 43,
+    "truncated": 0,
+    "threshold": 1
+  }
+}
