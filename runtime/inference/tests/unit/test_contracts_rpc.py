@@ -26,6 +26,7 @@ def _request(prompt: str = "Write unit tests for a small utility function.") -> 
         "kind": "route_request",
         "id": "req_test_1",
         "prompt": prompt,
+        "routingDecision": {"locality": "local", "tier": "local"},
     }
 
 
@@ -61,7 +62,18 @@ def test_route_reports_human_approval_for_major_decisions(config):
     service = _service(config)
 
     response = service.route(
-        _request("Replace authentication with OAuth while preserving old sessions.")
+        {
+            "contractVersion": "1.0",
+            "kind": "route_request",
+            "id": "req_test_1",
+            "prompt": "Replace authentication with OAuth while preserving old sessions.",
+            "routingDecision": {
+                "locality": "local",
+                "tier": "local",
+                "decisionLevel": "major",
+                "requiresHumanApproval": True,
+            },
+        }
     )
 
     assert response["decisionLevel"] in {"major", "critical"}
@@ -104,6 +116,7 @@ async def test_generate_returns_text_and_is_idempotent(config):
         "tier": "local",
         "messages": [{"role": "user", "content": "hello"}],
         "idempotencyKey": "gen-1",
+        "routingDecision": {"locality": "local", "tier": "local"},
     }
 
     first = await service.generate(params)
