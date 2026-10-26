@@ -197,3 +197,23 @@ func TestNoEligibleWorker(t *testing.T) {
 		t.Fatal("expected no eligible worker error")
 	}
 }
+
+func TestRejectMarksAssignmentFailed(t *testing.T) {
+	sink := &recSink{}
+	o, _, _ := newTestScheduler(t, true, sink)
+	report, dispatched, err := o.Dispatch(context.Background())
+	if err != nil || !dispatched || report.Status != "pending" {
+		t.Fatalf("dispatch = %+v dispatched=%v err=%v", report, dispatched, err)
+	}
+	o.Reject("wp_a", "not acceptable")
+	resolved, err := o.Resolve("wp_a")
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	if resolved.Status != "failed" {
+		t.Fatalf("resolved = %+v", resolved)
+	}
+	if report := o.Status(); len(report.Assignments) != 1 || report.Assignments[0].State != string(StateFailed) {
+		t.Fatalf("status = %+v", report)
+	}
+}

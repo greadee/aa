@@ -77,7 +77,7 @@ type Backend interface {
 	WorkPackages(projectID string) []WorkPackageView
 	SubmitWork(projectID, title string, dependsOn []string) (string, error)
 	Assignments() []AssignmentView
-	Approve(gateID string) error
+	Approve(gateID, decision, actor, reason string) error
 	Issues(projectID string) []json.RawMessage
 	Strategies(projectID string) []json.RawMessage
 	Events(projectID string) []json.RawMessage

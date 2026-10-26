@@ -8,6 +8,7 @@ package controlplane
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -16,6 +17,13 @@ const APIPrefix = "/api/v1"
 
 // RPCVersion is the control-plane RPC generation advertised on /health.
 const RPCVersion = "1.0"
+
+// Backend error classes mapped to governed HTTP errors.
+var (
+	ErrInvalid  = errors.New("controlplane: invalid request")
+	ErrNotFound = errors.New("controlplane: not found")
+	ErrConflict = errors.New("controlplane: conflict")
+)
 
 // Status is the aggregate host status served on /status.
 type Status struct {
@@ -247,12 +255,42 @@ func (s *Server) approve(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusServiceUnavailable, codeUnavailable, "no backend configured")
 		return
 	}
-	gateID := r.PathValue("gateId")
-	if err := s.cfg.Backend.Approve(gateID); err != nil {
-		writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
+	var req struct {
+		Decision string `json:"decision"`
+		Actor    string `json:"actor"`
+		Reason   string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, codeInvalidParams, "invalid JSON body")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "approved", "gateId": gateID})
+	if req.Decision != "approve" && req.Decision != "reject" {
+		writeError(w, http.StatusBadRequest, codeInvalidParams, "decision must be approve or reject")
+		return
+	}
+	if req.Actor == "" {
+		writeError(w, http.StatusBadRequest, codeInvalidParams, "actor is required")
+		return
+	}
+	gateID := r.PathValue("gateId")
+	if err := s.cfg.Backend.Approve(gateID, req.Decision, req.Actor, req.Reason); err != nil {
+		switch {
+		case errors.Is(err, ErrNotFound):
+			writeError(w, http.StatusNotFound, codeNotFound, err.Error())
+		case errors.Is(err, ErrConflict):
+			writeError(w, http.StatusConflict, codeConflict, err.Error())
+		case errors.Is(err, ErrInvalid):
+			writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
+		default:
+			writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
+		}
+		return
+	}
+	status := "approved"
+	if req.Decision == "reject" {
+		status = "rejected"
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": status, "gateId": gateID})
 }
 
 func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {

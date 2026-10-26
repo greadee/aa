@@ -13,6 +13,7 @@ import (
 	"github.com/greadee/aa/kernel/allocator/planner"
 	"github.com/greadee/aa/kernel/allocator/role_allocator"
 	"github.com/greadee/aa/kernel/api"
+	"github.com/greadee/aa/kernel/gate"
 	"github.com/greadee/aa/kernel/scheduler"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/repo"
@@ -40,6 +41,7 @@ type State struct {
 type Project struct {
 	Record    v2.ProjectRecord
 	Graph     *planner.Graph
+	Gate      *gate.HumanGate
 	Scheduler *scheduler.Scheduler
 	API       *api.Service
 }
@@ -143,16 +145,20 @@ func (s *State) restoreApprovals() error {
 		}
 		if approval.Decision == repo.DecisionApprove {
 			project.API.Approve(approval.WorkPackageID)
+		} else {
+			project.API.Reject(approval.WorkPackageID, approval.Reason)
 		}
 	}
 	return nil
 }
 
 func attachRuntime(project *Project, opts Options, sink scheduler.Sink) error {
+	humanGate := gate.NewHumanGate()
 	sched, err := scheduler.New(project.Graph, scheduler.Config{
 		Registry:  role_allocator.New(),
 		Lifecycle: opts.Lifecycle,
 		Sink:      sink,
+		Gates:     []gate.Gate{humanGate},
 	})
 	if err != nil {
 		return err
@@ -161,6 +167,7 @@ func attachRuntime(project *Project, opts Options, sink scheduler.Sink) error {
 	if err != nil {
 		return err
 	}
+	project.Gate = humanGate
 	project.Scheduler = sched
 	project.API = service
 	return nil
@@ -326,20 +333,43 @@ func (s *State) ActiveAssignments() int {
 	return active
 }
 
-// RecordApproval persists a decision and applies an approval to the project
-// scheduler. Reject is persisted for later gate evaluation; it never approves.
+// RecordApproval persists a decision and applies it to the project scheduler.
+// Reject never approves. If the work package already has a decision or has
+// reached a terminal assignment state, the decision is rejected as resolved.
 func (s *State) RecordApproval(projectID, workPackageID, decision, actor, reason string) (repo.ApprovalRecord, error) {
+	if decision != repo.DecisionApprove && decision != repo.DecisionReject {
+		return repo.ApprovalRecord{}, fmt.Errorf("%w: decision must be approve or reject", ErrInvalidApproval)
+	}
+	if actor == "" {
+		return repo.ApprovalRecord{}, fmt.Errorf("%w: actor is required", ErrInvalidApproval)
+	}
 	s.mu.RLock()
 	project, ok := s.projects[projectID]
 	if !ok {
 		s.mu.RUnlock()
-		return repo.ApprovalRecord{}, fmt.Errorf("projectstate: unknown project %q", projectID)
+		return repo.ApprovalRecord{}, fmt.Errorf("%w: project %q", ErrNotFound, projectID)
 	}
 	if _, ok := project.Graph.Get(workPackageID); !ok {
 		s.mu.RUnlock()
-		return repo.ApprovalRecord{}, fmt.Errorf("projectstate: unknown work package %q", workPackageID)
+		return repo.ApprovalRecord{}, fmt.Errorf("%w: work package %q", ErrNotFound, workPackageID)
 	}
 	s.mu.RUnlock()
+
+	if _, err := s.approvals.Get(workPackageID); err == nil {
+		return repo.ApprovalRecord{}, fmt.Errorf("%w: work package %q", ErrApprovalResolved, workPackageID)
+	} else if !errors.Is(err, store.ErrNotFound) {
+		return repo.ApprovalRecord{}, err
+	}
+	assignments, err := s.assignments.ListByProject(projectID)
+	if err != nil {
+		return repo.ApprovalRecord{}, err
+	}
+	for _, assignment := range assignments {
+		if assignment.WorkPackageID == workPackageID && terminalAssignmentState(assignment.State) {
+			return repo.ApprovalRecord{}, fmt.Errorf("%w: work package %q assignment is %s", ErrApprovalResolved, workPackageID, assignment.State)
+		}
+	}
+
 	record, err := s.approvals.Save(repo.ApprovalRecord{
 		WorkPackageID: workPackageID,
 		ProjectID:     projectID,
@@ -352,8 +382,23 @@ func (s *State) RecordApproval(projectID, workPackageID, decision, actor, reason
 	}
 	if decision == repo.DecisionApprove {
 		project.API.Approve(workPackageID)
+	} else {
+		project.API.Reject(workPackageID, reason)
 	}
+	// Advance an already-running assignment if it is awaiting gates. A
+	// pre-approval has no in-memory assignment yet; that error is intentionally
+	// ignored and the decision is applied when the gate is evaluated.
+	_, _ = project.API.Resolve(workPackageID)
 	return record, nil
+}
+
+func terminalAssignmentState(state string) bool {
+	switch state {
+	case "accepted", "failed", "canceled", "expired":
+		return true
+	default:
+		return false
+	}
 }
 
 // ApprovalRecords returns all durable approval decisions.
@@ -412,5 +457,12 @@ func fromContractState(state v2.WorkPackageState) planner.State {
 	}
 }
 
-// ErrNotFound is retained for callers that need to distinguish absent state.
+// ErrNotFound is returned when the project or work package does not exist.
 var ErrNotFound = errors.New("projectstate: not found")
+
+// ErrInvalidApproval is returned for a malformed approval decision.
+var ErrInvalidApproval = errors.New("projectstate: invalid approval")
+
+// ErrApprovalResolved is returned when a work package already has a decision
+// or has reached a terminal assignment state.
+var ErrApprovalResolved = errors.New("projectstate: approval already resolved")

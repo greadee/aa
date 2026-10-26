@@ -58,11 +58,12 @@ func (TestsGate) Evaluate(s Subject) Decision {
 type HumanGate struct {
 	mu       sync.Mutex
 	approved map[string]bool
+	rejected map[string]string
 }
 
 // NewHumanGate returns an unapproved human gate.
 func NewHumanGate() *HumanGate {
-	return &HumanGate{approved: make(map[string]bool)}
+	return &HumanGate{approved: make(map[string]bool), rejected: make(map[string]string)}
 }
 
 // Name returns the gate name.
@@ -75,10 +76,25 @@ func (g *HumanGate) Approve(workPackageID string) {
 	g.approved[workPackageID] = true
 }
 
-// Evaluate reports pending until the work package is approved.
+// Reject records a negative human decision. Rejection is terminal for the
+// current work package attempt and never approves it.
+func (g *HumanGate) Reject(workPackageID, reason string) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	delete(g.approved, workPackageID)
+	g.rejected[workPackageID] = reason
+}
+
+// Evaluate reports rejection first, then approval, otherwise pending.
 func (g *HumanGate) Evaluate(s Subject) Decision {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	if reason, ok := g.rejected[s.WorkPackageID]; ok {
+		if reason == "" {
+			reason = "no reason given"
+		}
+		return Decision{Gate: "human_review", Reason: "rejected: " + reason}
+	}
 	if g.approved[s.WorkPackageID] {
 		return Decision{Gate: "human_review", Passed: true, Reason: "approved"}
 	}

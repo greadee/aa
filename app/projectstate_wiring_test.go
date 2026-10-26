@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"errors"
+	"testing"
+
+	"github.com/greadee/aa/app/internal/controlplane"
+)
 
 func TestControlPlaneProjectsAndWorkAreWired(t *testing.T) {
 	root := t.TempDir()
@@ -31,7 +36,7 @@ func TestControlPlaneProjectsAndWorkAreWired(t *testing.T) {
 	if _, err := b.SubmitWork("missing", "work", nil); err == nil {
 		t.Fatal("expected unknown project error")
 	}
-	if err := b.Approve("missing"); err == nil {
+	if err := b.Approve("missing", "approve", "tester", ""); err == nil {
 		t.Fatal("expected unknown gate error")
 	}
 	if len(b.Projects()) != 2 {
@@ -87,7 +92,7 @@ func TestControlPlaneApprovalSurvivesRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := b.Approve(id); err != nil {
+	if err := b.Approve(id, "approve", "tester", ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := g.obs.Close(); err != nil {
@@ -104,5 +109,41 @@ func TestControlPlaneApprovalSurvivesRestart(t *testing.T) {
 	}
 	if reopened.projects.ActiveAssignments() != 0 {
 		t.Fatalf("active assignments = %d", reopened.projects.ActiveAssignments())
+	}
+}
+
+func TestControlPlaneApprovalResolutionAndReject(t *testing.T) {
+	g, err := build(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.obs.Close()
+	b := &backend{g: g}
+	if err := b.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	first, err := b.SubmitWork("p1", "first", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Approve(first, "approve", "human", "ok"); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Approve(first, "approve", "human", "again"); !errors.Is(err, controlplane.ErrConflict) {
+		t.Fatalf("duplicate err = %v, want conflict", err)
+	}
+	second, err := b.SubmitWork("p1", "second", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Approve(second, "reject", "human", "no"); err != nil {
+		t.Fatal(err)
+	}
+	approvals, err := g.projects.ApprovalRecords()
+	if err != nil || len(approvals) != 2 {
+		t.Fatalf("approvals = %+v err = %v", approvals, err)
+	}
+	if approvals[0].Decision != "approve" && approvals[0].Decision != "reject" {
+		t.Fatalf("approvals = %+v", approvals)
 	}
 }

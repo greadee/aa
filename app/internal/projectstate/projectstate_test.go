@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/greadee/aa/kernel/gate"
+
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/repo"
@@ -268,5 +270,83 @@ func TestNewRejectsAssignmentWithUnknownWorkPackage(t *testing.T) {
 	}
 	if _, err := New(st, projection.NewMem()); err == nil {
 		t.Fatal("expected corrupt assignment state to fail closed")
+	}
+}
+
+func TestApprovalSemanticsApproveRejectAndConflict(t *testing.T) {
+	state, st := newState(t)
+	if _, err := state.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	work, err := state.SubmitWork("p1", "Work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	project, ok := state.ProjectForWorkPackage(work.ID)
+	if !ok {
+		t.Fatal("project missing")
+	}
+	if _, err := state.RecordApproval("p1", work.ID, repo.DecisionApprove, "human", "ok"); err != nil {
+		t.Fatal(err)
+	}
+	decision := project.Gate.Evaluate(gate.Subject{WorkPackageID: work.ID})
+	if !decision.Passed || decision.Pending {
+		t.Fatalf("gate = %+v", decision)
+	}
+	if _, err := state.RecordApproval("p1", work.ID, repo.DecisionApprove, "human", "again"); !errors.Is(err, ErrApprovalResolved) {
+		t.Fatalf("duplicate err = %v, want ErrApprovalResolved", err)
+	}
+
+	second, err := state.SubmitWork("p1", "Second", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := state.RecordApproval("p1", second.ID, repo.DecisionReject, "human", "no"); err != nil {
+		t.Fatal(err)
+	}
+	decision = project.Gate.Evaluate(gate.Subject{WorkPackageID: second.ID})
+	if decision.Passed || decision.Pending {
+		t.Fatalf("rejected gate = %+v", decision)
+	}
+	if _, err := state.RecordApproval("p1", second.ID, repo.DecisionApprove, "human", ""); !errors.Is(err, ErrApprovalResolved) {
+		t.Fatalf("resolved err = %v, want ErrApprovalResolved", err)
+	}
+
+	// Terminal assignment state also resolves the gate.
+	third, err := state.SubmitWork("p1", "Third", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assignments := repo.NewAssignmentRepository(st, projection.NewMem())
+	if _, err := assignments.Save(repo.AssignmentRecord{
+		ID: "asg_third", ProjectID: "p1", WorkPackageID: third.ID, WorkerID: "w1", State: "accepted", Attempt: 1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := state.RecordApproval("p1", third.ID, repo.DecisionApprove, "human", ""); !errors.Is(err, ErrApprovalResolved) {
+		t.Fatalf("terminal err = %v, want ErrApprovalResolved", err)
+	}
+}
+
+func TestApprovalValidation(t *testing.T) {
+	state, _ := newState(t)
+	if _, err := state.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	work, err := state.SubmitWork("p1", "Work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := state.RecordApproval("p1", work.ID, "bogus", "human", ""); !errors.Is(err, ErrInvalidApproval) {
+		t.Fatalf("decision err = %v, want ErrInvalidApproval", err)
+	}
+	if _, err := state.RecordApproval("p1", work.ID, repo.DecisionApprove, "", ""); !errors.Is(err, ErrInvalidApproval) {
+		t.Fatalf("actor err = %v, want ErrInvalidApproval", err)
+	}
+	if _, err := state.RecordApproval("p1", "missing", repo.DecisionApprove, "human", ""); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("work err = %v, want ErrNotFound", err)
+	}
+	if _, err := state.RecordApproval("missing", work.ID, repo.DecisionApprove, "human", ""); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("project err = %v, want ErrNotFound", err)
 	}
 }

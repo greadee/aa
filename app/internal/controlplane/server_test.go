@@ -71,11 +71,11 @@ func (fakeBackend) SubmitWork(projectID, title string, dependsOn []string) (stri
 	}
 	return "wp-1", nil
 }
-func (fakeBackend) Assignments() []AssignmentView       { return []AssignmentView{} }
-func (fakeBackend) Approve(gateID string) error         { return nil }
-func (fakeBackend) Issues(string) []json.RawMessage     { return nil }
-func (fakeBackend) Strategies(string) []json.RawMessage { return nil }
-func (fakeBackend) Events(string) []json.RawMessage     { return nil }
+func (fakeBackend) Assignments() []AssignmentView                        { return []AssignmentView{} }
+func (fakeBackend) Approve(gateID, decision, actor, reason string) error { return nil }
+func (fakeBackend) Issues(string) []json.RawMessage                      { return nil }
+func (fakeBackend) Strategies(string) []json.RawMessage                  { return nil }
+func (fakeBackend) Events(string) []json.RawMessage                      { return nil }
 func (fakeBackend) Nodes() []Node {
 	return []Node{{ID: "local", Authority: true, State: "ready"}}
 }

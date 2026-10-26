@@ -56,7 +56,7 @@ func TestOpenAPIPaths(t *testing.T) {
 		{http.MethodGet, APIPrefix + "/workers", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/workers/events", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/tools", "", http.StatusOK},
-		{http.MethodPost, APIPrefix + "/approvals/g1", "", http.StatusOK},
+		{http.MethodPost, APIPrefix + "/approvals/g1", `{"decision":"approve","actor":"tester"}`, http.StatusOK},
 		{http.MethodGet, APIPrefix + "/nope", "", http.StatusNotFound},
 	}
 	for _, c := range cases {

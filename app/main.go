@@ -305,21 +305,30 @@ func (b *backend) Assignments() []controlplane.AssignmentView {
 	return out
 }
 
-func (b *backend) Approve(gateID string) error {
+func (b *backend) Approve(gateID, decision, actor, reason string) error {
 	project, ok := b.g.projects.ProjectForWorkPackage(gateID)
 	if !ok {
-		return fmt.Errorf("unknown gate %q", gateID)
+		return controlplane.ErrNotFound
 	}
-	if _, err := b.g.projects.RecordApproval(project.Record.ID, gateID, repo.DecisionApprove, "console", ""); err != nil {
-		return err
+	if _, err := b.g.projects.RecordApproval(project.Record.ID, gateID, decision, actor, reason); err != nil {
+		switch {
+		case errors.Is(err, projectstate.ErrNotFound):
+			return controlplane.ErrNotFound
+		case errors.Is(err, projectstate.ErrApprovalResolved):
+			return controlplane.ErrConflict
+		case errors.Is(err, projectstate.ErrInvalidApproval):
+			return controlplane.ErrInvalid
+		default:
+			return err
+		}
 	}
 	b.emit("control-plane", protocol.Event{
 		SourceType:    protocol.SourceSession,
 		Confidence:    protocol.ConfidenceObserved,
-		Action:        "gate.approve",
-		Actor:         "console",
+		Action:        "gate." + decision,
+		Actor:         actor,
 		WorkPackageID: gateID,
-		Metadata:      map[string]string{"status": "approved"},
+		Metadata:      map[string]string{"status": decision + "d", "decision": decision, "reason": reason},
 	})
 	return nil
 }

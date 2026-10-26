@@ -323,6 +323,15 @@ func (o *Scheduler) Approve(workPackageID string) {
 	}
 }
 
+// Reject records a negative human decision in every rejector gate.
+func (o *Scheduler) Reject(workPackageID, reason string) {
+	for _, g := range o.cfg.Gates {
+		if rejector, ok := g.(interface{ Reject(string, string) }); ok {
+			rejector.Reject(workPackageID, reason)
+		}
+	}
+}
+
 // Telemetry returns recorded telemetry in order.
 func (o *Scheduler) Telemetry() []telemetry.Record {
 	o.mu.Lock()
