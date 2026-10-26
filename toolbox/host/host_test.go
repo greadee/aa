@@ -185,3 +185,19 @@ func TestHostRecordsInvocationAndCacheMetrics(t *testing.T) {
 		t.Fatalf("snapshot = %+v", snap)
 	}
 }
+
+func TestInvokeIdempotencyConflictOnDifferentInput(t *testing.T) {
+	h, p, _ := newHost(t)
+	first := toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}, IdempotencyKey: "k-conflict"}
+	if _, err := h.Invoke(context.Background(), first, contract("read_project")); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	second := first
+	second.Input = map[string]any{"x": 2}
+	if _, err := h.Invoke(context.Background(), second, contract("read_project")); !errors.Is(err, toolbox.ErrConflict) {
+		t.Fatalf("second err = %v, want ErrConflict", err)
+	}
+	if len(p.Calls()) != 1 {
+		t.Fatalf("provider calls = %d, want 1", len(p.Calls()))
+	}
+}

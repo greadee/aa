@@ -8,6 +8,7 @@ package host
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -24,7 +25,12 @@ type Host struct {
 	metrics  toolbox.Metrics
 
 	mu    sync.Mutex
-	cache map[string]toolbox.Result
+	cache map[string]hostCacheEntry
+}
+
+type hostCacheEntry struct {
+	result    toolbox.Result
+	inputHash string
 }
 
 // New returns a host over a registry and policy engine. A nil metrics value
@@ -34,7 +40,7 @@ func New(reg *registry.Registry, eng *policy.Engine, metrics ...toolbox.Metrics)
 	if len(metrics) > 0 && metrics[0] != nil {
 		m = metrics[0]
 	}
-	return &Host{registry: reg, policy: eng, metrics: m, cache: map[string]toolbox.Result{}}
+	return &Host{registry: reg, policy: eng, metrics: m, cache: map[string]hostCacheEntry{}}
 }
 
 // Invoke runs a tool under an execution contract. It returns a typed error
@@ -70,14 +76,19 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 		contractID = inv.ExecutionContractID
 	}
 	key := toolbox.InvocationKey(inv.ToolID, contractID, inv.IdempotencyKey)
+	inputHash := inputFingerprint(inv.Input)
 
 	h.mu.Lock()
 	if cached, found := h.cache[key]; found {
 		h.mu.Unlock()
+		if cached.inputHash != inputHash {
+			return toolbox.Result{}, fmt.Errorf("%w: idempotency key reused with a different input", toolbox.ErrConflict)
+		}
 		h.metrics.RecordCacheHit(key)
-		cached.Replayed = true
+		result := cached.result
+		result.Replayed = true
 		success = true
-		return cached, nil
+		return result, nil
 	}
 	h.mu.Unlock()
 	h.metrics.RecordCacheMiss(key)
@@ -89,10 +100,18 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 	result := toolbox.Result{ToolID: inv.ToolID, Output: output}
 
 	h.mu.Lock()
-	h.cache[key] = result
+	h.cache[key] = hostCacheEntry{result: result, inputHash: inputHash}
 	h.mu.Unlock()
 	success = true
 	return result, nil
+}
+
+func inputFingerprint(input map[string]any) string {
+	data, err := json.Marshal(input)
+	if err != nil {
+		return ""
+	}
+	return toolbox.Hash(data)
 }
 
 // Audit returns the ordered policy audit log.
