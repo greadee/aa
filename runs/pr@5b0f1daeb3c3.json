@@ -1,0 +1,122 @@
+{
+  "id": "pr@5b0f1daeb3c3",
+  "profile": "pr",
+  "repository": "greadee/aa",
+  "ref": "5b0f1daeb3c3b149bdf98424865220f64ce34dfa",
+  "base": "origin/main",
+  "head": "5b0f1daeb3c3b149bdf98424865220f64ce34dfa",
+  "generated": "2026-10-26T04:53:29.49599898Z",
+  "findings": [
+    {
+      "id": "999027a7863285ec33043d70e0e9c695",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "contracts/go/v2/records.go",
+        "line": 89,
+        "snippet": "if m.Confidence != nil \u0026\u0026 (*m.Confidence \u003c 0 || *m.Confidence \u003e 1) {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if m.Confidence != nil \u0026\u0026 (*m.Confidence \u003c 0 || *m.Confidence \u003e 1) {",
+      "status": "new",
+      "firstSeen": "pr@5b0f1daeb3c3",
+      "lastSeen": "pr@5b0f1daeb3c3",
+      "runId": "pr@5b0f1daeb3c3"
+    },
+    {
+      "id": "e69e6d651c17e1972903db971dfb2464",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/metrics.go",
+        "line": 68,
+        "snippet": "func NewMemMetrics"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "toolbox",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewMemMetrics",
+      "status": "new",
+      "firstSeen": "pr@5b0f1daeb3c3",
+      "lastSeen": "pr@5b0f1daeb3c3",
+      "runId": "pr@5b0f1daeb3c3",
+      "unverified": true
+    },
+    {
+      "id": "90997f65042ad76bb488fd65e2057db1",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/rpc/rpc.go",
+        "line": 193,
+        "snippet": "if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {",
+      "status": "new",
+      "firstSeen": "pr@5b0f1daeb3c3",
+      "lastSeen": "pr@5b0f1daeb3c3",
+      "runId": "pr@5b0f1daeb3c3",
+      "unverified": true
+    },
+    {
+      "id": "0ea80a868c3e0502043df4791f8621bf",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/workflow/compile.go",
+        "line": 51,
+        "snippet": "if s.Retries != nil \u0026\u0026 *s.Retries \u003c 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if s.Retries != nil \u0026\u0026 *s.Retries \u003c 0 {",
+      "status": "new",
+      "firstSeen": "pr@5b0f1daeb3c3",
+      "lastSeen": "pr@5b0f1daeb3c3",
+      "runId": "pr@5b0f1daeb3c3",
+      "unverified": true
+    },
+    {
+      "id": "9d0d314f9893be1085c39381b7d9419c",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/workflow/runtime.go",
+        "line": 283,
+        "snippet": "func IsApproval"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "toolbox/workflow",
+      "detector": "detector.orphan",
+      "anchor": "orphan:IsApproval",
+      "status": "new",
+      "firstSeen": "pr@5b0f1daeb3c3",
+      "lastSeen": "pr@5b0f1daeb3c3",
+      "runId": "pr@5b0f1daeb3c3",
+      "unverified": true
+    }
+  ],
+  "resolved": null,
+  "blockThreshold": "P1",
+  "archiveURL": "",
+  "coverage": {
+    "selected": 112,
+    "analyzed": 112,
+    "skipped": 52,
+    "truncated": 0,
+    "threshold": 1
+  }
+}
