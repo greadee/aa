@@ -1,0 +1,10 @@
+# Review engine configuration for the aa repository.
+#
+# Phase and integration PRs regularly touch more than the default 60-file
+# review budget. Keep the coverage gate strict while allowing the complete diff
+# to be reviewed instead of silently truncating it.
+review:
+  maxFiles: 250
+  maxFileBytes: 500000
+  coverageThreshold: 1.0
+  blockThreshold: P1
