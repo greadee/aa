@@ -19,10 +19,16 @@ import (
 	"github.com/greadee/aa/memory/store"
 )
 
+// Options configures the kernel runtime attached to each project.
+type Options struct {
+	Lifecycle scheduler.WorkerLifecycle
+}
+
 // State is the durable multi-project control-plane model.
 type State struct {
 	mu       sync.RWMutex
 	projects map[string]*Project
+	opts     Options
 
 	projectsRepo *repo.ProjectRepository
 	workRepo     *repo.WorkPackageRepository
@@ -38,9 +44,14 @@ type Project struct {
 
 // New loads projects and work packages from the store and rebuilds each graph.
 // Corrupt or orphaned state fails closed.
-func New(st *store.Store, proj projection.Projection) (*State, error) {
+func New(st *store.Store, proj projection.Projection, options ...Options) (*State, error) {
+	opts := Options{}
+	if len(options) > 0 {
+		opts = options[0]
+	}
 	s := &State{
 		projects:     map[string]*Project{},
+		opts:         opts,
 		projectsRepo: repo.NewProjectRepository(st, proj),
 		workRepo:     repo.NewWorkPackageRepository(st, proj),
 	}
@@ -83,16 +94,17 @@ func New(st *store.Store, proj projection.Projection) (*State, error) {
 		if err := project.Graph.Validate(); err != nil {
 			return nil, fmt.Errorf("projectstate: validate project %q: %w", id, err)
 		}
-		if err := attachRuntime(project); err != nil {
+		if err := attachRuntime(project, s.opts); err != nil {
 			return nil, fmt.Errorf("projectstate: project %q: %w", id, err)
 		}
 	}
 	return s, nil
 }
 
-func attachRuntime(project *Project) error {
+func attachRuntime(project *Project, opts Options) error {
 	sched, err := scheduler.New(project.Graph, scheduler.Config{
-		Registry: role_allocator.New(),
+		Registry:  role_allocator.New(),
+		Lifecycle: opts.Lifecycle,
 	})
 	if err != nil {
 		return err
@@ -133,6 +145,25 @@ func (s *State) Project(id string) (v2.ProjectRecord, bool) {
 func (s *State) CreateProject(id, name string) (v2.ProjectRecord, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.createLocked(id, name)
+}
+
+// EnsureProject returns an existing project or creates it. It is idempotent and
+// is used to seed the default project.
+func (s *State) EnsureProject(id, name string) (v2.ProjectRecord, bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if project, ok := s.projects[id]; ok {
+		return project.Record, false, nil
+	}
+	record, err := s.createLocked(id, name)
+	if err != nil {
+		return v2.ProjectRecord{}, false, err
+	}
+	return record, true, nil
+}
+
+func (s *State) createLocked(id, name string) (v2.ProjectRecord, error) {
 	if _, exists := s.projects[id]; exists {
 		return v2.ProjectRecord{}, fmt.Errorf("%w: project %q", repo.ErrExists, id)
 	}
@@ -144,7 +175,7 @@ func (s *State) CreateProject(id, name string) (v2.ProjectRecord, error) {
 		Record: record,
 		Graph:  planner.NewGraph(record.ID, "graph_"+record.ID),
 	}
-	if err := attachRuntime(project); err != nil {
+	if err := attachRuntime(project, s.opts); err != nil {
 		return v2.ProjectRecord{}, err
 	}
 	s.projects[id] = project
@@ -201,6 +232,47 @@ func (s *State) SubmitWork(projectID, title string, dependsOn []string) (repo.Wo
 		return repo.WorkPackageRecord{}, err
 	}
 	return record, nil
+}
+
+// ProjectForWorkPackage finds the project that owns a work package.
+func (s *State) ProjectForWorkPackage(workPackageID string) (*Project, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, project := range s.projects {
+		if _, ok := project.Graph.Get(workPackageID); ok {
+			return project, true
+		}
+	}
+	return nil, false
+}
+
+// AssignmentStatuses returns scheduler assignment views across all projects.
+func (s *State) AssignmentStatuses() []scheduler.AssignmentStatus {
+	s.mu.RLock()
+	projects := make([]*Project, 0, len(s.projects))
+	for _, project := range s.projects {
+		projects = append(projects, project)
+	}
+	s.mu.RUnlock()
+	var out []scheduler.AssignmentStatus
+	for _, project := range projects {
+		out = append(out, project.Scheduler.Status().Assignments...)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+// ActiveAssignments counts assignments that have not reached a terminal state.
+func (s *State) ActiveAssignments() int {
+	active := 0
+	for _, assignment := range s.AssignmentStatuses() {
+		switch assignment.State {
+		case "accepted", "failed", "canceled", "expired":
+		default:
+			active++
+		}
+	}
+	return active
 }
 
 // ProjectRuntime returns the in-process scheduler/API for one project.

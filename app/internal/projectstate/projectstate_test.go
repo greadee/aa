@@ -137,3 +137,42 @@ func TestProjectRecordStateIsCanonical(t *testing.T) {
 		t.Fatalf("project = %+v", project)
 	}
 }
+
+func TestEnsureProjectIsIdempotent(t *testing.T) {
+	state, _ := newState(t)
+	first, created, err := state.EnsureProject("default", "Default")
+	if err != nil || !created {
+		t.Fatalf("first ensure = %+v created=%v err=%v", first, created, err)
+	}
+	second, created, err := state.EnsureProject("default", "Default")
+	if err != nil || created || second.ID != first.ID {
+		t.Fatalf("second ensure = %+v created=%v err=%v", second, created, err)
+	}
+	if len(state.Projects()) != 1 {
+		t.Fatalf("projects = %+v", state.Projects())
+	}
+}
+
+func TestProjectForWorkPackageAndAssignments(t *testing.T) {
+	state, _ := newState(t)
+	if _, err := state.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	work, err := state.SubmitWork("p1", "Work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	project, ok := state.ProjectForWorkPackage(work.ID)
+	if !ok || project.Record.ID != "p1" {
+		t.Fatalf("project = %+v ok=%v", project, ok)
+	}
+	if _, ok := state.ProjectForWorkPackage("missing"); ok {
+		t.Fatal("unexpected project for missing work")
+	}
+	if len(state.AssignmentStatuses()) != 0 {
+		t.Fatalf("assignments = %+v", state.AssignmentStatuses())
+	}
+	if state.ActiveAssignments() != 0 {
+		t.Fatalf("active = %d", state.ActiveAssignments())
+	}
+}

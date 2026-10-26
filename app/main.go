@@ -21,20 +21,17 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"sync"
 	"syscall"
 	"time"
 
 	"github.com/greadee/aa/app/internal/controlplane"
 	"github.com/greadee/aa/app/internal/obsplane"
+	"github.com/greadee/aa/app/internal/projectstate"
 	"github.com/greadee/aa/app/internal/syncplane"
 	"github.com/greadee/aa/app/internal/visplane"
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge/memsync"
-	"github.com/greadee/aa/kernel/allocator/planner"
-	"github.com/greadee/aa/kernel/allocator/role_allocator"
 	"github.com/greadee/aa/kernel/allocator/routing"
-	"github.com/greadee/aa/kernel/api"
 	aaContext "github.com/greadee/aa/kernel/context"
 	"github.com/greadee/aa/kernel/joblearn"
 	"github.com/greadee/aa/kernel/joblearn/attribution"
@@ -43,7 +40,6 @@ import (
 	"github.com/greadee/aa/kernel/joblearn/promote"
 	"github.com/greadee/aa/kernel/joblearn/tracesource"
 	"github.com/greadee/aa/kernel/observability"
-	"github.com/greadee/aa/kernel/scheduler"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/repo"
 	"github.com/greadee/aa/memory/retention"
@@ -211,9 +207,7 @@ type runtime struct {
 	traceSink  *promote.MemorySink
 	computer   *computeruse.Provider
 	tools      *registry.Registry
-	graph      *planner.Graph
-	sched      *scheduler.Scheduler
-	api        *api.Service
+	projects   *projectstate.State
 	syncer     *syncplane.Plane
 	obs        *obsplane.Plane
 	vis        *visplane.Plane
@@ -226,35 +220,28 @@ type runtime struct {
 // status reports the aggregate host status for the control plane.
 func (g *runtime) status() controlplane.Status {
 	projects := 0
-	if recs, err := g.store.ListRecords("project_record"); err == nil {
-		projects = len(recs)
+	active := 0
+	if g.projects != nil {
+		projects = len(g.projects.Projects())
+		active = g.projects.ActiveAssignments()
 	}
 	nodes := 0
 	if g.syncer != nil {
 		nodes = len(g.syncer.Nodes())
 	}
-	return controlplane.Status{Projects: projects, ActiveAssignments: 0, Nodes: nodes}
+	return controlplane.Status{Projects: projects, ActiveAssignments: active, Nodes: nodes}
 }
 
 // backend implements controlplane.Backend over the composed graph.
 type backend struct {
-	g   *runtime
-	mu  sync.Mutex
-	seq int
+	g *runtime
 }
 
 func (b *backend) Projects() []controlplane.Project {
-	recs, err := b.g.store.ListRecords("project_record")
-	if err != nil {
-		return nil
-	}
+	recs := b.g.projects.Projects()
 	out := make([]controlplane.Project, 0, len(recs))
-	for _, r := range recs {
-		var m struct {
-			Name string `json:"name"`
-		}
-		_ = json.Unmarshal(r.Data, &m)
-		out = append(out, controlplane.Project{ID: r.ID, Name: m.Name})
+	for _, record := range recs {
+		out = append(out, controlplane.Project{ID: record.ID, Name: record.Name})
 	}
 	return out
 }
@@ -263,22 +250,7 @@ func (b *backend) CreateProject(id, name string) error {
 	if id == "" {
 		return errors.New("project id is required")
 	}
-	data, err := json.Marshal(map[string]any{
-		"contractVersion": "2.0",
-		"kind":            "project_record",
-		"id":              id,
-		"name":            name,
-		"state":           "CREATED",
-		"layoutVersion":   "1",
-	})
-	if err != nil {
-		return err
-	}
-	rec, err := store.NewRecord("project_record", id, 1, data)
-	if err != nil {
-		return err
-	}
-	if _, err = b.g.store.PutRecord(rec); err != nil {
+	if _, err := b.g.projects.CreateProject(id, name); err != nil {
 		return err
 	}
 	b.emit("project:"+id, protocol.Event{
@@ -292,26 +264,25 @@ func (b *backend) CreateProject(id, name string) error {
 }
 
 func (b *backend) WorkPackages(projectID string) []controlplane.WorkPackageView {
-	if projectID != b.g.graph.ProjectID {
+	records, err := b.g.projects.WorkPackages(projectID)
+	if err != nil {
 		return nil
 	}
-	wps := b.g.api.Status().WorkPackages
-	out := make([]controlplane.WorkPackageView, 0, len(wps))
-	for _, wp := range wps {
-		out = append(out, controlplane.WorkPackageView{ID: wp.ID, Title: wp.Title, State: string(wp.State), DependsOn: wp.DependsOn})
+	out := make([]controlplane.WorkPackageView, 0, len(records))
+	for _, record := range records {
+		out = append(out, controlplane.WorkPackageView{
+			ID:        record.ID,
+			Title:     record.Title,
+			State:     string(record.State),
+			DependsOn: record.Dependencies,
+		})
 	}
 	return out
 }
 
 func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {
-	if projectID != b.g.graph.ProjectID {
-		return "", fmt.Errorf("unknown project %q", projectID)
-	}
-	b.mu.Lock()
-	b.seq++
-	id := fmt.Sprintf("wp-%d", b.seq)
-	b.mu.Unlock()
-	if err := b.g.graph.Add(planner.WorkPackage{ID: id, Title: title, DependsOn: dependsOn}); err != nil {
+	record, err := b.g.projects.SubmitWork(projectID, title, dependsOn)
+	if err != nil {
 		return "", err
 	}
 	b.emit("project:"+projectID, protocol.Event{
@@ -319,14 +290,14 @@ func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (strin
 		Confidence:    protocol.ConfidenceExact,
 		Action:        "work.submit",
 		Actor:         "control-plane",
-		WorkPackageID: id,
+		WorkPackageID: record.ID,
 		Metadata:      map[string]string{"status": "submitted"},
 	})
-	return id, nil
+	return record.ID, nil
 }
 
 func (b *backend) Assignments() []controlplane.AssignmentView {
-	as := b.g.api.Status().Assignments
+	as := b.g.projects.AssignmentStatuses()
 	out := make([]controlplane.AssignmentView, 0, len(as))
 	for _, a := range as {
 		out = append(out, controlplane.AssignmentView{ID: a.ID, WorkPackageID: a.WorkPackageID, WorkerID: a.WorkerID, State: a.State, Attempt: a.Attempt})
@@ -335,7 +306,11 @@ func (b *backend) Assignments() []controlplane.AssignmentView {
 }
 
 func (b *backend) Approve(gateID string) error {
-	b.g.api.Approve(gateID)
+	project, ok := b.g.projects.ProjectForWorkPackage(gateID)
+	if !ok {
+		return fmt.Errorf("unknown gate %q", gateID)
+	}
+	project.API.Approve(gateID)
 	b.emit("control-plane", protocol.Event{
 		SourceType:    protocol.SourceSession,
 		Confidence:    protocol.ConfidenceObserved,
@@ -539,19 +514,14 @@ func build(root string) (*runtime, error) {
 		Sink: lifecycleObserver{plane: observations},
 	})
 
-	// Kernel control path: one project graph + scheduler, exposed in-process by
-	// kernel/api. Execution stays disabled on the core path (no model, no worker).
-	graph := planner.NewGraph("default", "plan-main")
-	sched, err := scheduler.New(graph, scheduler.Config{
-		Registry:  role_allocator.New(),
-		Lifecycle: lifecycleManager,
-	})
+	// Durable multi-project control path. Execution stays disabled on the core
+	// path until Sprint 3 wires the deterministic runtime.
+	projects, err := projectstate.New(st, proj, projectstate.Options{Lifecycle: lifecycleManager})
 	if err != nil {
-		return nil, fmt.Errorf("kernel/scheduler: %w", err)
+		return nil, fmt.Errorf("projectstate: %w", err)
 	}
-	apiSvc, err := api.New(api.Config{Scheduler: sched})
-	if err != nil {
-		return nil, fmt.Errorf("kernel/api: %w", err)
+	if _, _, err := projects.EnsureProject("default", "Default"); err != nil {
+		return nil, fmt.Errorf("projectstate: default project: %w", err)
 	}
 
 	return &runtime{
@@ -569,9 +539,7 @@ func build(root string) (*runtime, error) {
 		traceSink:  traceSink,
 		computer:   computerProvider,
 		tools:      toolReg,
-		graph:      graph,
-		sched:      sched,
-		api:        apiSvc,
+		projects:   projects,
 		syncer:     syncer,
 		obs:        observations,
 		vis:        visualizerPlane,
