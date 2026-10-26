@@ -1,6 +1,9 @@
 package toolbox
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestKeyIsStableAndTrimmed(t *testing.T) {
 	got := Key(" invoke ", " a ", "b")
@@ -14,8 +17,8 @@ func TestKeyIsStableAndTrimmed(t *testing.T) {
 
 func TestInvocationKeyNamespacesExplicitByToolAndContract(t *testing.T) {
 	got := InvocationKey("tool_1", "ec_1", "explicit")
-	if got != "invoke:tool_1:ec_1:explicit" {
-		t.Fatalf("explicit key = %q, want %q", got, "invoke:tool_1:ec_1:explicit")
+	if !strings.HasPrefix(got, "invoke:") {
+		t.Fatalf("explicit key = %q, want invoke prefix", got)
 	}
 	if other := InvocationKey("tool_2", "ec_1", "explicit"); other == got {
 		t.Fatalf("explicit keys should differ across tools: %q", other)
@@ -25,10 +28,18 @@ func TestInvocationKeyNamespacesExplicitByToolAndContract(t *testing.T) {
 	}
 }
 
+func TestInvocationKeyHasNoDelimiterCollision(t *testing.T) {
+	first := InvocationKey("tool_a", "contract_b", "key_c:d")
+	second := InvocationKey("tool_a:b", "contract_c", "key_d")
+	if first == second {
+		t.Fatalf("delimiter collision: %q", first)
+	}
+}
+
 func TestInvocationKeyStableWhenEmpty(t *testing.T) {
 	got := InvocationKey("tool_1", "ec_1", "")
-	if got != "invoke:tool_1:ec_1:" {
-		t.Fatalf("derived key = %q, want %q", got, "invoke:tool_1:ec_1:")
+	if !strings.HasPrefix(got, "invoke:") {
+		t.Fatalf("derived key = %q, want invoke prefix", got)
 	}
 	if same := InvocationKey("tool_1", "ec_1", ""); same != got {
 		t.Fatalf("derived key not stable: %q vs %q", same, got)

@@ -1,6 +1,9 @@
 package toolbox
 
-import "strings"
+import (
+	"encoding/json"
+	"strings"
+)
 
 // Key derives a stable idempotency key from an operation name and its parts.
 //
@@ -19,5 +22,8 @@ func Key(operation string, parts ...string) string {
 // execution contract. Tool, contract, and caller-supplied key are all part of
 // the identity so a key reused across tools or contracts cannot collide.
 func InvocationKey(toolID ToolID, contractID, explicit string) string {
-	return Key("invoke", string(toolID), contractID, explicit)
+	// Hash a structured tuple instead of joining raw strings. Identifiers and
+	// caller-supplied keys may contain ':', so delimiter-joining is ambiguous.
+	payload, _ := json.Marshal([]string{"invoke", string(toolID), contractID, explicit})
+	return "invoke:" + Hash(payload)
 }

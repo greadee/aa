@@ -524,3 +524,29 @@ func TestNonIdempotentCallHonorsCallerDeadline(t *testing.T) {
 	<-provider.started
 	close(provider.release)
 }
+
+func TestRequestFingerprintNormalizesNilAndEmptyInput(t *testing.T) {
+	base := map[string]any{"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "fp-k1"}
+	withNil := req(MethodInvoke, map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "fp-k1", "input": nil,
+	})
+	withEmpty := req(MethodInvoke, map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "fp-k1", "input": map[string]any{},
+	})
+	withoutInput := req(MethodInvoke, base)
+	a, err := requestFingerprint(withNil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := requestFingerprint(withEmpty)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := requestFingerprint(withoutInput)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a != b || b != c {
+		t.Fatalf("fingerprints differ: %q %q %q", a, b, c)
+	}
+}

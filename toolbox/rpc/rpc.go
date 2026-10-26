@@ -290,7 +290,7 @@ func requestFingerprint(req Request) (string, error) {
 		Caller string         `json:"caller,omitempty"`
 	}{
 		Method: req.Method,
-		Params: req.Params,
+		Params: normalizeParams(req.Params),
 		Caller: func() string {
 			if req.AA == nil {
 				return ""
@@ -302,6 +302,26 @@ func requestFingerprint(req Request) (string, error) {
 		return "", err
 	}
 	return toolbox.Hash(payload), nil
+}
+
+func normalizeParams(params map[string]any) map[string]any {
+	if params == nil {
+		return nil
+	}
+	out := make(map[string]any, len(params))
+	for key, value := range params {
+		out[key] = value
+	}
+	if input, ok := out["input"]; ok {
+		if input == nil {
+			delete(out, "input")
+			return out
+		}
+		if values, ok := input.(map[string]any); ok && len(values) == 0 {
+			delete(out, "input")
+		}
+	}
+	return out
 }
 
 func errorCategory(data map[string]any) string {
