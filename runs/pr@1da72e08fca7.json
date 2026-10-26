@@ -1,0 +1,60 @@
+{
+  "id": "pr@1da72e08fca7",
+  "profile": "pr",
+  "repository": "greadee/aa",
+  "ref": "1da72e08fca7958f026c0ee319d4e2524d592318",
+  "base": "origin/main",
+  "head": "1da72e08fca7958f026c0ee319d4e2524d592318",
+  "generated": "2026-10-26T05:20:11.610423544Z",
+  "findings": [
+    {
+      "id": "e69e6d651c17e1972903db971dfb2464",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/metrics.go",
+        "line": 86,
+        "snippet": "func NewMemMetrics"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "toolbox",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewMemMetrics",
+      "status": "new",
+      "firstSeen": "pr@1da72e08fca7",
+      "lastSeen": "pr@1da72e08fca7",
+      "runId": "pr@1da72e08fca7"
+    },
+    {
+      "id": "90997f65042ad76bb488fd65e2057db1",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/rpc/rpc.go",
+        "line": 211,
+        "snippet": "if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {",
+      "status": "new",
+      "firstSeen": "pr@1da72e08fca7",
+      "lastSeen": "pr@1da72e08fca7",
+      "runId": "pr@1da72e08fca7"
+    }
+  ],
+  "resolved": null,
+  "blockThreshold": "P1",
+  "archiveURL": "",
+  "coverage": {
+    "selected": 6,
+    "analyzed": 6,
+    "skipped": 0,
+    "truncated": 0,
+    "threshold": 1
+  }
+}
