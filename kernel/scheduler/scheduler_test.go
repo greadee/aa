@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/greadee/aa/kernel/allocator/planner"
@@ -11,8 +12,15 @@ import (
 	"github.com/greadee/aa/runtime/worker"
 )
 
+type sinkRecord struct {
+	kind string
+	id   string
+	data []byte
+}
+
 type recSink struct {
-	events []string
+	events  []string
+	records []sinkRecord
 }
 
 func (s *recSink) Event(_ int, eventType string, _ map[string]any) error {
@@ -20,7 +28,10 @@ func (s *recSink) Event(_ int, eventType string, _ map[string]any) error {
 	return nil
 }
 
-func (s *recSink) Record(string, string, []byte) error { return nil }
+func (s *recSink) Record(kind, id string, data []byte) error {
+	s.records = append(s.records, sinkRecord{kind: kind, id: id, data: append([]byte(nil), data...)})
+	return nil
+}
 
 func newTestScheduler(t *testing.T, enabled bool, sink Sink) (*Scheduler, *worker.Fake, *gate.HumanGate) {
 	t.Helper()
@@ -113,6 +124,20 @@ func TestSupervisedRun(t *testing.T) {
 	}
 	if len(sink.events) == 0 {
 		t.Fatal("expected sink events")
+	}
+	if len(sink.records) == 0 {
+		t.Fatal("expected sink assignment records")
+	}
+	last := sink.records[len(sink.records)-1]
+	if last.kind != "assignment" {
+		t.Fatalf("last record kind = %q", last.kind)
+	}
+	var record AssignmentRecord
+	if err := json.Unmarshal(last.data, &record); err != nil {
+		t.Fatal(err)
+	}
+	if record.State != string(StateAccepted) || record.ProjectID != "prj_1" {
+		t.Fatalf("last record = %+v", record)
 	}
 }
 

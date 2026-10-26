@@ -72,3 +72,37 @@ func TestControlPlaneProjectWorkSurvivesRestart(t *testing.T) {
 		t.Fatalf("projects after restart = %+v", b2.Projects())
 	}
 }
+
+func TestControlPlaneApprovalSurvivesRestart(t *testing.T) {
+	root := t.TempDir()
+	g, err := build(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := &backend{g: g}
+	if err := b.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	id, err := b.SubmitWork("p1", "project work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Approve(id); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.obs.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := build(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.obs.Close()
+	approvals, err := reopened.projects.ApprovalRecords()
+	if err != nil || len(approvals) != 1 || approvals[0].Decision != "approve" {
+		t.Fatalf("approvals = %+v err = %v", approvals, err)
+	}
+	if reopened.projects.ActiveAssignments() != 0 {
+		t.Fatalf("active assignments = %d", reopened.projects.ActiveAssignments())
+	}
+}

@@ -310,7 +310,9 @@ func (b *backend) Approve(gateID string) error {
 	if !ok {
 		return fmt.Errorf("unknown gate %q", gateID)
 	}
-	project.API.Approve(gateID)
+	if _, err := b.g.projects.RecordApproval(project.Record.ID, gateID, repo.DecisionApprove, "console", ""); err != nil {
+		return err
+	}
 	b.emit("control-plane", protocol.Event{
 		SourceType:    protocol.SourceSession,
 		Confidence:    protocol.ConfidenceObserved,

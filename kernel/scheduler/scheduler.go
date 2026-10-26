@@ -8,6 +8,7 @@ package scheduler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -201,6 +202,7 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 	o.emit("EXECUTION_STARTED", map[string]any{
 		"workPackageId": workPackageID, "assignmentId": assignmentID, "workerId": string(selected.ID),
 	})
+	o.recordAssignment(assignment)
 	o.mu.Unlock()
 
 	var instanceID string
@@ -223,6 +225,7 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 			o.mu.Lock()
 			_ = assignment.Transition(StateCanceled)
 			o.assignments[workPackageID] = assignment
+			o.recordAssignment(assignment)
 			o.mu.Unlock()
 			return DispatchReport{}, err
 		}
@@ -230,6 +233,7 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 		_ = assignment.Transition(StateFailed)
 		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
 		o.assignments[workPackageID] = assignment
+		o.recordAssignment(assignment)
 		o.mu.Unlock()
 		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed"}, nil
 	}
@@ -258,18 +262,21 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 	o.assignments[workPackageID] = assignment
 	o.results[workPackageID] = result
 	o.recordTelemetry(assignment, result)
+	o.recordAssignment(assignment)
 
 	report := gate.Evaluate(o.cfg.Gates, o.subject(workPackageID, result))
 
 	if result.Status != "succeeded" && result.Status != "partial" {
 		_ = assignment.Transition(StateFailed)
 		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
+		o.recordAssignment(assignment)
 		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed", Gates: report, IntakeAccepted: accepted}, nil
 	}
 
 	if err := assignment.Transition(StateAwaitingGates); err != nil {
 		return DispatchReport{}, err
 	}
+	o.recordAssignment(assignment)
 	if report.Passed {
 		return o.accept(assignment, report, accepted), nil
 	}
@@ -303,6 +310,7 @@ func (o *Scheduler) Resolve(workPackageID string) (DispatchReport, error) {
 	}
 	_ = assignment.Transition(StateFailed)
 	_ = o.graph.SetState(workPackageID, planner.StateDeficient)
+	o.recordAssignment(assignment)
 	return DispatchReport{WorkPackageID: workPackageID, WorkerID: assignment.WorkerID, State: string(assignment.State), Status: "failed", Gates: report}, nil
 }
 
@@ -342,6 +350,19 @@ type AssignmentStatus struct {
 	Attempt       int    `json:"attempt"`
 }
 
+// AssignmentRecord is the serializable assignment shape emitted through
+// Sink.Record. It maps directly to memory/repo.AssignmentRecord.
+type AssignmentRecord struct {
+	ID             string `json:"id"`
+	ProjectID      string `json:"projectId"`
+	WorkPackageID  string `json:"workPackageId"`
+	WorkerID       string `json:"workerId"`
+	State          string `json:"state"`
+	Attempt        int    `json:"attempt"`
+	LeaseOwner     string `json:"leaseOwner,omitempty"`
+	LeaseExpiresAt string `json:"leaseExpiresAt,omitempty"`
+}
+
 // ProjectStatus is a read view of the project.
 type ProjectStatus struct {
 	ProjectID    string                `json:"projectId"`
@@ -364,9 +385,30 @@ func (o *Scheduler) Status() ProjectStatus {
 	return status
 }
 
+func (o *Scheduler) recordAssignment(assignment *Assignment) {
+	record := AssignmentRecord{
+		ID:            assignment.ID,
+		ProjectID:     assignment.ProjectID,
+		WorkPackageID: assignment.WorkPackageID,
+		WorkerID:      assignment.WorkerID,
+		State:         string(assignment.State),
+		Attempt:       assignment.Attempt,
+		LeaseOwner:    assignment.Lease.Owner,
+	}
+	if !assignment.Lease.ExpiresAt.IsZero() {
+		record.LeaseExpiresAt = assignment.Lease.ExpiresAt.UTC().Format(time.RFC3339Nano)
+	}
+	data, err := json.Marshal(record)
+	if err != nil {
+		return
+	}
+	_ = o.cfg.Sink.Record("assignment", assignment.ID, data)
+}
+
 func (o *Scheduler) accept(assignment *Assignment, report gate.Report, accepted bool) DispatchReport {
 	_ = assignment.Transition(StateAccepted)
 	_ = o.graph.SetState(assignment.WorkPackageID, planner.StateCompleted)
+	o.recordAssignment(assignment)
 	o.emit("WORK_ACCEPTED", map[string]any{
 		"workPackageId": assignment.WorkPackageID, "assignmentId": assignment.ID,
 	})

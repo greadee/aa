@@ -176,3 +176,97 @@ func TestProjectForWorkPackageAndAssignments(t *testing.T) {
 		t.Fatalf("active = %d", state.ActiveAssignments())
 	}
 }
+
+func TestRecordApprovalPersistsAndRestores(t *testing.T) {
+	state, st := newState(t)
+	if _, err := state.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	work, err := state.SubmitWork("p1", "Work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := state.RecordApproval("p1", work.ID, repo.DecisionApprove, "human", "ok"); err != nil {
+		t.Fatal(err)
+	}
+	records, err := state.ApprovalRecords()
+	if err != nil || len(records) != 1 || records[0].Decision != repo.DecisionApprove {
+		t.Fatalf("approvals = %+v err = %v", records, err)
+	}
+	reopened, err := New(st, projection.NewMem())
+	if err != nil {
+		t.Fatal(err)
+	}
+	records, err = reopened.ApprovalRecords()
+	if err != nil || len(records) != 1 || records[0].Decision != repo.DecisionApprove {
+		t.Fatalf("reopened approvals = %+v err = %v", records, err)
+	}
+	if _, err := state.RecordApproval("p1", "missing", repo.DecisionApprove, "human", ""); err == nil {
+		t.Fatal("expected unknown work package error")
+	}
+	if _, err := state.RecordApproval("missing", work.ID, repo.DecisionApprove, "human", ""); err == nil {
+		t.Fatal("expected unknown project error")
+	}
+}
+
+func TestDurableAssignmentReadModel(t *testing.T) {
+	state, st := newState(t)
+	if _, err := state.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	work, err := state.SubmitWork("p1", "Work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assignments := repo.NewAssignmentRepository(st, projection.NewMem())
+	record := repo.AssignmentRecord{
+		ID:            "asg_1",
+		ProjectID:     "p1",
+		WorkPackageID: work.ID,
+		WorkerID:      "w1",
+		State:         "running",
+		Attempt:       1,
+	}
+	if _, err := assignments.Save(record); err != nil {
+		t.Fatal(err)
+	}
+	statuses := state.AssignmentStatuses()
+	if len(statuses) != 1 || statuses[0].State != "running" || state.ActiveAssignments() != 1 {
+		t.Fatalf("statuses = %+v active = %d", statuses, state.ActiveAssignments())
+	}
+	record.State = "accepted"
+	if _, err := assignments.Save(record); err != nil {
+		t.Fatal(err)
+	}
+	if state.ActiveAssignments() != 0 {
+		t.Fatalf("active after accepted = %d", state.ActiveAssignments())
+	}
+	reopened, err := New(st, projection.NewMem())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if statuses := reopened.AssignmentStatuses(); len(statuses) != 1 || statuses[0].State != "accepted" {
+		t.Fatalf("reopened statuses = %+v", statuses)
+	}
+}
+
+func TestNewRejectsAssignmentWithUnknownWorkPackage(t *testing.T) {
+	state, st := newState(t)
+	if _, err := state.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	assignments := repo.NewAssignmentRepository(st, projection.NewMem())
+	if _, err := assignments.Save(repo.AssignmentRecord{
+		ID:            "asg_bad",
+		ProjectID:     "p1",
+		WorkPackageID: "missing",
+		WorkerID:      "w1",
+		State:         "running",
+		Attempt:       1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(st, projection.NewMem()); err == nil {
+		t.Fatal("expected corrupt assignment state to fail closed")
+	}
+}

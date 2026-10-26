@@ -32,6 +32,8 @@ type State struct {
 
 	projectsRepo *repo.ProjectRepository
 	workRepo     *repo.WorkPackageRepository
+	assignments  *repo.AssignmentRepository
+	approvals    *repo.ApprovalRepository
 }
 
 // Project is one project's durable record plus its in-process kernel graph.
@@ -54,6 +56,8 @@ func New(st *store.Store, proj projection.Projection, options ...Options) (*Stat
 		opts:         opts,
 		projectsRepo: repo.NewProjectRepository(st, proj),
 		workRepo:     repo.NewWorkPackageRepository(st, proj),
+		assignments:  repo.NewAssignmentRepository(st, proj),
+		approvals:    repo.NewApprovalRepository(st, proj),
 	}
 
 	projects, err := s.projectsRepo.List()
@@ -94,17 +98,61 @@ func New(st *store.Store, proj projection.Projection, options ...Options) (*Stat
 		if err := project.Graph.Validate(); err != nil {
 			return nil, fmt.Errorf("projectstate: validate project %q: %w", id, err)
 		}
-		if err := attachRuntime(project, s.opts); err != nil {
+		if err := attachRuntime(project, s.opts, assignmentSink{repo: s.assignments}); err != nil {
 			return nil, fmt.Errorf("projectstate: project %q: %w", id, err)
 		}
+	}
+	if err := s.restoreAssignments(); err != nil {
+		return nil, err
+	}
+	if err := s.restoreApprovals(); err != nil {
+		return nil, err
 	}
 	return s, nil
 }
 
-func attachRuntime(project *Project, opts Options) error {
+func (s *State) restoreAssignments() error {
+	assignments, err := s.assignments.List()
+	if err != nil {
+		return fmt.Errorf("projectstate: list assignments: %w", err)
+	}
+	for _, assignment := range assignments {
+		project, ok := s.projects[assignment.ProjectID]
+		if !ok {
+			return fmt.Errorf("projectstate: assignment %q references unknown project %q", assignment.ID, assignment.ProjectID)
+		}
+		if _, ok := project.Graph.Get(assignment.WorkPackageID); !ok {
+			return fmt.Errorf("projectstate: assignment %q references unknown work package %q", assignment.ID, assignment.WorkPackageID)
+		}
+	}
+	return nil
+}
+
+func (s *State) restoreApprovals() error {
+	approvals, err := s.approvals.List()
+	if err != nil {
+		return fmt.Errorf("projectstate: list approvals: %w", err)
+	}
+	for _, approval := range approvals {
+		project, ok := s.projects[approval.ProjectID]
+		if !ok {
+			return fmt.Errorf("projectstate: approval for %q references unknown project %q", approval.WorkPackageID, approval.ProjectID)
+		}
+		if _, ok := project.Graph.Get(approval.WorkPackageID); !ok {
+			return fmt.Errorf("projectstate: approval references unknown work package %q", approval.WorkPackageID)
+		}
+		if approval.Decision == repo.DecisionApprove {
+			project.API.Approve(approval.WorkPackageID)
+		}
+	}
+	return nil
+}
+
+func attachRuntime(project *Project, opts Options, sink scheduler.Sink) error {
 	sched, err := scheduler.New(project.Graph, scheduler.Config{
 		Registry:  role_allocator.New(),
 		Lifecycle: opts.Lifecycle,
+		Sink:      sink,
 	})
 	if err != nil {
 		return err
@@ -175,7 +223,7 @@ func (s *State) createLocked(id, name string) (v2.ProjectRecord, error) {
 		Record: record,
 		Graph:  planner.NewGraph(record.ID, "graph_"+record.ID),
 	}
-	if err := attachRuntime(project, s.opts); err != nil {
+	if err := attachRuntime(project, s.opts, assignmentSink{repo: s.assignments}); err != nil {
 		return v2.ProjectRecord{}, err
 	}
 	s.projects[id] = project
@@ -246,19 +294,22 @@ func (s *State) ProjectForWorkPackage(workPackageID string) (*Project, bool) {
 	return nil, false
 }
 
-// AssignmentStatuses returns scheduler assignment views across all projects.
+// AssignmentStatuses returns durable assignment views across all projects.
 func (s *State) AssignmentStatuses() []scheduler.AssignmentStatus {
-	s.mu.RLock()
-	projects := make([]*Project, 0, len(s.projects))
-	for _, project := range s.projects {
-		projects = append(projects, project)
+	records, err := s.assignments.List()
+	if err != nil {
+		return nil
 	}
-	s.mu.RUnlock()
-	var out []scheduler.AssignmentStatus
-	for _, project := range projects {
-		out = append(out, project.Scheduler.Status().Assignments...)
+	out := make([]scheduler.AssignmentStatus, 0, len(records))
+	for _, record := range records {
+		out = append(out, scheduler.AssignmentStatus{
+			ID:            record.ID,
+			WorkPackageID: record.WorkPackageID,
+			WorkerID:      record.WorkerID,
+			State:         record.State,
+			Attempt:       record.Attempt,
+		})
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out
 }
 
@@ -275,6 +326,41 @@ func (s *State) ActiveAssignments() int {
 	return active
 }
 
+// RecordApproval persists a decision and applies an approval to the project
+// scheduler. Reject is persisted for later gate evaluation; it never approves.
+func (s *State) RecordApproval(projectID, workPackageID, decision, actor, reason string) (repo.ApprovalRecord, error) {
+	s.mu.RLock()
+	project, ok := s.projects[projectID]
+	if !ok {
+		s.mu.RUnlock()
+		return repo.ApprovalRecord{}, fmt.Errorf("projectstate: unknown project %q", projectID)
+	}
+	if _, ok := project.Graph.Get(workPackageID); !ok {
+		s.mu.RUnlock()
+		return repo.ApprovalRecord{}, fmt.Errorf("projectstate: unknown work package %q", workPackageID)
+	}
+	s.mu.RUnlock()
+	record, err := s.approvals.Save(repo.ApprovalRecord{
+		WorkPackageID: workPackageID,
+		ProjectID:     projectID,
+		Decision:      decision,
+		Actor:         actor,
+		Reason:        reason,
+	})
+	if err != nil {
+		return repo.ApprovalRecord{}, err
+	}
+	if decision == repo.DecisionApprove {
+		project.API.Approve(workPackageID)
+	}
+	return record, nil
+}
+
+// ApprovalRecords returns all durable approval decisions.
+func (s *State) ApprovalRecords() ([]repo.ApprovalRecord, error) {
+	return s.approvals.List()
+}
+
 // ProjectRuntime returns the in-process scheduler/API for one project.
 func (s *State) ProjectRuntime(projectID string) (*scheduler.Scheduler, *api.Service, bool) {
 	s.mu.RLock()
@@ -284,6 +370,19 @@ func (s *State) ProjectRuntime(projectID string) (*scheduler.Scheduler, *api.Ser
 		return nil, nil, false
 	}
 	return project.Scheduler, project.API, true
+}
+
+type assignmentSink struct {
+	repo *repo.AssignmentRepository
+}
+
+func (assignmentSink) Event(int, string, map[string]any) error { return nil }
+
+func (s assignmentSink) Record(kind, id string, data []byte) error {
+	if kind != "assignment" {
+		return nil
+	}
+	return s.repo.SaveJSON(data)
 }
 
 func toPlanner(record repo.WorkPackageRecord) planner.WorkPackage {
