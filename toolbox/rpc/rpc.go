@@ -123,37 +123,11 @@ type ContractResolver interface {
 type Service struct {
 	host      *host.Host
 	contracts ContractResolver
-	metrics   *Metrics
+	metrics   toolbox.Metrics
 
 	mu       sync.Mutex
-	cache    map[string]any
+	cache    map[string]Response
 	inflight map[string]*cacheResult
-}
-
-// Metrics collects invocation statistics.
-type Metrics struct {
-	mu           sync.Mutex
-	invocations  int64
-	denials      int64
-	totalLatency time.Duration
-}
-
-// Snapshot returns a point-in-time copy of the metrics.
-func (m *Metrics) Snapshot() MetricsSnapshot {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return MetricsSnapshot{
-		Invocations:  m.invocations,
-		Denials:      m.denials,
-		AvgLatencyMS: int64(float64(m.totalLatency) / float64(m.invocations) / float64(time.Millisecond)),
-	}
-}
-
-// MetricsSnapshot is an immutable point-in-time copy of Metrics.
-type MetricsSnapshot struct {
-	Invocations  int64
-	Denials      int64
-	AvgLatencyMS int64
 }
 
 // cacheResult holds the result of an in-flight request for deduplication.
@@ -163,12 +137,13 @@ type cacheResult struct {
 }
 
 // New returns a service over an invocation host and contract resolver.
-// Optionally pass a *Metrics to collect invocation statistics.
-func New(h *host.Host, contracts ContractResolver, m *Metrics) *Service {
-	if m == nil {
-		m = &Metrics{}
+// Optionally pass a Metrics implementation; the default is a no-op collector.
+func New(h *host.Host, contracts ContractResolver, metrics ...toolbox.Metrics) *Service {
+	m := toolbox.Metrics(toolbox.NoopMetrics{})
+	if len(metrics) > 0 && metrics[0] != nil {
+		m = metrics[0]
 	}
-	return &Service{host: h, contracts: contracts, metrics: m, cache: map[string]any{}, inflight: map[string]*cacheResult{}}
+	return &Service{host: h, contracts: contracts, metrics: m, cache: map[string]Response{}, inflight: map[string]*cacheResult{}}
 }
 
 // Capabilities reports the RPC/contract versions and methods this adapter speaks,
@@ -181,9 +156,14 @@ func (s *Service) Capabilities() Capabilities {
 	}
 }
 
-// Metrics returns a snapshot of invocation statistics.
-func (s *Service) Metrics() MetricsSnapshot {
-	return s.metrics.Snapshot()
+// Metrics returns a snapshot when the service is using MemMetrics. Other
+// implementations return a zero snapshot; callers can also hold the Metrics
+// value they passed to New.
+func (s *Service) Metrics() toolbox.MetricsSnapshot {
+	if m, ok := s.metrics.(*toolbox.MemMetrics); ok {
+		return m.Snapshot()
+	}
+	return toolbox.MetricsSnapshot{}
 }
 
 // Capabilities is the advertised version and method set of an adapter.
@@ -195,30 +175,21 @@ type Capabilities struct {
 
 // Handle validates the envelope and dispatches one request.
 func (s *Service) Handle(ctx context.Context, req Request) Response {
-	start := time.Now()
-	resp := s.doHandle(ctx, req)
-	// record metrics after the full response is ready.
-	s.metrics.mu.Lock()
-	s.metrics.invocations++
-	s.metrics.totalLatency += time.Since(start)
-	if resp.Error != nil {
-		if resp.Error.Code == CodeUnauthorized || resp.Error.Code == CodeIncompatible {
-			s.metrics.denials++
-		}
-	}
-	s.metrics.mu.Unlock()
-	return resp
+	return s.doHandle(ctx, req)
 }
 
 // doHandle is the internal handle logic (without metrics recording).
 func (s *Service) doHandle(ctx context.Context, req Request) Response {
 	if req.JSONRPC != "" && req.JSONRPC != "2.0" {
-		return errResponse(req.ID, CodeInvalidRequest, "jsonrpc must be \"2.0\"")
+		return errResponseData(req.ID, CodeInvalidRequest, "jsonrpc must be \"2.0\"", errorData("invalid", false, "", ""))
 	}
 	if !compatible(req.AA) {
-		return errResponseData(req.ID, CodeIncompatible, "unsupported RPC or contract major", retryable(false))
+		return errResponseData(req.ID, CodeIncompatible, "unsupported RPC or contract major", errorData("incompatible", false, "", ""))
 	}
-	// apply timeout from aa envelope if specified.
+	// AA is an optional envelope. Its absence is valid and means the caller
+	// requested no timeout; only an explicit positive TimeoutMS adds a
+	// deadline. This is intentional fail-open for optional metadata, not an
+	// unvalidated safety check.
 	if req.AA != nil && req.AA.TimeoutMS > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(req.AA.TimeoutMS)*time.Millisecond)
@@ -230,53 +201,52 @@ func (s *Service) doHandle(ctx context.Context, req Request) Response {
 	return s.handleSingle(ctx, req)
 }
 
-// handleWithDedup deduplicates in-flight requests sharing the same idempotency
-// key: only the first caller executes the method; others wait and reuse the result.
+// handleWithDedup guarantees one execution per method/idempotency-key. It
+// serves completed results from the cache and makes concurrent callers wait for
+// the first execution, including cancellation when their own deadline expires.
 func (s *Service) handleWithDedup(ctx context.Context, req Request, key string) Response {
+	cacheKey := req.Method + "|" + key
+
 	s.mu.Lock()
-	if cr, exists := s.inflight[req.Method+"|"+key]; exists {
-		// another caller is already executing this request; wait for its result.
+	if cached, found := s.cache[cacheKey]; found {
+		s.mu.Unlock()
+		s.metrics.RecordCacheHit(cacheKey)
+		cached.ID = req.ID
+		return cached
+	}
+	if cr, exists := s.inflight[cacheKey]; exists {
 		ch := cr.respCh
 		s.mu.Unlock()
-		<-ch // blocks until the first caller closes it
-		s.mu.Lock()
-		resp := cr.resp
-		s.cache[req.Method+"|"+key] = resp.Result
-		delete(s.inflight, req.Method+"|"+key)
-		s.mu.Unlock()
-		return resp
+		select {
+		case <-ch:
+			s.mu.Lock()
+			resp := cr.resp
+			s.mu.Unlock()
+			s.metrics.RecordCacheHit(cacheKey)
+			resp.ID = req.ID
+			return resp
+		case <-ctx.Done():
+			return errResponseFrom(req, ctx.Err())
+		}
 	}
-	// first caller: create a result holder and proceed to execute.
 	cr := &cacheResult{respCh: make(chan struct{})}
-	s.inflight[req.Method+"|"+key] = cr
+	s.inflight[cacheKey] = cr
 	s.mu.Unlock()
+	s.metrics.RecordCacheMiss(cacheKey)
 
-	// execute the method outside the lock.
 	resp := s.dispatch(ctx, req)
 
-	// signal all waiters and clean up.
 	s.mu.Lock()
 	cr.resp = resp
-	s.cache[req.Method+"|"+key] = resp.Result
-	delete(s.inflight, req.Method+"|"+key)
-	close(cr.respCh) // unblocks all waiters
+	s.cache[cacheKey] = resp
+	delete(s.inflight, cacheKey)
+	close(cr.respCh)
 	s.mu.Unlock()
 	return resp
 }
 
-// handleSingle processes a non-idempotent request.
+// handleSingle processes a request without an idempotency key.
 func (s *Service) handleSingle(ctx context.Context, req Request) Response {
-	s.mu.Lock()
-	if key, ok := idempotencyKey(req); ok {
-		s.mu.Unlock()
-		// idempotency key present but not used for dedup—still cache the result.
-		result := s.dispatch(ctx, req)
-		s.mu.Lock()
-		s.cache[req.Method+"|"+key] = result.Result
-		s.mu.Unlock()
-		return result
-	}
-	s.mu.Unlock()
 	return s.dispatch(ctx, req)
 }
 
@@ -294,10 +264,10 @@ func (s *Service) dispatch(ctx context.Context, req Request) Response {
 	case MethodRegistry:
 		result, err = s.listRegistry(req)
 	default:
-		return errResponse(req.ID, CodeMethodNotFound, fmt.Sprintf("unknown method %q", req.Method))
+		return errResponseData(req.ID, CodeMethodNotFound, fmt.Sprintf("unknown method %q", req.Method), errorData("method_not_found", false, "", ""))
 	}
 	if err != nil {
-		return errResponseFrom(req.ID, err)
+		return errResponseFrom(req, err)
 	}
 	return Response{JSONRPC: "2.0", ID: req.ID, Result: result}
 }
@@ -477,21 +447,86 @@ func errResponseData(id any, code any, message string, data map[string]any) Resp
 	return Response{JSONRPC: "2.0", ID: id, Error: &Error{Code: code, Message: message, Data: data}}
 }
 
-func retryable(v bool) map[string]any { return map[string]any{"retryable": v} }
+func errorData(category string, retryableValue bool, toolID, contractID string) map[string]any {
+	data := map[string]any{
+		"category":  category,
+		"retryable": retryableValue,
+	}
+	if toolID != "" {
+		data["toolId"] = toolID
+	}
+	if contractID != "" {
+		data["executionContractId"] = contractID
+	}
+	return data
+}
 
-func errResponseFrom(id any, err error) Response {
+func requestErrorIDs(req Request) (toolID, contractID string) {
+	if req.Params == nil {
+		return "", ""
+	}
+	toolID, _ = req.Params["toolId"].(string)
+	contractID, _ = req.Params["executionContractId"].(string)
+	return toolID, contractID
+}
+
+func toolboxErrorName(err error) string {
+	switch {
+	case errors.Is(err, toolbox.ErrInvalid):
+		return "ErrInvalid"
+	case errors.Is(err, toolbox.ErrNotFound):
+		return "ErrNotFound"
+	case errors.Is(err, toolbox.ErrConflict):
+		return "ErrConflict"
+	case errors.Is(err, toolbox.ErrDenied):
+		return "ErrDenied"
+	case errors.Is(err, toolbox.ErrSandbox):
+		return "ErrSandbox"
+	case errors.Is(err, toolbox.ErrNoProvider):
+		return "ErrNoProvider"
+	case errors.Is(err, toolbox.ErrCycle):
+		return "ErrCycle"
+	case errors.Is(err, toolbox.ErrFailed):
+		return "ErrFailed"
+	case errors.Is(err, toolbox.ErrUnsupported):
+		return "ErrUnsupported"
+	case errors.Is(err, toolbox.ErrApproval):
+		return "ErrApproval"
+	default:
+		return ""
+	}
+}
+
+func withToolboxError(data map[string]any, err error) map[string]any {
+	if name := toolboxErrorName(err); name != "" {
+		data["toolboxError"] = name
+	}
+	return data
+}
+
+func errResponseFrom(req Request, err error) Response {
+	toolID, contractID := requestErrorIDs(req)
 	switch {
 	case errors.Is(err, context.DeadlineExceeded):
-		return errResponseData(id, CodeUnavailable, "request timed out", retryable(true))
+		return errResponseData(req.ID, CodeUnavailable, "request timed out",
+			withToolboxError(errorData("timeout", true, toolID, contractID), err))
+	case errors.Is(err, context.Canceled):
+		return errResponseData(req.ID, CodeUnavailable, "request canceled",
+			withToolboxError(errorData("canceled", false, toolID, contractID), err))
 	case errors.Is(err, toolbox.ErrInvalid), errors.Is(err, toolbox.ErrCycle):
-		return errResponseData(id, CodeInvalidParams, err.Error(), retryable(false))
+		return errResponseData(req.ID, CodeInvalidParams, err.Error(),
+			withToolboxError(errorData("invalid", false, toolID, contractID), err))
 	case errors.Is(err, toolbox.ErrNotFound):
-		return errResponseData(id, CodeNotFound, err.Error(), retryable(false))
+		return errResponseData(req.ID, CodeNotFound, err.Error(),
+			withToolboxError(errorData("not_found", false, toolID, contractID), err))
 	case errors.Is(err, toolbox.ErrDenied), errors.Is(err, toolbox.ErrSandbox), errors.Is(err, toolbox.ErrApproval):
-		return errResponseData(id, CodeUnauthorized, err.Error(), retryable(false))
+		return errResponseData(req.ID, CodeUnauthorized, err.Error(),
+			withToolboxError(errorData("unauthorized", false, toolID, contractID), err))
 	case errors.Is(err, toolbox.ErrNoProvider):
-		return errResponseData(id, CodeUnavailable, err.Error(), retryable(true))
+		return errResponseData(req.ID, CodeUnavailable, err.Error(),
+			withToolboxError(errorData("unavailable", true, toolID, contractID), err))
 	default:
-		return errResponseData(id, CodeInternalError, err.Error(), retryable(false))
+		return errResponseData(req.ID, CodeInternalError, err.Error(),
+			withToolboxError(errorData("internal", false, toolID, contractID), err))
 	}
 }
