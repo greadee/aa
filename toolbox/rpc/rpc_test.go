@@ -45,6 +45,33 @@ func newService(t *testing.T) (*Service, *host.FakeProvider) {
 	return New(h, contracts, nil), p
 }
 
+func newServiceWithMetrics(t *testing.T) (*Service, *toolbox.MemMetrics) {
+	t.Helper()
+	metrics := toolbox.NewMemMetrics()
+	// Rebuild with the observable collector so RPC-level counters are checked.
+	reg := registry.New()
+	p := host.NewFakeProvider(toolbox.KindTool)
+	if err := reg.RegisterProvider(p); err != nil {
+		t.Fatalf("RegisterProvider: %v", err)
+	}
+	m := toolbox.Manifest{
+		Envelope:     toolbox.Envelope{ContractVersion: "2.0", Kind: "tool_manifest", ID: "tool_a"},
+		Name:         "tool_a",
+		ToolKind:     toolbox.KindTool,
+		Version:      "1.0",
+		Capabilities: []string{"read_project"},
+	}
+	if err := reg.Register(m); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	h := host.New(reg, policy.New(nil, toolbox.NewFixedClock(), metrics), metrics)
+	contracts := resolver{
+		"ec_ok": {Capabilities: []toolbox.Capability{"read_project"}},
+		"ec_no": {Capabilities: []toolbox.Capability{"run_tests"}},
+	}
+	return New(h, contracts, metrics), metrics
+}
+
 func req(method string, params map[string]any) Request {
 	return Request{JSONRPC: "2.0", ID: 1, Method: method, Params: params}
 }
@@ -301,7 +328,7 @@ func TestConcurrentIdempotencyExecutesOnce(t *testing.T) {
 			t.Fatalf("caller %d error = %+v", i, resp.Error)
 		}
 	}
-	if got := metrics.Snapshot(); got.CacheMisses < 1 || got.CacheHits < callers-1 {
+	if got := metrics.Snapshot(); got.RPCRequests != callers || got.Invocations != 1 {
 		t.Fatalf("metrics = %+v", got)
 	}
 }
@@ -326,14 +353,8 @@ func TestIdempotencyCacheServesCompletedRequest(t *testing.T) {
 	if got := atomic.LoadInt32(&provider.calls); got != 1 {
 		t.Fatalf("provider calls = %d, want 1", got)
 	}
-	if got := metrics.Snapshot(); got.CacheHits < 1 || got.CacheMisses < 1 {
+	if got := metrics.Snapshot(); got.CacheHits < 1 || got.CacheMisses < 1 || got.RPCRequests != 2 {
 		t.Fatalf("metrics = %+v", got)
-	}
-	s.mu.Lock()
-	cached := len(s.cache)
-	s.mu.Unlock()
-	if cached != 1 {
-		t.Fatalf("rpc cache entries = %d, want 1", cached)
 	}
 }
 
@@ -360,6 +381,7 @@ func TestTimeoutReturnsStructuredError(t *testing.T) {
 	if got := atomic.LoadInt32(&provider.calls); got != 1 {
 		t.Fatalf("provider calls = %d, want 1", got)
 	}
+	close(provider.release)
 }
 
 func TestWaiterHonorsOwnTimeout(t *testing.T) {
@@ -388,6 +410,64 @@ func TestWaiterHonorsOwnTimeout(t *testing.T) {
 	}
 }
 
+func TestTimeoutDoesNotCacheFailure(t *testing.T) {
+	s, provider, _ := newBlockingService(t)
+	params := map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "timeout-retry-k1",
+	}
+	first := req(MethodInvoke, params)
+	first.AA = &AA{TimeoutMS: 20}
+	if resp := s.Handle(context.Background(), first); resp.Error == nil {
+		t.Fatal("expected first request to time out")
+	}
+	close(provider.release)
+	time.Sleep(50 * time.Millisecond)
+	second := s.Handle(context.Background(), req(MethodInvoke, params))
+	if second.Error != nil {
+		t.Fatalf("retry after timeout failed: %+v", second.Error)
+	}
+	if got := atomic.LoadInt32(&provider.calls); got != 2 {
+		t.Fatalf("provider calls = %d, want 2 (first timed out, retry executed)", got)
+	}
+}
+
+func TestConcurrentKeyReuseWithDifferentRequestConflicts(t *testing.T) {
+	s, provider, _ := newBlockingService(t)
+	firstParams := map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok",
+		"input": map[string]any{"x": 1}, "idempotencyKey": "shared-k1",
+	}
+	firstDone := make(chan Response, 1)
+	go func() { firstDone <- s.Handle(context.Background(), req(MethodInvoke, firstParams)) }()
+	<-provider.started
+
+	secondParams := map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok",
+		"input": map[string]any{"x": 2}, "idempotencyKey": "shared-k1",
+	}
+	resp := s.Handle(context.Background(), req(MethodInvoke, secondParams))
+	if resp.Error == nil || resp.Error.Code != CodeConflict {
+		t.Fatalf("second error = %+v, want conflict", resp.Error)
+	}
+	close(provider.release)
+	if first := <-firstDone; first.Error != nil {
+		t.Fatalf("first error = %+v", first.Error)
+	}
+}
+
+func TestRPCLevelErrorMetrics(t *testing.T) {
+	s, _ := newServiceWithMetrics(t)
+	bad := req(MethodRegistry, nil)
+	bad.JSONRPC = "1.0"
+	if resp := s.Handle(context.Background(), bad); resp.Error == nil {
+		t.Fatal("expected invalid jsonrpc error")
+	}
+	snap := s.Metrics()
+	if snap.RPCRequests != 1 || snap.RPCFailures != 1 || snap.RPCErrors != 1 || snap.RPCByMethod[MethodRegistry] != 1 {
+		t.Fatalf("snapshot = %+v", snap)
+	}
+}
+
 func TestStructuredInvokeErrorData(t *testing.T) {
 	s, _ := newService(t)
 	resp := s.Handle(context.Background(), req(MethodInvoke, map[string]any{
@@ -412,5 +492,61 @@ func TestNilAAEnvelopeIsValid(t *testing.T) {
 	resp := s.Handle(context.Background(), r)
 	if resp.Error != nil {
 		t.Fatalf("error = %+v", resp.Error)
+	}
+}
+
+func TestTimeoutAboveMaximumIsRejected(t *testing.T) {
+	s, _ := newService(t)
+	request := req(MethodInvoke, map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "too-long-k1",
+	})
+	request.AA = &AA{TimeoutMS: int(maxRequestTimeout/time.Millisecond) + 1}
+	resp := s.Handle(context.Background(), request)
+	if resp.Error == nil || resp.Error.Code != CodeInvalidParams || resp.Error.Data["category"] != "invalid" {
+		t.Fatalf("error = %+v, want invalid params", resp.Error)
+	}
+}
+
+func TestNonIdempotentCallHonorsCallerDeadline(t *testing.T) {
+	s, provider, _ := newBlockingService(t)
+	request := req(MethodInvoke, map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok",
+	})
+	request.AA = &AA{TimeoutMS: 20}
+	started := time.Now()
+	resp := s.Handle(context.Background(), request)
+	if resp.Error == nil || resp.Error.Code != CodeUnavailable || resp.Error.Message != "request timed out" {
+		t.Fatalf("error = %+v, want timeout", resp.Error)
+	}
+	if time.Since(started) > time.Second {
+		t.Fatal("non-idempotent timeout took too long")
+	}
+	<-provider.started
+	close(provider.release)
+}
+
+func TestRequestFingerprintNormalizesNilAndEmptyInput(t *testing.T) {
+	base := map[string]any{"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "fp-k1"}
+	withNil := req(MethodInvoke, map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "fp-k1", "input": nil,
+	})
+	withEmpty := req(MethodInvoke, map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "fp-k1", "input": map[string]any{},
+	})
+	withoutInput := req(MethodInvoke, base)
+	a, err := requestFingerprint(withNil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := requestFingerprint(withEmpty)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := requestFingerprint(withoutInput)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a != b || b != c {
+		t.Fatalf("fingerprints differ: %q %q %q", a, b, c)
 	}
 }

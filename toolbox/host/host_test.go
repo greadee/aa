@@ -3,7 +3,11 @@ package host
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	toolbox "github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/policy"
@@ -183,5 +187,137 @@ func TestHostRecordsInvocationAndCacheMetrics(t *testing.T) {
 	}
 	if snap.InvocationsByTool["tool_a"] < 2 || snap.InvocationsByKind["tool"] < 2 || snap.DenialsByTool["tool_a"] != 1 {
 		t.Fatalf("snapshot = %+v", snap)
+	}
+}
+
+func TestInvokeIdempotencyConflictOnDifferentInput(t *testing.T) {
+	h, p, _ := newHost(t)
+	first := toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}, IdempotencyKey: "k-conflict"}
+	if _, err := h.Invoke(context.Background(), first, contract("read_project")); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	second := first
+	second.Input = map[string]any{"x": 2}
+	if _, err := h.Invoke(context.Background(), second, contract("read_project")); !errors.Is(err, toolbox.ErrConflict) {
+		t.Fatalf("second err = %v, want ErrConflict", err)
+	}
+	if len(p.Calls()) != 1 {
+		t.Fatalf("provider calls = %d, want 1", len(p.Calls()))
+	}
+}
+
+func TestInvokeExplicitKeyIsContractScoped(t *testing.T) {
+	h, p, _ := newHost(t)
+	firstContract := contract("read_project")
+	firstContract.ID = "ec_1"
+	secondContract := contract("read_project")
+	secondContract.ID = "ec_2"
+	inv := toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}, IdempotencyKey: "contract-k1"}
+	if _, err := h.Invoke(context.Background(), inv, firstContract); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	if _, err := h.Invoke(context.Background(), inv, secondContract); err != nil {
+		t.Fatalf("second: %v", err)
+	}
+	if len(p.Calls()) != 2 {
+		t.Fatalf("provider calls = %d, want 2", len(p.Calls()))
+	}
+}
+
+func TestInvokeWithoutKeyExecutesEveryTime(t *testing.T) {
+	h, p, _ := newHost(t)
+	if _, err := h.Invoke(context.Background(), toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}}, contract("read_project")); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	if _, err := h.Invoke(context.Background(), toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 2}}, contract("read_project")); err != nil {
+		t.Fatalf("second: %v", err)
+	}
+	if len(p.Calls()) != 2 {
+		t.Fatalf("provider calls = %d, want 2", len(p.Calls()))
+	}
+}
+
+func TestInvokeNilAndEmptyInputAreEquivalentForIdempotency(t *testing.T) {
+	h, p, _ := newHost(t)
+	inv := toolbox.Invocation{ToolID: "tool_a", IdempotencyKey: "nil-empty-k1"}
+	if _, err := h.Invoke(context.Background(), inv, contract("read_project")); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	inv.Input = map[string]any{}
+	if _, err := h.Invoke(context.Background(), inv, contract("read_project")); err != nil {
+		t.Fatalf("second: %v", err)
+	}
+	if len(p.Calls()) != 1 {
+		t.Fatalf("provider calls = %d, want 1", len(p.Calls()))
+	}
+}
+
+func TestHostCacheIsBounded(t *testing.T) {
+	h, _, _ := newHost(t)
+	h.mu.Lock()
+	for i := 0; i < defaultCacheLimit+10; i++ {
+		h.storeLocked(fmt.Sprintf("k-%d", i), hostCacheEntry{inputHash: "x"})
+	}
+	size := len(h.cache)
+	h.mu.Unlock()
+	if size != defaultCacheLimit {
+		t.Fatalf("cache size = %d, want %d", size, defaultCacheLimit)
+	}
+}
+
+type blockingProvider struct {
+	started chan struct{}
+	release chan struct{}
+	calls   int32
+}
+
+func (p *blockingProvider) Kind() string { return toolbox.KindTool }
+
+func (p *blockingProvider) Invoke(ctx context.Context, _ toolbox.Manifest, _ map[string]any) (map[string]any, error) {
+	atomic.AddInt32(&p.calls, 1)
+	select {
+	case p.started <- struct{}{}:
+	default:
+	}
+	select {
+	case <-p.release:
+		return map[string]any{"ok": true}, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func TestHostConcurrentSameKeyExecutesOnce(t *testing.T) {
+	reg := registry.New()
+	p := &blockingProvider{started: make(chan struct{}, 1), release: make(chan struct{})}
+	if err := reg.RegisterProvider(p); err != nil {
+		t.Fatalf("RegisterProvider: %v", err)
+	}
+	if err := reg.Register(manifest("tool_a")); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	h := New(reg, policy.New(nil, toolbox.NewFixedClock()))
+	inv := toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}, IdempotencyKey: "concurrent-host-k1"}
+
+	var wg sync.WaitGroup
+	errs := make([]error, 2)
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			_, errs[i] = h.Invoke(context.Background(), inv, contract("read_project"))
+		}(i)
+	}
+	<-p.started
+	time.Sleep(20 * time.Millisecond)
+	close(p.release)
+	wg.Wait()
+	if got := atomic.LoadInt32(&p.calls); got != 1 {
+		t.Fatalf("provider calls = %d, want 1", got)
+	}
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("caller %d error = %v", i, err)
+		}
 	}
 }

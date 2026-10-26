@@ -42,7 +42,14 @@ const (
 	CodeIncompatible   = "aa.incompatible"
 	CodeUnauthorized   = "aa.unauthorized"
 	CodeNotFound       = "aa.not_found"
+	CodeConflict       = "aa.conflict"
+	CodeApproval       = "aa.approval_required"
 	CodeUnavailable    = "aa.unavailable"
+)
+
+const (
+	defaultTimeout    = 30 * time.Second
+	maxRequestTimeout = 5 * time.Minute
 )
 
 // AA is the transport metadata carried on every request.
@@ -126,15 +133,21 @@ type Service struct {
 	metrics   toolbox.Metrics
 
 	mu       sync.Mutex
-	cache    map[string]Response
 	inflight map[string]*cacheResult
 }
 
 // cacheResult holds the result of an in-flight request for deduplication.
 type cacheResult struct {
-	respCh chan struct{} // closed when the first caller finishes
-	resp   Response      // result set by the first caller
+	respCh      chan struct{} // closed when the first caller finishes
+	resp        Response      // result set by the first caller
+	fingerprint string        // canonical request identity for conflict detection
 }
+
+// Metrics and MetricsSnapshot are retained as source-compatible aliases for
+// callers that used the former rpc-local metrics type. Use toolbox.MemMetrics
+// for new code.
+type Metrics = toolbox.MemMetrics
+type MetricsSnapshot = toolbox.MetricsSnapshot
 
 // New returns a service over an invocation host and contract resolver.
 // Optionally pass a Metrics implementation; the default is a no-op collector.
@@ -143,7 +156,7 @@ func New(h *host.Host, contracts ContractResolver, metrics ...toolbox.Metrics) *
 	if len(metrics) > 0 && metrics[0] != nil {
 		m = metrics[0]
 	}
-	return &Service{host: h, contracts: contracts, metrics: m, cache: map[string]Response{}, inflight: map[string]*cacheResult{}}
+	return &Service{host: h, contracts: contracts, metrics: m, inflight: map[string]*cacheResult{}}
 }
 
 // Capabilities reports the RPC/contract versions and methods this adapter speaks,
@@ -175,7 +188,13 @@ type Capabilities struct {
 
 // Handle validates the envelope and dispatches one request.
 func (s *Service) Handle(ctx context.Context, req Request) Response {
-	return s.doHandle(ctx, req)
+	start := time.Now()
+	resp := s.doHandle(ctx, req)
+	s.metrics.RecordRPC(req.Method, time.Since(start), resp.Error == nil)
+	if resp.Error != nil {
+		s.metrics.RecordRPCError(req.Method, errorCategory(resp.Error.Data))
+	}
+	return resp
 }
 
 // doHandle is the internal handle logic (without metrics recording).
@@ -186,15 +205,20 @@ func (s *Service) doHandle(ctx context.Context, req Request) Response {
 	if !compatible(req.AA) {
 		return errResponseData(req.ID, CodeIncompatible, "unsupported RPC or contract major", errorData("incompatible", false, "", ""))
 	}
-	// AA is an optional envelope. Its absence is valid and means the caller
-	// requested no timeout; only an explicit positive TimeoutMS adds a
-	// deadline. This is intentional fail-open for optional metadata, not an
-	// unvalidated safety check.
+	// AA is optional on the wire for compatibility, but every request is
+	// bounded. An explicit positive TimeoutMS overrides the server default.
+	timeout := defaultTimeout
 	if req.AA != nil && req.AA.TimeoutMS > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(req.AA.TimeoutMS)*time.Millisecond)
-		defer cancel()
+		if req.AA.TimeoutMS > int(maxRequestTimeout/time.Millisecond) {
+			toolID, contractID := requestErrorIDs(req)
+			return errResponseData(req.ID, CodeInvalidParams, "timeoutMs exceeds the server maximum",
+				errorData("invalid", false, toolID, contractID))
+		}
+		timeout = time.Duration(req.AA.TimeoutMS) * time.Millisecond
 	}
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, timeout)
+	defer cancel()
 	if key, ok := idempotencyKey(req); ok {
 		return s.handleWithDedup(ctx, req, key)
 	}
@@ -202,51 +226,142 @@ func (s *Service) doHandle(ctx context.Context, req Request) Response {
 }
 
 // handleWithDedup guarantees one execution per method/idempotency-key. It
-// serves completed results from the cache and makes concurrent callers wait for
-// the first execution, including cancellation when their own deadline expires.
+// deduplicates only in-flight requests. Completed replays are delegated to the
+// host, whose cache is tool/contract scoped and re-evaluates policy first.
 func (s *Service) handleWithDedup(ctx context.Context, req Request, key string) Response {
-	cacheKey := req.Method + "|" + key
+	if err := ctx.Err(); err != nil {
+		return errResponseFrom(req, err)
+	}
+	dedupKey := req.Method + "|" + key
+	fingerprint, err := requestFingerprint(req)
+	if err != nil {
+		toolID, contractID := requestErrorIDs(req)
+		return errResponseData(req.ID, CodeInvalidParams, "request is not serializable",
+			errorData("invalid", false, toolID, contractID))
+	}
 
 	s.mu.Lock()
-	if cached, found := s.cache[cacheKey]; found {
-		s.mu.Unlock()
-		s.metrics.RecordCacheHit(cacheKey)
-		cached.ID = req.ID
-		return cached
-	}
-	if cr, exists := s.inflight[cacheKey]; exists {
-		ch := cr.respCh
-		s.mu.Unlock()
-		select {
-		case <-ch:
-			s.mu.Lock()
-			resp := cr.resp
+	if cr, exists := s.inflight[dedupKey]; exists {
+		if cr.fingerprint != fingerprint {
 			s.mu.Unlock()
-			s.metrics.RecordCacheHit(cacheKey)
-			resp.ID = req.ID
-			return resp
-		case <-ctx.Done():
-			return errResponseFrom(req, ctx.Err())
+			toolID, contractID := requestErrorIDs(req)
+			return errResponseData(req.ID, CodeConflict, "idempotency key reused with a different request",
+				errorData("conflict", false, toolID, contractID))
 		}
+		s.mu.Unlock()
+		return waitForResponse(ctx, req, cr)
 	}
-	cr := &cacheResult{respCh: make(chan struct{})}
-	s.inflight[cacheKey] = cr
+	cr := &cacheResult{respCh: make(chan struct{}), fingerprint: fingerprint}
+	s.inflight[dedupKey] = cr
 	s.mu.Unlock()
-	s.metrics.RecordCacheMiss(cacheKey)
+	s.metrics.RecordCacheMiss(dedupKey)
 
-	resp := s.dispatch(ctx, req)
-
-	s.mu.Lock()
-	cr.resp = resp
-	s.cache[cacheKey] = resp
-	delete(s.inflight, cacheKey)
-	close(cr.respCh)
-	s.mu.Unlock()
-	return resp
+	// Execution is bound to the first caller's deadline. A timed-out request
+	// must not continue mutating state after the client has been told it failed.
+	go func() {
+		resp := s.dispatchSafe(ctx, req)
+		if ctx.Err() != nil {
+			resp = errResponseFrom(req, ctx.Err())
+		}
+		s.mu.Lock()
+		cr.resp = resp
+		delete(s.inflight, dedupKey)
+		close(cr.respCh)
+		s.mu.Unlock()
+	}()
+	return waitForResponse(ctx, req, cr)
 }
 
-// handleSingle processes a request without an idempotency key.
+func waitForResponse(ctx context.Context, req Request, cr *cacheResult) Response {
+	select {
+	case <-cr.respCh:
+		resp := cr.resp
+		resp.ID = req.ID
+		return resp
+	case <-ctx.Done():
+		return errResponseFrom(req, ctx.Err())
+	}
+}
+
+func requestFingerprint(req Request) (string, error) {
+	payload, err := json.Marshal(struct {
+		Method string         `json:"method"`
+		Params map[string]any `json:"params"`
+		Caller string         `json:"caller,omitempty"`
+	}{
+		Method: req.Method,
+		Params: normalizeParams(req.Params),
+		Caller: func() string {
+			if req.AA == nil {
+				return ""
+			}
+			return req.AA.Caller
+		}(),
+	})
+	if err != nil {
+		return "", err
+	}
+	return toolbox.Hash(payload), nil
+}
+
+func normalizeParams(params map[string]any) map[string]any {
+	if params == nil {
+		return nil
+	}
+	out := make(map[string]any, len(params))
+	for key, value := range params {
+		out[key] = value
+	}
+	if input, ok := out["input"]; ok {
+		if input == nil {
+			delete(out, "input")
+			return out
+		}
+		if values, ok := input.(map[string]any); ok && len(values) == 0 {
+			delete(out, "input")
+		}
+	}
+	return out
+}
+
+func errorCategory(data map[string]any) string {
+	if data == nil {
+		return "internal"
+	}
+	if category, ok := data["category"].(string); ok {
+		return category
+	}
+	return "internal"
+}
+
+// handleSingle processes a request without an idempotency key. Execution is
+// detached only so the caller can return at its deadline; the context still
+// cancels provider work when the deadline is reached.
 func (s *Service) handleSingle(ctx context.Context, req Request) Response {
+	if err := ctx.Err(); err != nil {
+		return errResponseFrom(req, err)
+	}
+	responses := make(chan Response, 1)
+	go func() { responses <- s.dispatchSafe(ctx, req) }()
+	select {
+	case resp := <-responses:
+		if ctx.Err() != nil {
+			return errResponseFrom(req, ctx.Err())
+		}
+		return resp
+	case <-ctx.Done():
+		return errResponseFrom(req, ctx.Err())
+	}
+}
+
+func (s *Service) dispatchSafe(ctx context.Context, req Request) (resp Response) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			toolID, contractID := requestErrorIDs(req)
+			resp = errResponseData(req.ID, CodeInternalError, "internal error",
+				errorData("internal", false, toolID, contractID))
+		}
+	}()
 	return s.dispatch(ctx, req)
 }
 
@@ -519,9 +634,18 @@ func errResponseFrom(req Request, err error) Response {
 	case errors.Is(err, toolbox.ErrNotFound):
 		return errResponseData(req.ID, CodeNotFound, err.Error(),
 			withToolboxError(errorData("not_found", false, toolID, contractID), err))
-	case errors.Is(err, toolbox.ErrDenied), errors.Is(err, toolbox.ErrSandbox), errors.Is(err, toolbox.ErrApproval):
+	case errors.Is(err, toolbox.ErrConflict):
+		return errResponseData(req.ID, CodeConflict, err.Error(),
+			withToolboxError(errorData("conflict", false, toolID, contractID), err))
+	case errors.Is(err, toolbox.ErrDenied), errors.Is(err, toolbox.ErrSandbox):
 		return errResponseData(req.ID, CodeUnauthorized, err.Error(),
 			withToolboxError(errorData("unauthorized", false, toolID, contractID), err))
+	case errors.Is(err, toolbox.ErrApproval):
+		return errResponseData(req.ID, CodeApproval, err.Error(),
+			withToolboxError(errorData("approval_required", false, toolID, contractID), err))
+	case errors.Is(err, toolbox.ErrUnsupported):
+		return errResponseData(req.ID, CodeUnavailable, err.Error(),
+			withToolboxError(errorData("unsupported", false, toolID, contractID), err))
 	case errors.Is(err, toolbox.ErrNoProvider):
 		return errResponseData(req.ID, CodeUnavailable, err.Error(),
 			withToolboxError(errorData("unavailable", true, toolID, contractID), err))

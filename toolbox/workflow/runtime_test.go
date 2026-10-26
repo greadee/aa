@@ -299,7 +299,7 @@ func TestRuntimeRecordsStepMetrics(t *testing.T) {
 		t.Fatalf("Run: %v", err)
 	}
 	snap := metrics.Snapshot()
-	if snap.WorkflowSteps != 2 || snap.WorkflowStepsByKind["task"] != 1 || snap.WorkflowStepsByKind["gate"] != 1 {
+	if snap.WorkflowSteps != 2 || snap.WorkflowAttempts != 2 || snap.WorkflowStepsByKind["task"] != 1 || snap.WorkflowStepsByKind["gate"] != 1 || snap.WorkflowStepsByID["a"] != 1 || snap.WorkflowStepsByID["g"] != 1 {
 		t.Fatalf("snapshot = %+v", snap)
 	}
 }
