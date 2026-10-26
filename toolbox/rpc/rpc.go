@@ -48,8 +48,8 @@ const (
 )
 
 const (
-	defaultTimeout      = 30 * time.Second
-	maxExecutionTimeout = 5 * time.Minute
+	defaultTimeout    = 30 * time.Second
+	maxRequestTimeout = 5 * time.Minute
 )
 
 // AA is the transport metadata carried on every request.
@@ -192,7 +192,7 @@ func (s *Service) Handle(ctx context.Context, req Request) Response {
 	resp := s.doHandle(ctx, req)
 	s.metrics.RecordRPC(req.Method, time.Since(start), resp.Error == nil)
 	if resp.Error != nil {
-		s.metrics.RecordRPCDenial(req.Method, errorCategory(resp.Error.Data))
+		s.metrics.RecordRPCError(req.Method, errorCategory(resp.Error.Data))
 	}
 	return resp
 }
@@ -209,6 +209,11 @@ func (s *Service) doHandle(ctx context.Context, req Request) Response {
 	// bounded. An explicit positive TimeoutMS overrides the server default.
 	timeout := defaultTimeout
 	if req.AA != nil && req.AA.TimeoutMS > 0 {
+		if req.AA.TimeoutMS > int(maxRequestTimeout/time.Millisecond) {
+			toolID, contractID := requestErrorIDs(req)
+			return errResponseData(req.ID, CodeInvalidParams, "timeoutMs exceeds the server maximum",
+				errorData("invalid", false, toolID, contractID))
+		}
 		timeout = time.Duration(req.AA.TimeoutMS) * time.Millisecond
 	}
 	var cancel context.CancelFunc
@@ -224,8 +229,16 @@ func (s *Service) doHandle(ctx context.Context, req Request) Response {
 // deduplicates only in-flight requests. Completed replays are delegated to the
 // host, whose cache is tool/contract scoped and re-evaluates policy first.
 func (s *Service) handleWithDedup(ctx context.Context, req Request, key string) Response {
+	if err := ctx.Err(); err != nil {
+		return errResponseFrom(req, err)
+	}
 	dedupKey := req.Method + "|" + key
-	fingerprint := requestFingerprint(req)
+	fingerprint, err := requestFingerprint(req)
+	if err != nil {
+		toolID, contractID := requestErrorIDs(req)
+		return errResponseData(req.ID, CodeInvalidParams, "request is not serializable",
+			errorData("invalid", false, toolID, contractID))
+	}
 
 	s.mu.Lock()
 	if cr, exists := s.inflight[dedupKey]; exists {
@@ -243,16 +256,12 @@ func (s *Service) handleWithDedup(ctx context.Context, req Request, key string) 
 	s.mu.Unlock()
 	s.metrics.RecordCacheMiss(dedupKey)
 
-	// The provider's lifetime is not tied to any single waiter's deadline. Each
-	// caller still enforces its own deadline while waiting; execution keeps its
-	// own bounded context so a short-deadline first caller cannot cancel work a
-	// longer-deadline waiter is still entitled to receive.
-	execCtx, execCancel := context.WithTimeout(context.WithoutCancel(ctx), maxExecutionTimeout)
+	// Execution is bound to the first caller's deadline. A timed-out request
+	// must not continue mutating state after the client has been told it failed.
 	go func() {
-		defer execCancel()
-		resp := s.dispatch(execCtx, req)
-		if execCtx.Err() != nil {
-			resp = errResponseFrom(req, execCtx.Err())
+		resp := s.dispatchSafe(ctx, req)
+		if ctx.Err() != nil {
+			resp = errResponseFrom(req, ctx.Err())
 		}
 		s.mu.Lock()
 		cr.resp = resp
@@ -274,8 +283,8 @@ func waitForResponse(ctx context.Context, req Request, cr *cacheResult) Response
 	}
 }
 
-func requestFingerprint(req Request) string {
-	payload, _ := json.Marshal(struct {
+func requestFingerprint(req Request) (string, error) {
+	payload, err := json.Marshal(struct {
 		Method string         `json:"method"`
 		Params map[string]any `json:"params"`
 		Caller string         `json:"caller,omitempty"`
@@ -289,7 +298,10 @@ func requestFingerprint(req Request) string {
 			return req.AA.Caller
 		}(),
 	})
-	return toolbox.Hash(payload)
+	if err != nil {
+		return "", err
+	}
+	return toolbox.Hash(payload), nil
 }
 
 func errorCategory(data map[string]any) string {
@@ -302,8 +314,34 @@ func errorCategory(data map[string]any) string {
 	return "internal"
 }
 
-// handleSingle processes a request without an idempotency key.
+// handleSingle processes a request without an idempotency key. Execution is
+// detached only so the caller can return at its deadline; the context still
+// cancels provider work when the deadline is reached.
 func (s *Service) handleSingle(ctx context.Context, req Request) Response {
+	if err := ctx.Err(); err != nil {
+		return errResponseFrom(req, err)
+	}
+	responses := make(chan Response, 1)
+	go func() { responses <- s.dispatchSafe(ctx, req) }()
+	select {
+	case resp := <-responses:
+		if ctx.Err() != nil {
+			return errResponseFrom(req, ctx.Err())
+		}
+		return resp
+	case <-ctx.Done():
+		return errResponseFrom(req, ctx.Err())
+	}
+}
+
+func (s *Service) dispatchSafe(ctx context.Context, req Request) (resp Response) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			toolID, contractID := requestErrorIDs(req)
+			resp = errResponseData(req.ID, CodeInternalError, "internal error",
+				errorData("internal", false, toolID, contractID))
+		}
+	}()
 	return s.dispatch(ctx, req)
 }
 

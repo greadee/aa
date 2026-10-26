@@ -12,20 +12,23 @@ func TestKeyIsStableAndTrimmed(t *testing.T) {
 	}
 }
 
-func TestInvocationKeyNamespacesExplicitByTool(t *testing.T) {
+func TestInvocationKeyNamespacesExplicitByToolAndContract(t *testing.T) {
 	got := InvocationKey("tool_1", "ec_1", "explicit")
-	if got != "invoke:tool_1:explicit" {
-		t.Fatalf("explicit key = %q, want %q", got, "invoke:tool_1:explicit")
+	if got != "invoke:tool_1:ec_1:explicit" {
+		t.Fatalf("explicit key = %q, want %q", got, "invoke:tool_1:ec_1:explicit")
 	}
 	if other := InvocationKey("tool_2", "ec_1", "explicit"); other == got {
 		t.Fatalf("explicit keys should differ across tools: %q", other)
 	}
+	if other := InvocationKey("tool_1", "ec_2", "explicit"); other == got {
+		t.Fatalf("explicit keys should differ across contracts: %q", other)
+	}
 }
 
-func TestInvocationKeyDerivesWhenEmpty(t *testing.T) {
+func TestInvocationKeyStableWhenEmpty(t *testing.T) {
 	got := InvocationKey("tool_1", "ec_1", "")
-	if got != "invoke:tool_1:ec_1" {
-		t.Fatalf("derived key = %q, want %q", got, "invoke:tool_1:ec_1")
+	if got != "invoke:tool_1:ec_1:" {
+		t.Fatalf("derived key = %q, want %q", got, "invoke:tool_1:ec_1:")
 	}
 	if same := InvocationKey("tool_1", "ec_1", ""); same != got {
 		t.Fatalf("derived key not stable: %q vs %q", same, got)

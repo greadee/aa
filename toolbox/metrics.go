@@ -14,7 +14,7 @@ type Metrics interface {
 	RecordCacheHit(key string)
 	RecordCacheMiss(key string)
 	RecordRPC(method string, latency time.Duration, success bool)
-	RecordRPCDenial(method string, category string)
+	RecordRPCError(method string, category string)
 }
 
 // NoopMetrics discards every observation.
@@ -26,7 +26,7 @@ func (NoopMetrics) RecordWorkflowStep(string, string, int, bool, time.Duration) 
 func (NoopMetrics) RecordCacheHit(string)                                       {}
 func (NoopMetrics) RecordCacheMiss(string)                                      {}
 func (NoopMetrics) RecordRPC(string, time.Duration, bool)                       {}
-func (NoopMetrics) RecordRPCDenial(string, string)                              {}
+func (NoopMetrics) RecordRPCError(string, string)                               {}
 
 // MetricsSnapshot is an immutable point-in-time copy of MemMetrics.
 type MetricsSnapshot struct {
@@ -40,8 +40,9 @@ type MetricsSnapshot struct {
 	CacheMisses          int64            `json:"cacheMisses"`
 	RPCRequests          int64            `json:"rpcRequests"`
 	RPCFailures          int64            `json:"rpcFailures"`
-	RPCDenials           int64            `json:"rpcDenials"`
+	RPCErrors            int64            `json:"rpcErrors"`
 	AvgLatencyMS         int64            `json:"avgLatencyMs"`
+	AvgRPCLatencyMS      int64            `json:"avgRpcLatencyMs"`
 	InvocationsByTool    map[ToolID]int64 `json:"invocationsByTool,omitempty"`
 	InvocationsByKind    map[string]int64 `json:"invocationsByKind,omitempty"`
 	DenialsByReason      map[string]int64 `json:"denialsByReason,omitempty"`
@@ -50,7 +51,7 @@ type MetricsSnapshot struct {
 	WorkflowStepsByKind  map[string]int64 `json:"workflowStepsByKind,omitempty"`
 	WorkflowStepsByID    map[string]int64 `json:"workflowStepsById,omitempty"`
 	RPCByMethod          map[string]int64 `json:"rpcByMethod,omitempty"`
-	RPCDenialsByCategory map[string]int64 `json:"rpcDenialsByCategory,omitempty"`
+	RPCErrorsByCategory  map[string]int64 `json:"rpcErrorsByCategory,omitempty"`
 }
 
 // MemMetrics is a dependency-free in-memory Metrics implementation. External
@@ -68,32 +69,63 @@ type MemMetrics struct {
 	cacheMisses          int64
 	rpcRequests          int64
 	rpcFailures          int64
-	rpcDenials           int64
+	rpcErrors            int64
 	totalLatency         time.Duration
+	rpcTotalLatency      time.Duration
 
-	byTool               map[ToolID]int64
-	byKind               map[string]int64
-	denialsByReason      map[string]int64
-	denialsByTool        map[ToolID]int64
-	denialsByCapability  map[string]int64
-	stepsByKind          map[string]int64
-	stepsByID            map[string]int64
-	rpcByMethod          map[string]int64
-	rpcDenialsByCategory map[string]int64
+	byTool              map[ToolID]int64
+	byKind              map[string]int64
+	denialsByReason     map[string]int64
+	denialsByTool       map[ToolID]int64
+	denialsByCapability map[string]int64
+	stepsByKind         map[string]int64
+	stepsByID           map[string]int64
+	rpcByMethod         map[string]int64
+	rpcErrorsByCategory map[string]int64
 }
 
 // NewMemMetrics returns an empty in-memory metrics collector.
 func NewMemMetrics() *MemMetrics {
 	return &MemMetrics{
-		byTool:               map[ToolID]int64{},
-		byKind:               map[string]int64{},
-		denialsByReason:      map[string]int64{},
-		denialsByTool:        map[ToolID]int64{},
-		denialsByCapability:  map[string]int64{},
-		stepsByKind:          map[string]int64{},
-		stepsByID:            map[string]int64{},
-		rpcByMethod:          map[string]int64{},
-		rpcDenialsByCategory: map[string]int64{},
+		byTool:              map[ToolID]int64{},
+		byKind:              map[string]int64{},
+		denialsByReason:     map[string]int64{},
+		denialsByTool:       map[ToolID]int64{},
+		denialsByCapability: map[string]int64{},
+		stepsByKind:         map[string]int64{},
+		stepsByID:           map[string]int64{},
+		rpcByMethod:         map[string]int64{},
+		rpcErrorsByCategory: map[string]int64{},
+	}
+}
+
+func (m *MemMetrics) ensureLocked() {
+	if m.byTool == nil {
+		m.byTool = map[ToolID]int64{}
+	}
+	if m.byKind == nil {
+		m.byKind = map[string]int64{}
+	}
+	if m.denialsByReason == nil {
+		m.denialsByReason = map[string]int64{}
+	}
+	if m.denialsByTool == nil {
+		m.denialsByTool = map[ToolID]int64{}
+	}
+	if m.denialsByCapability == nil {
+		m.denialsByCapability = map[string]int64{}
+	}
+	if m.stepsByKind == nil {
+		m.stepsByKind = map[string]int64{}
+	}
+	if m.stepsByID == nil {
+		m.stepsByID = map[string]int64{}
+	}
+	if m.rpcByMethod == nil {
+		m.rpcByMethod = map[string]int64{}
+	}
+	if m.rpcErrorsByCategory == nil {
+		m.rpcErrorsByCategory = map[string]int64{}
 	}
 }
 
@@ -101,6 +133,7 @@ func NewMemMetrics() *MemMetrics {
 func (m *MemMetrics) RecordInvocation(toolID ToolID, kind string, latency time.Duration, success bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.ensureLocked()
 	m.invocations++
 	if !success {
 		m.failures++
@@ -116,6 +149,7 @@ func (m *MemMetrics) RecordInvocation(toolID ToolID, kind string, latency time.D
 func (m *MemMetrics) RecordDenial(toolID ToolID, reason string, capability string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.ensureLocked()
 	m.denials++
 	m.denialsByReason[reason]++
 	if toolID != "" {
@@ -130,6 +164,7 @@ func (m *MemMetrics) RecordDenial(toolID ToolID, reason string, capability strin
 func (m *MemMetrics) RecordWorkflowStep(stepID string, kind string, attempts int, success bool, latency time.Duration) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.ensureLocked()
 	m.workflowSteps++
 	m.workflowAttempts += int64(attempts)
 	if !success {
@@ -147,6 +182,7 @@ func (m *MemMetrics) RecordWorkflowStep(stepID string, kind string, attempts int
 func (m *MemMetrics) RecordCacheHit(string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.ensureLocked()
 	m.cacheHits++
 }
 
@@ -154,6 +190,7 @@ func (m *MemMetrics) RecordCacheHit(string) {
 func (m *MemMetrics) RecordCacheMiss(string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.ensureLocked()
 	m.cacheMisses++
 }
 
@@ -161,26 +198,25 @@ func (m *MemMetrics) RecordCacheMiss(string) {
 func (m *MemMetrics) RecordRPC(method string, latency time.Duration, success bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.ensureLocked()
 	m.rpcRequests++
 	if !success {
 		m.rpcFailures++
 	}
-	m.totalLatency += latency
+	m.rpcTotalLatency += latency
 	if method != "" {
 		m.rpcByMethod[method]++
 	}
 }
 
-// RecordRPCDenial implements Metrics.
-func (m *MemMetrics) RecordRPCDenial(method string, category string) {
+// RecordRPCError implements Metrics.
+func (m *MemMetrics) RecordRPCError(method string, category string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.rpcDenials++
+	m.ensureLocked()
+	m.rpcErrors++
 	if category != "" {
-		m.rpcDenialsByCategory[category]++
-	}
-	if method != "" {
-		m.rpcByMethod[method]++
+		m.rpcErrorsByCategory[category]++
 	}
 }
 
@@ -191,6 +227,10 @@ func (m *MemMetrics) Snapshot() MetricsSnapshot {
 	avg := int64(0)
 	if m.invocations > 0 {
 		avg = int64(float64(m.totalLatency) / float64(m.invocations) / float64(time.Millisecond))
+	}
+	rpcAvg := int64(0)
+	if m.rpcRequests > 0 {
+		rpcAvg = int64(float64(m.rpcTotalLatency) / float64(m.rpcRequests) / float64(time.Millisecond))
 	}
 	return MetricsSnapshot{
 		Invocations:          m.invocations,
@@ -203,8 +243,9 @@ func (m *MemMetrics) Snapshot() MetricsSnapshot {
 		CacheMisses:          m.cacheMisses,
 		RPCRequests:          m.rpcRequests,
 		RPCFailures:          m.rpcFailures,
-		RPCDenials:           m.rpcDenials,
+		RPCErrors:            m.rpcErrors,
 		AvgLatencyMS:         avg,
+		AvgRPCLatencyMS:      rpcAvg,
 		InvocationsByTool:    copyCounts(m.byTool),
 		InvocationsByKind:    copyStringCounts(m.byKind),
 		DenialsByReason:      copyStringCounts(m.denialsByReason),
@@ -213,7 +254,7 @@ func (m *MemMetrics) Snapshot() MetricsSnapshot {
 		WorkflowStepsByKind:  copyStringCounts(m.stepsByKind),
 		WorkflowStepsByID:    copyStringCounts(m.stepsByID),
 		RPCByMethod:          copyStringCounts(m.rpcByMethod),
-		RPCDenialsByCategory: copyStringCounts(m.rpcDenialsByCategory),
+		RPCErrorsByCategory:  copyStringCounts(m.rpcErrorsByCategory),
 	}
 }
 

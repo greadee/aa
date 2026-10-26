@@ -421,12 +421,13 @@ func TestTimeoutDoesNotCacheFailure(t *testing.T) {
 		t.Fatal("expected first request to time out")
 	}
 	close(provider.release)
+	time.Sleep(50 * time.Millisecond)
 	second := s.Handle(context.Background(), req(MethodInvoke, params))
 	if second.Error != nil {
 		t.Fatalf("retry after timeout failed: %+v", second.Error)
 	}
-	if got := atomic.LoadInt32(&provider.calls); got != 1 {
-		t.Fatalf("provider calls = %d, want 1", got)
+	if got := atomic.LoadInt32(&provider.calls); got != 2 {
+		t.Fatalf("provider calls = %d, want 2 (first timed out, retry executed)", got)
 	}
 }
 
@@ -462,7 +463,7 @@ func TestRPCLevelErrorMetrics(t *testing.T) {
 		t.Fatal("expected invalid jsonrpc error")
 	}
 	snap := s.Metrics()
-	if snap.RPCRequests != 1 || snap.RPCFailures != 1 || snap.RPCDenials != 1 {
+	if snap.RPCRequests != 1 || snap.RPCFailures != 1 || snap.RPCErrors != 1 || snap.RPCByMethod[MethodRegistry] != 1 {
 		t.Fatalf("snapshot = %+v", snap)
 	}
 }
@@ -492,4 +493,34 @@ func TestNilAAEnvelopeIsValid(t *testing.T) {
 	if resp.Error != nil {
 		t.Fatalf("error = %+v", resp.Error)
 	}
+}
+
+func TestTimeoutAboveMaximumIsRejected(t *testing.T) {
+	s, _ := newService(t)
+	request := req(MethodInvoke, map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok", "idempotencyKey": "too-long-k1",
+	})
+	request.AA = &AA{TimeoutMS: int(maxRequestTimeout/time.Millisecond) + 1}
+	resp := s.Handle(context.Background(), request)
+	if resp.Error == nil || resp.Error.Code != CodeInvalidParams || resp.Error.Data["category"] != "invalid" {
+		t.Fatalf("error = %+v, want invalid params", resp.Error)
+	}
+}
+
+func TestNonIdempotentCallHonorsCallerDeadline(t *testing.T) {
+	s, provider, _ := newBlockingService(t)
+	request := req(MethodInvoke, map[string]any{
+		"toolId": "tool_a", "executionContractId": "ec_ok",
+	})
+	request.AA = &AA{TimeoutMS: 20}
+	started := time.Now()
+	resp := s.Handle(context.Background(), request)
+	if resp.Error == nil || resp.Error.Code != CodeUnavailable || resp.Error.Message != "request timed out" {
+		t.Fatalf("error = %+v, want timeout", resp.Error)
+	}
+	if time.Since(started) > time.Second {
+		t.Fatal("non-idempotent timeout took too long")
+	}
+	<-provider.started
+	close(provider.release)
 }

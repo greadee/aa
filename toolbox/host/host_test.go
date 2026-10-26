@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	toolbox "github.com/greadee/aa/toolbox"
@@ -199,5 +200,64 @@ func TestInvokeIdempotencyConflictOnDifferentInput(t *testing.T) {
 	}
 	if len(p.Calls()) != 1 {
 		t.Fatalf("provider calls = %d, want 1", len(p.Calls()))
+	}
+}
+
+func TestInvokeExplicitKeyIsContractScoped(t *testing.T) {
+	h, p, _ := newHost(t)
+	firstContract := contract("read_project")
+	firstContract.ID = "ec_1"
+	secondContract := contract("read_project")
+	secondContract.ID = "ec_2"
+	inv := toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}, IdempotencyKey: "contract-k1"}
+	if _, err := h.Invoke(context.Background(), inv, firstContract); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	if _, err := h.Invoke(context.Background(), inv, secondContract); err != nil {
+		t.Fatalf("second: %v", err)
+	}
+	if len(p.Calls()) != 2 {
+		t.Fatalf("provider calls = %d, want 2", len(p.Calls()))
+	}
+}
+
+func TestInvokeWithoutKeyExecutesEveryTime(t *testing.T) {
+	h, p, _ := newHost(t)
+	if _, err := h.Invoke(context.Background(), toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}}, contract("read_project")); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	if _, err := h.Invoke(context.Background(), toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 2}}, contract("read_project")); err != nil {
+		t.Fatalf("second: %v", err)
+	}
+	if len(p.Calls()) != 2 {
+		t.Fatalf("provider calls = %d, want 2", len(p.Calls()))
+	}
+}
+
+func TestInvokeNilAndEmptyInputAreEquivalentForIdempotency(t *testing.T) {
+	h, p, _ := newHost(t)
+	inv := toolbox.Invocation{ToolID: "tool_a", IdempotencyKey: "nil-empty-k1"}
+	if _, err := h.Invoke(context.Background(), inv, contract("read_project")); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	inv.Input = map[string]any{}
+	if _, err := h.Invoke(context.Background(), inv, contract("read_project")); err != nil {
+		t.Fatalf("second: %v", err)
+	}
+	if len(p.Calls()) != 1 {
+		t.Fatalf("provider calls = %d, want 1", len(p.Calls()))
+	}
+}
+
+func TestHostCacheIsBounded(t *testing.T) {
+	h, _, _ := newHost(t)
+	h.mu.Lock()
+	for i := 0; i < defaultCacheLimit+10; i++ {
+		h.storeLocked(fmt.Sprintf("k-%d", i), hostCacheEntry{inputHash: "x"})
+	}
+	size := len(h.cache)
+	h.mu.Unlock()
+	if size != defaultCacheLimit {
+		t.Fatalf("cache size = %d, want %d", size, defaultCacheLimit)
 	}
 }
