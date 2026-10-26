@@ -155,3 +155,33 @@ func TestInvokeProviderErrorPropagates(t *testing.T) {
 		t.Fatalf("err = %v, want %v", err, sentinel)
 	}
 }
+
+func TestHostRecordsInvocationAndCacheMetrics(t *testing.T) {
+	reg := registry.New()
+	p := NewFakeProvider(toolbox.KindTool)
+	if err := reg.RegisterProvider(p); err != nil {
+		t.Fatalf("RegisterProvider: %v", err)
+	}
+	if err := reg.Register(manifest("tool_a")); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	metrics := toolbox.NewMemMetrics()
+	h := New(reg, policy.New(nil, toolbox.NewFixedClock(), metrics), metrics)
+	inv := toolbox.Invocation{ToolID: "tool_a", IdempotencyKey: "metrics-k1"}
+	if _, err := h.Invoke(context.Background(), inv, contract("read_project")); err != nil {
+		t.Fatalf("first invoke: %v", err)
+	}
+	if _, err := h.Invoke(context.Background(), inv, contract("read_project")); err != nil {
+		t.Fatalf("replay invoke: %v", err)
+	}
+	if _, err := h.Invoke(context.Background(), toolbox.Invocation{ToolID: "tool_a"}, contract()); err == nil {
+		t.Fatal("expected denial")
+	}
+	snap := metrics.Snapshot()
+	if snap.Invocations != 3 || snap.Denials != 1 || snap.CacheMisses < 1 || snap.CacheHits < 1 {
+		t.Fatalf("snapshot = %+v", snap)
+	}
+	if snap.InvocationsByTool["tool_a"] < 2 || snap.InvocationsByKind["tool"] < 2 || snap.DenialsByTool["tool_a"] != 1 {
+		t.Fatalf("snapshot = %+v", snap)
+	}
+}

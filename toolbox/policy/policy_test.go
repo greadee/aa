@@ -151,3 +151,14 @@ func TestAuditLogIsOrderedAndCopied(t *testing.T) {
 		t.Fatal("Audit returned an aliased slice")
 	}
 }
+
+func TestEvaluateRecordsDenialMetrics(t *testing.T) {
+	metrics := toolbox.NewMemMetrics()
+	e := New(nil, toolbox.NewFixedClock(), metrics)
+	e.Evaluate(manifest("t", "read_project", "run_tests"), contract("read_project"))
+	e.Evaluate(manifest("t", "read_project"), contract("read_project"))
+	snap := metrics.Snapshot()
+	if snap.Denials != 1 || snap.DenialsByTool["t"] != 1 || snap.DenialsByCapability["run_tests"] != 1 {
+		t.Fatalf("snapshot = %+v", snap)
+	}
+}
