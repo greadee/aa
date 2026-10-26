@@ -98,6 +98,9 @@ jobs:
         working-directory: contracts/python
         run: python -m unittest discover -s tests -t .
 
+      - name: Binding parity
+        run: python contracts/tools/check_binding_parity.py
+
   inference:
     name: inference (py${{ matrix.python }})
     runs-on: ubuntu-latest

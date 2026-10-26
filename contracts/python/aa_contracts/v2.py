@@ -530,6 +530,12 @@ class RouteResponse(Envelope, total=False):
     reasons: List[str]
 
 
+class SandboxSpec(TypedDict, total=False):
+    required: bool
+    kind: str
+    network: bool
+
+
 class ToolManifest(Envelope, total=False):
     name: str
     toolKind: str
@@ -539,7 +545,7 @@ class ToolManifest(Envelope, total=False):
     permissions: List[str]
     inputSchema: Dict[str, Any]
     outputSchema: Dict[str, Any]
-    sandbox: Dict[str, Any]
+    sandbox: SandboxSpec
     endpoint: str
 
 
