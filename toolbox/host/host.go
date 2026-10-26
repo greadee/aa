@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	toolbox "github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/policy"
@@ -20,14 +21,20 @@ import (
 type Host struct {
 	registry *registry.Registry
 	policy   *policy.Engine
+	metrics  toolbox.Metrics
 
 	mu    sync.Mutex
 	cache map[string]toolbox.Result
 }
 
-// New returns a host over a registry and policy engine.
-func New(reg *registry.Registry, eng *policy.Engine) *Host {
-	return &Host{registry: reg, policy: eng, cache: map[string]toolbox.Result{}}
+// New returns a host over a registry and policy engine. A nil metrics value
+// uses a no-op collector so instrumentation never changes behavior.
+func New(reg *registry.Registry, eng *policy.Engine, metrics ...toolbox.Metrics) *Host {
+	m := toolbox.Metrics(toolbox.NoopMetrics{})
+	if len(metrics) > 0 && metrics[0] != nil {
+		m = metrics[0]
+	}
+	return &Host{registry: reg, policy: eng, metrics: m, cache: map[string]toolbox.Result{}}
 }
 
 // Invoke runs a tool under an execution contract. It returns a typed error
@@ -36,10 +43,14 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 	if inv.ToolID == "" {
 		return toolbox.Result{}, fmt.Errorf("%w: toolId is required", toolbox.ErrInvalid)
 	}
+	start := time.Now()
 	manifest, ok := h.registry.Get(inv.ToolID)
 	if !ok {
+		h.metrics.RecordInvocation(inv.ToolID, "", time.Since(start), false)
 		return toolbox.Result{}, fmt.Errorf("%w: tool %q", toolbox.ErrNotFound, inv.ToolID)
 	}
+	success := false
+	defer func() { h.metrics.RecordInvocation(inv.ToolID, manifest.ToolKind, time.Since(start), success) }()
 	if h.policy != nil {
 		decision := h.policy.Evaluate(manifest, contract)
 		if !decision.Allowed {
@@ -63,10 +74,13 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 	h.mu.Lock()
 	if cached, found := h.cache[key]; found {
 		h.mu.Unlock()
+		h.metrics.RecordCacheHit(key)
 		cached.Replayed = true
+		success = true
 		return cached, nil
 	}
 	h.mu.Unlock()
+	h.metrics.RecordCacheMiss(key)
 
 	output, err := provider.Invoke(ctx, manifest, inv.Input)
 	if err != nil {
@@ -77,6 +91,7 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 	h.mu.Lock()
 	h.cache[key] = result
 	h.mu.Unlock()
+	success = true
 	return result, nil
 }
 

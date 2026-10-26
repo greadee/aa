@@ -60,6 +60,7 @@ async def test_client_route_round_trip(endpoint: SocketEndpoint) -> None:
         "kind": "route_request",
         "id": "req_1",
         "prompt": "Write unit tests for a small utility function.",
+        "routingDecision": {"locality": "local", "tier": "local"},
     }
 
     async with InferenceClient(endpoint) as client:
@@ -93,6 +94,7 @@ async def test_client_generate_is_idempotent(config, runtime_dir: Path) -> None:
     await server.start()
     params = {
         "tier": "local",
+        "routingDecision": {"locality": "local", "tier": "local"},
         "messages": [{"role": "user", "content": "hello"}],
         "idempotencyKey": "gen-1",
     }
@@ -118,7 +120,13 @@ async def test_client_raises_on_remote_error(endpoint: SocketEndpoint) -> None:
 async def test_client_raises_on_invalid_params(endpoint: SocketEndpoint) -> None:
     async with InferenceClient(endpoint) as client:
         with pytest.raises(RpcClientError) as excinfo:
-            await client.generate({"tier": "local", "messages": []})
+            await client.generate(
+                {
+                    "tier": "local",
+                    "routingDecision": {"locality": "local", "tier": "local"},
+                    "messages": [],
+                }
+            )
 
     assert excinfo.value.code == -32602
 
@@ -132,6 +140,7 @@ async def test_client_surfaces_provider_error(config, runtime_dir: Path) -> None
                 await client.generate(
                     {
                         "tier": "local",
+                        "routingDecision": {"locality": "local", "tier": "local"},
                         "messages": [{"role": "user", "content": "hi"}],
                     }
                 )
@@ -157,6 +166,7 @@ async def test_client_enforces_its_own_deadline(config, runtime_dir: Path) -> No
                     client.generate(
                         {
                             "tier": "local",
+                            "routingDecision": {"locality": "local", "tier": "local"},
                             "messages": [{"role": "user", "content": "hi"}],
                         }
                     ),

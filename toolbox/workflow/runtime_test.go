@@ -284,3 +284,22 @@ func TestCloneIsDeep(t *testing.T) {
 		t.Fatal("Clone aliased output")
 	}
 }
+
+func TestRuntimeRecordsStepMetrics(t *testing.T) {
+	runner := newFakeRunner()
+	metrics := toolbox.NewMemMetrics()
+	plan, err := Compile(wf("wf",
+		step("a", "task"),
+		toolbox.WorkflowStep{ID: "g", Kind: "gate", DependsOn: []string{"a"}, Gates: []string{"tests"}},
+	))
+	if err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+	if _, err := New(runner, mapGates{"g": true}, metrics).Run(context.Background(), plan, nil); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	snap := metrics.Snapshot()
+	if snap.WorkflowSteps != 2 || snap.WorkflowStepsByKind["task"] != 1 || snap.WorkflowStepsByKind["gate"] != 1 {
+		t.Fatalf("snapshot = %+v", snap)
+	}
+}

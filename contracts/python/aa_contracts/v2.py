@@ -177,6 +177,44 @@ def _validate_workflow(data: Dict[str, Any]) -> None:
               {"task", "tool", "gate", "human_approval", "parallel", "conditional"})
 
 
+def _validate_work_plan(data: Dict[str, Any]) -> None:
+    units = data.get("units") or []
+    if not units:
+        raise ValueError("units: at least one unit is required")
+    seen = set()
+    for i, unit in enumerate(units):
+        _identifier(f"units[{i}].id", unit.get("id"))
+        if unit.get("id") in seen:
+            raise ValueError(f"units[{i}].id: duplicate id {unit.get('id')!r}")
+        seen.add(unit.get("id"))
+
+
+def _validate_execution_plan(data: Dict[str, Any]) -> None:
+    assignments = data.get("assignments") or []
+    for i, a in enumerate(assignments):
+        _identifier(f"assignments[{i}].role", a.get("role"))
+        workers = a.get("workers")
+        if workers is not None:
+            if not isinstance(workers, int) or isinstance(workers, bool) or workers < 0:
+                raise ValueError(f"assignments[{i}].workers: must be >= 0")
+    concurrency = data.get("concurrency")
+    if concurrency is not None:
+        if not isinstance(concurrency, int) or isinstance(concurrency, bool) or concurrency < 0:
+            raise ValueError("concurrency: must be >= 0")
+
+
+def _validate_routine(data: Dict[str, Any]) -> None:
+    stages = data.get("stages") or []
+    if not stages:
+        raise ValueError("stages: at least one stage is required")
+    seen = set()
+    for i, stage in enumerate(stages):
+        _identifier(f"stages[{i}].id", stage.get("id"))
+        if stage.get("id") in seen:
+            raise ValueError(f"stages[{i}].id: duplicate id {stage.get('id')!r}")
+        seen.add(stage.get("id"))
+
+
 # Required fields per kind (all kinds also carry contractVersion and id).
 _REQUIRED: Dict[str, List[str]] = {
     "event": ["sequence", "occurredAt", "type", "aggregate", "actor"],
@@ -231,6 +269,12 @@ _EXTRA: Dict[str, Callable[[Dict[str, Any]], None]] = {
     "tool_manifest": _validate_tool_manifest,
     "workflow": _validate_workflow,
     "trace": _validate_trace,
+    "work_plan": _validate_work_plan,
+    "execution_plan": _validate_execution_plan,
+    "routine": _validate_routine,
+    "team_spec": lambda _d: None,
+    "model_spec": lambda _d: None,
+    "role_spec": lambda _d: None,
 }
 
 
@@ -486,6 +530,12 @@ class RouteResponse(Envelope, total=False):
     reasons: List[str]
 
 
+class SandboxSpec(TypedDict, total=False):
+    required: bool
+    kind: str
+    network: bool
+
+
 class ToolManifest(Envelope, total=False):
     name: str
     toolKind: str
@@ -495,7 +545,7 @@ class ToolManifest(Envelope, total=False):
     permissions: List[str]
     inputSchema: Dict[str, Any]
     outputSchema: Dict[str, Any]
-    sandbox: Dict[str, Any]
+    sandbox: SandboxSpec
     endpoint: str
 
 
@@ -505,3 +555,178 @@ class Workflow(Envelope, total=False):
     description: str
     budget: Budget
     steps: List[Dict[str, Any]]
+
+
+class WorkflowStep(TypedDict, total=False):
+    id: str
+    kind: str
+    role: str
+    toolId: str
+    dependsOn: List[str]
+    retries: int
+    gates: List[str]
+    onFailure: str
+    config: Dict[str, Any]
+
+
+class TaskGraphNode(TypedDict, total=False):
+    workPackageId: str
+    dependsOn: List[str]
+    readiness: str
+
+
+class RoutingDecision(TypedDict, total=False):
+    locality: str
+    tier: str
+    blocked: bool
+    reason: str
+    estimatedCostUsd: float
+    decisionLevel: str
+    requiresHumanApproval: bool
+
+
+class TeamSpec(Envelope, total=False):
+    title: str
+    roles: List[str]
+
+
+class ModelSpec(Envelope, total=False):
+    provider: str
+    identifier: str
+    modelVersion: str
+    capabilities: List[str]
+    contextWindow: int
+    toolUse: bool
+    locality: str
+    available: bool
+    costPer1kInput: float
+    costPer1kOutput: float
+    latencyMs: int
+
+
+class RoleSpec(Envelope, total=False):
+    title: str
+    capabilities: List[str]
+    rules: List[str]
+    tools: List[str]
+    permissions: List[str]
+    contextExpectations: List[str]
+    evalCriteria: List[str]
+    observability: List[str]
+    costExpectation: str
+
+
+class RoutineStage(TypedDict, total=False):
+    id: str
+    title: str
+    teams: List[str]
+    roles: List[str]
+    gates: List[str]
+
+
+class Routine(Envelope, total=False):
+    name: str
+    version: str
+    description: str
+    teams: List[str]
+    roles: List[str]
+    stages: List[RoutineStage]
+    inputs: List[str]
+    outputs: List[str]
+    observability: List[str]
+
+
+class WorkUnit(TypedDict, total=False):
+    id: str
+    title: str
+    outputs: List[str]
+    completion: List[str]
+    dependsOn: List[str]
+
+
+class WorkPlan(Envelope, total=False):
+    sourceWorkflow: Reference
+    units: List[WorkUnit]
+    constraints: List[str]
+
+
+class PlanAssignment(TypedDict, total=False):
+    role: str
+    model: str
+    workers: int
+
+
+class ExecutionPlan(Envelope, total=False):
+    workPlan: Reference
+    assignments: List[PlanAssignment]
+    budget: Budget
+    concurrency: int
+    placement: List[str]
+    constraints: List[str]
+
+
+class Scope(TypedDict, total=False):
+    allowed: List[str]
+    inspect: List[str]
+    forbidden: List[str]
+
+
+class CallCounts(TypedDict, total=False):
+    total: int
+    local: int
+    cloud: int
+    retries: int
+
+
+class TokenCounts(TypedDict, total=False):
+    input: int
+    output: int
+
+
+class ResultArtifact(TypedDict, total=False):
+    kind: str
+    id: str
+    hash: str
+
+
+class TestResult(TypedDict, total=False):
+    name: str
+    outcome: str
+    durationMs: int
+
+
+class Failure(TypedDict, total=False):
+    class_: str
+    message: str
+    retryable: bool
+
+
+class RuntimeSpec(TypedDict, total=False):
+    kind: str
+    provider: str
+    model: str
+    nodeId: str
+
+
+class WorkspaceSpec(TypedDict, total=False):
+    required: bool
+    kind: str
+    root: str
+
+
+class MemoryContent(TypedDict, total=False):
+    summary: str
+    details: str
+    tags: List[str]
+
+
+class Applicability(TypedDict, total=False):
+    roles: List[str]
+    languages: List[str]
+
+
+class IssueLinks(TypedDict, total=False):
+    workPackages: List[str]
+    commits: List[str]
+    pullRequests: List[Reference]
+    adrs: List[str]

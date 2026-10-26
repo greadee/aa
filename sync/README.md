@@ -4,7 +4,7 @@ Remote sync, offline file sharing, and parallelization across machines.
 
 - **Owns:** paired mutual-TLS transport; resumable verified chunked transfer; one-way revision sync; offline change queue and reconciliation; work-package and artifact distribution; parallelization transport.
 - **Must not:** become a remote shell or gain execution authority.
-- **Status:** delivered in `ph6-sync` (transport seam with a deterministic fake; a live transport is a follow-up).
+- **Status:** delivered in `ph6-sync` (transport seam with a deterministic fake; a live transport is a follow-up). Composed into the `app/` control plane in phase 11 as a single-node nodes registry (ADR-0154); multi-machine pairing and a live transport remain a follow-up.
 - **Directive:** [aa-sync.md](aa-sync.md)
 - **Architecture:** [../docs/architecture/README.md](../docs/architecture/README.md)
 

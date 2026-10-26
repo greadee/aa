@@ -12,7 +12,7 @@ Given a prompt and context, decide which model tier and provider should handle i
 
 - Prompt decoding and decision classification (routine/significant/major/critical).
 - The human approval gate for major and critical decisions.
-- Preflight assessment and policy routing (`local_only`, `cloud_only`, `local_first`, `expert_first`, `adaptive`, `budget_constrained`).
+- Preflight assessment, budget accounting, escalation, and execution of the allocator's `routingDecision` (locality/tier/blocked).
 - Budgets, escalation, and provider abstraction (Ollama, OpenAI-compatible, DeepSeek).
 - Verification and execution-local message fitting / handoff (control-plane context lives in `kernel/context`).
 - Compute orchestration across local and cloud models.
@@ -21,7 +21,7 @@ Given a prompt and context, decide which model tier and provider should handle i
 
 - Hold project state or orchestrate work.
 - Send data to the cloud without redaction.
-- Hard-code model names in routing logic.
+- Decide routing policy or re-evaluate the allocator's budget gate.
 - Bypass approval or budget.
 
 ## Interfaces
@@ -44,7 +44,7 @@ Given a prompt and context, decide which model tier and provider should handle i
 | [`metrics (python)`](./metrics.md) | Structured trace/event logging and token/cost usage accounting. |
 | [`models (python)`](./models.md) | Provider abstraction, provider registry/factory, runtime model config, and Ollama/OpenAI-compatible/DeepSeek clients. |
 | [`recommend (python)`](./recommend.md) | Deterministic hardware/goal-based profile and context recommendation. |
-| [`routing (python)`](./routing.md) | Inference execution routing surface (preflight/budgets); routing policy is owned by `kernel/allocator/routing`. |
+| [`routing (python)`](./routing.md) | Execution-time helpers (preflight/budgets/escalation); routing policy is owned by `kernel/allocator/routing`. |
 | [`rpc (python)`](./rpc.md) | aa-inference RPC service (inter-module JSON-RPC v1). |
 | [`schemas (python)`](./schemas.md) | Bundled JSON Schemas used to validate the RPC boundary. |
 | [`system (python)`](./system.md) | Best-effort hardware detection (CPU/GPU/VRAM/RAM). |

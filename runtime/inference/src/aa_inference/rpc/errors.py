@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..contracts import ContractError
+from ..decision import RoutingBlockedError
 from ..models.provider import ProviderError
 from ..routing.budget import BudgetExceeded
 from ..tasks.executor import ApprovalRequiredError
@@ -82,6 +83,18 @@ def map_exception(exc: BaseException, request_id: Any = None) -> dict[str, Any]:
         return exc.as_error(request_id)
     if isinstance(exc, ContractError):
         return failure(request_id, INVALID_PARAMS, str(exc))
+    if isinstance(exc, RoutingBlockedError):
+        return failure(
+            request_id,
+            BUDGET_EXCEEDED,
+            str(exc),
+            data={
+                "kind": "routing_decision_blocked",
+                "reason": exc.decision.reason,
+                "estimatedCostUsd": exc.decision.estimated_cost_usd,
+                "retryable": False,
+            },
+        )
     if isinstance(exc, BudgetExceeded):
         return failure(
             request_id,

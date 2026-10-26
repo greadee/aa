@@ -36,6 +36,14 @@ type Config struct {
 	Status func() Status
 	// Backend supplies projects/work/assignments/approvals. Optional.
 	Backend Backend
+	// Observations supplies the composed obsv journal. Optional.
+	Observations ObservationBackend
+	// Visualizer supplies the composed visualizer read model. Optional.
+	Visualizer VisualizerBackend
+	// Registry supplies the durable definition stores. Optional.
+	Registry RegistryBackend
+	// Lifecycle supplies the runtime worker lifecycle read model. Optional.
+	Lifecycle LifecycleBackend
 }
 
 // Server is the control-plane HTTP handler.
@@ -61,6 +69,26 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/events", s.auth(s.events))
 	s.mux.Handle("GET "+APIPrefix+"/assignments", s.auth(s.assignments))
 	s.mux.Handle("GET "+APIPrefix+"/nodes", s.auth(s.nodes))
+	s.mux.Handle("GET "+APIPrefix+"/sync/status", s.auth(s.syncStatus))
+	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}", s.auth(s.observations))
+	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}/stream", s.auth(s.observationStream))
+	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}/report", s.auth(s.observationReport))
+	s.mux.Handle("POST "+APIPrefix+"/observations/{sessionId}/codex", s.auth(s.observationCodex))
+	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions", s.auth(s.visualizerSessions))
+	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/timeline", s.auth(s.visualizerTimeline))
+	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/graph", s.auth(s.visualizerGraph))
+	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/stream", s.auth(s.visualizerStream))
+	s.mux.Handle("GET "+APIPrefix+"/teams", s.auth(s.teamsList))
+	s.mux.Handle("POST "+APIPrefix+"/teams", s.auth(s.teamAdd))
+	s.mux.Handle("GET "+APIPrefix+"/teams/{teamId}", s.auth(s.teamGet))
+	s.mux.Handle("GET "+APIPrefix+"/routines", s.auth(s.routinesList))
+	s.mux.Handle("POST "+APIPrefix+"/routines", s.auth(s.routineAdd))
+	s.mux.Handle("GET "+APIPrefix+"/routines/{routineId}", s.auth(s.routineGet))
+	s.mux.Handle("GET "+APIPrefix+"/policies", s.auth(s.policiesList))
+	s.mux.Handle("POST "+APIPrefix+"/policies", s.auth(s.policyAdd))
+	s.mux.Handle("GET "+APIPrefix+"/policies/{policyId}", s.auth(s.policyGet))
+	s.mux.Handle("GET "+APIPrefix+"/workers", s.auth(s.workers))
+	s.mux.Handle("GET "+APIPrefix+"/workers/events", s.auth(s.workerEvents))
 	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
 	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
 	// Anything else under the prefix is not found (JSON, same error vocabulary).
@@ -196,6 +224,14 @@ func (s *Server) nodes(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, s.cfg.Backend.Nodes())
+}
+
+func (s *Server) syncStatus(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, SyncStatus{Nodes: []SyncNode{}, Transfers: []SyncTransfer{}})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.cfg.Backend.SyncStatus())
 }
 
 func (s *Server) tools(w http.ResponseWriter, _ *http.Request) {

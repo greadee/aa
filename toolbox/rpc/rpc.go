@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	toolbox "github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/host"
@@ -61,6 +62,42 @@ type Request struct {
 	AA      *AA            `json:"aa,omitempty"`
 }
 
+// InvokeRequest is the typed payload for toolbox.invoke.
+type InvokeRequest struct {
+	ToolID              string         `json:"toolId"`
+	ExecutionContractID string         `json:"executionContractId"`
+	Input               map[string]any `json:"input,omitempty"`
+	IdempotencyKey      string         `json:"idempotencyKey,omitempty"`
+}
+
+// InvokeOutput is the output envelope returned by toolbox.invoke.
+type InvokeOutput struct {
+	Output map[string]any `json:"output"`
+}
+
+// CompileWorkflowRequest is the typed payload for toolbox.compileWorkflow.
+type CompileWorkflowRequest struct {
+	Workflow WorkflowParam `json:"workflow"`
+}
+
+// WorkflowParam wraps the workflow object (flat or nested).
+type WorkflowParam map[string]any
+
+// CompileWorkflowResponse wraps the compiled plan.
+type CompileWorkflowResponse struct {
+	Plan workflow.Plan `json:"plan"`
+}
+
+// ListRegistryRequest is the optional filter for toolbox.registry.
+type ListRegistryRequest struct {
+	ToolKind string `json:"toolKind,omitempty"`
+}
+
+// ListRegistryResponse wraps the returned tool manifests.
+type ListRegistryResponse struct {
+	Tools []toolbox.Manifest `json:"tools"`
+}
+
 // Error is a JSON-RPC 2.0 error object. Governed codes carry data.retryable.
 type Error struct {
 	Code    any            `json:"code"`
@@ -86,14 +123,27 @@ type ContractResolver interface {
 type Service struct {
 	host      *host.Host
 	contracts ContractResolver
+	metrics   toolbox.Metrics
 
-	mu    sync.Mutex
-	cache map[string]any
+	mu       sync.Mutex
+	cache    map[string]Response
+	inflight map[string]*cacheResult
+}
+
+// cacheResult holds the result of an in-flight request for deduplication.
+type cacheResult struct {
+	respCh chan struct{} // closed when the first caller finishes
+	resp   Response      // result set by the first caller
 }
 
 // New returns a service over an invocation host and contract resolver.
-func New(h *host.Host, contracts ContractResolver) *Service {
-	return &Service{host: h, contracts: contracts, cache: map[string]any{}}
+// Optionally pass a Metrics implementation; the default is a no-op collector.
+func New(h *host.Host, contracts ContractResolver, metrics ...toolbox.Metrics) *Service {
+	m := toolbox.Metrics(toolbox.NoopMetrics{})
+	if len(metrics) > 0 && metrics[0] != nil {
+		m = metrics[0]
+	}
+	return &Service{host: h, contracts: contracts, metrics: m, cache: map[string]Response{}, inflight: map[string]*cacheResult{}}
 }
 
 // Capabilities reports the RPC/contract versions and methods this adapter speaks,
@@ -106,6 +156,16 @@ func (s *Service) Capabilities() Capabilities {
 	}
 }
 
+// Metrics returns a snapshot when the service is using MemMetrics. Other
+// implementations return a zero snapshot; callers can also hold the Metrics
+// value they passed to New.
+func (s *Service) Metrics() toolbox.MetricsSnapshot {
+	if m, ok := s.metrics.(*toolbox.MemMetrics); ok {
+		return m.Snapshot()
+	}
+	return toolbox.MetricsSnapshot{}
+}
+
 // Capabilities is the advertised version and method set of an adapter.
 type Capabilities struct {
 	RPCVersion      string   `json:"rpcVersion"`
@@ -115,20 +175,83 @@ type Capabilities struct {
 
 // Handle validates the envelope and dispatches one request.
 func (s *Service) Handle(ctx context.Context, req Request) Response {
+	return s.doHandle(ctx, req)
+}
+
+// doHandle is the internal handle logic (without metrics recording).
+func (s *Service) doHandle(ctx context.Context, req Request) Response {
 	if req.JSONRPC != "" && req.JSONRPC != "2.0" {
-		return errResponse(req.ID, CodeInvalidRequest, "jsonrpc must be \"2.0\"")
+		return errResponseData(req.ID, CodeInvalidRequest, "jsonrpc must be \"2.0\"", errorData("invalid", false, "", ""))
 	}
 	if !compatible(req.AA) {
-		return errResponseData(req.ID, CodeIncompatible, "unsupported RPC or contract major", retryable(false))
+		return errResponseData(req.ID, CodeIncompatible, "unsupported RPC or contract major", errorData("incompatible", false, "", ""))
+	}
+	// AA is an optional envelope. Its absence is valid and means the caller
+	// requested no timeout; only an explicit positive TimeoutMS adds a
+	// deadline. This is intentional fail-open for optional metadata, not an
+	// unvalidated safety check.
+	if req.AA != nil && req.AA.TimeoutMS > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(req.AA.TimeoutMS)*time.Millisecond)
+		defer cancel()
 	}
 	if key, ok := idempotencyKey(req); ok {
-		s.mu.Lock()
-		if cached, found := s.cache[req.Method+"|"+key]; found {
-			s.mu.Unlock()
-			return Response{JSONRPC: "2.0", ID: req.ID, Result: cached}
-		}
-		s.mu.Unlock()
+		return s.handleWithDedup(ctx, req, key)
 	}
+	return s.handleSingle(ctx, req)
+}
+
+// handleWithDedup guarantees one execution per method/idempotency-key. It
+// serves completed results from the cache and makes concurrent callers wait for
+// the first execution, including cancellation when their own deadline expires.
+func (s *Service) handleWithDedup(ctx context.Context, req Request, key string) Response {
+	cacheKey := req.Method + "|" + key
+
+	s.mu.Lock()
+	if cached, found := s.cache[cacheKey]; found {
+		s.mu.Unlock()
+		s.metrics.RecordCacheHit(cacheKey)
+		cached.ID = req.ID
+		return cached
+	}
+	if cr, exists := s.inflight[cacheKey]; exists {
+		ch := cr.respCh
+		s.mu.Unlock()
+		select {
+		case <-ch:
+			s.mu.Lock()
+			resp := cr.resp
+			s.mu.Unlock()
+			s.metrics.RecordCacheHit(cacheKey)
+			resp.ID = req.ID
+			return resp
+		case <-ctx.Done():
+			return errResponseFrom(req, ctx.Err())
+		}
+	}
+	cr := &cacheResult{respCh: make(chan struct{})}
+	s.inflight[cacheKey] = cr
+	s.mu.Unlock()
+	s.metrics.RecordCacheMiss(cacheKey)
+
+	resp := s.dispatch(ctx, req)
+
+	s.mu.Lock()
+	cr.resp = resp
+	s.cache[cacheKey] = resp
+	delete(s.inflight, cacheKey)
+	close(cr.respCh)
+	s.mu.Unlock()
+	return resp
+}
+
+// handleSingle processes a request without an idempotency key.
+func (s *Service) handleSingle(ctx context.Context, req Request) Response {
+	return s.dispatch(ctx, req)
+}
+
+// dispatch executes the requested method and returns the response.
+func (s *Service) dispatch(ctx context.Context, req Request) Response {
 	var (
 		result any
 		err    error
@@ -141,64 +264,93 @@ func (s *Service) Handle(ctx context.Context, req Request) Response {
 	case MethodRegistry:
 		result, err = s.listRegistry(req)
 	default:
-		return errResponse(req.ID, CodeMethodNotFound, fmt.Sprintf("unknown method %q", req.Method))
+		return errResponseData(req.ID, CodeMethodNotFound, fmt.Sprintf("unknown method %q", req.Method), errorData("method_not_found", false, "", ""))
 	}
 	if err != nil {
-		return errResponseFrom(req.ID, err)
-	}
-	if key, ok := idempotencyKey(req); ok {
-		s.mu.Lock()
-		s.cache[req.Method+"|"+key] = result
-		s.mu.Unlock()
+		return errResponseFrom(req, err)
 	}
 	return Response{JSONRPC: "2.0", ID: req.ID, Result: result}
 }
 
 func (s *Service) invoke(ctx context.Context, req Request) (any, error) {
-	toolID, err := stringField(req.Params, "toolId")
-	if err != nil {
-		return nil, err
-	}
-	contractID := ""
-	if v, ok := req.Params["executionContractId"].(string); ok {
-		contractID = v
-	}
-	if contractID == "" {
-		return nil, fmt.Errorf("%w: executionContractId is required", toolbox.ErrInvalid)
+	var typed InvokeRequest
+	if err := json.Unmarshal(mapToJSON(req.Params), &typed); err != nil {
+		// fall back to manual parsing for backward compatibility.
+		toolID, err := stringField(req.Params, "toolId")
+		if err != nil {
+			return nil, err
+		}
+		contractID := ""
+		if v, ok := req.Params["executionContractId"].(string); ok {
+			contractID = v
+		}
+		if contractID == "" {
+			return nil, fmt.Errorf("%w: executionContractId is required", toolbox.ErrInvalid)
+		}
+		if s.contracts == nil {
+			return nil, fmt.Errorf("%w: no execution contract for %q", toolbox.ErrDenied, contractID)
+		}
+		contract, ok := s.contracts.Resolve(contractID)
+		if !ok {
+			return nil, fmt.Errorf("%w: execution contract %q", toolbox.ErrNotFound, contractID)
+		}
+		input := map[string]any{}
+		if raw, ok := req.Params["input"]; ok && raw != nil {
+			if m, ok := raw.(map[string]any); ok {
+				input = m
+			}
+		}
+		idem := ""
+		if v, ok := req.Params["idempotencyKey"].(string); ok {
+			idem = v
+		}
+		result, err := s.host.Invoke(ctx, toolbox.Invocation{
+			ToolID:              toolbox.ToolID(toolID),
+			Input:               input,
+			ExecutionContractID: contractID,
+			IdempotencyKey:      idem,
+		}, contract)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"output": result.Output}, nil
 	}
 	if s.contracts == nil {
-		return nil, fmt.Errorf("%w: no execution contract for %q", toolbox.ErrDenied, contractID)
+		return nil, fmt.Errorf("%w: no execution contract for %q", toolbox.ErrDenied, typed.ExecutionContractID)
 	}
-	contract, ok := s.contracts.Resolve(contractID)
+	contract, ok := s.contracts.Resolve(typed.ExecutionContractID)
 	if !ok {
-		return nil, fmt.Errorf("%w: execution contract %q", toolbox.ErrNotFound, contractID)
-	}
-	input := map[string]any{}
-	if raw, ok := req.Params["input"]; ok && raw != nil {
-		m, ok := raw.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("%w: input must be an object", toolbox.ErrInvalid)
-		}
-		input = m
-	}
-	idem := ""
-	if v, ok := req.Params["idempotencyKey"].(string); ok {
-		idem = v
+		return nil, fmt.Errorf("%w: execution contract %q", toolbox.ErrNotFound, typed.ExecutionContractID)
 	}
 	result, err := s.host.Invoke(ctx, toolbox.Invocation{
-		ToolID:              toolbox.ToolID(toolID),
-		Input:               input,
-		ExecutionContractID: contractID,
-		IdempotencyKey:      idem,
+		ToolID:              toolbox.ToolID(typed.ToolID),
+		Input:               typed.Input,
+		ExecutionContractID: typed.ExecutionContractID,
+		IdempotencyKey:      typed.IdempotencyKey,
 	}, contract)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"output": result.Output}, nil
+	return InvokeOutput{Output: result.Output}, nil
 }
 
 func (s *Service) compileWorkflow(req Request) (any, error) {
-	wf, err := workflowParams(req.Params)
+	var typed CompileWorkflowRequest
+	if req.Params != nil {
+		if err := json.Unmarshal(mapToJSON(req.Params), &typed); err != nil {
+			// fall back to manual parsing for backward compatibility.
+			wf, err := workflowParams(req.Params)
+			if err != nil {
+				return nil, err
+			}
+			plan, err := workflow.Compile(wf)
+			if err != nil {
+				return nil, err
+			}
+			return CompileWorkflowResponse{Plan: plan}, nil
+		}
+	}
+	wf, err := workflowParams(map[string]any(typed.Workflow))
 	if err != nil {
 		return nil, err
 	}
@@ -206,17 +358,27 @@ func (s *Service) compileWorkflow(req Request) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"plan": plan}, nil
+	return CompileWorkflowResponse{Plan: plan}, nil
 }
 
 func (s *Service) listRegistry(req Request) (any, error) {
-	kind := ""
+	var typed ListRegistryRequest
 	if req.Params != nil {
-		if v, ok := req.Params["toolKind"].(string); ok {
-			kind = v
+		if err := json.Unmarshal(mapToJSON(req.Params), &typed); err != nil {
+			// fall back to manual parsing.
+			kind := ""
+			if v, ok := req.Params["toolKind"].(string); ok {
+				kind = v
+			}
+			return ListRegistryResponse{Tools: s.host.ListTools(kind)}, nil
 		}
 	}
-	return map[string]any{"tools": s.host.ListTools(kind)}, nil
+	return ListRegistryResponse{Tools: s.host.ListTools(typed.ToolKind)}, nil
+}
+
+func mapToJSON(m map[string]any) []byte {
+	b, _ := json.Marshal(m)
+	return b
 }
 
 func workflowParams(params map[string]any) (toolbox.Workflow, error) {
@@ -285,19 +447,86 @@ func errResponseData(id any, code any, message string, data map[string]any) Resp
 	return Response{JSONRPC: "2.0", ID: id, Error: &Error{Code: code, Message: message, Data: data}}
 }
 
-func retryable(v bool) map[string]any { return map[string]any{"retryable": v} }
+func errorData(category string, retryableValue bool, toolID, contractID string) map[string]any {
+	data := map[string]any{
+		"category":  category,
+		"retryable": retryableValue,
+	}
+	if toolID != "" {
+		data["toolId"] = toolID
+	}
+	if contractID != "" {
+		data["executionContractId"] = contractID
+	}
+	return data
+}
 
-func errResponseFrom(id any, err error) Response {
+func requestErrorIDs(req Request) (toolID, contractID string) {
+	if req.Params == nil {
+		return "", ""
+	}
+	toolID, _ = req.Params["toolId"].(string)
+	contractID, _ = req.Params["executionContractId"].(string)
+	return toolID, contractID
+}
+
+func toolboxErrorName(err error) string {
 	switch {
-	case errors.Is(err, toolbox.ErrInvalid), errors.Is(err, toolbox.ErrCycle):
-		return errResponseData(id, CodeInvalidParams, err.Error(), retryable(false))
+	case errors.Is(err, toolbox.ErrInvalid):
+		return "ErrInvalid"
 	case errors.Is(err, toolbox.ErrNotFound):
-		return errResponseData(id, CodeNotFound, err.Error(), retryable(false))
-	case errors.Is(err, toolbox.ErrDenied), errors.Is(err, toolbox.ErrSandbox), errors.Is(err, toolbox.ErrApproval):
-		return errResponseData(id, CodeUnauthorized, err.Error(), retryable(false))
+		return "ErrNotFound"
+	case errors.Is(err, toolbox.ErrConflict):
+		return "ErrConflict"
+	case errors.Is(err, toolbox.ErrDenied):
+		return "ErrDenied"
+	case errors.Is(err, toolbox.ErrSandbox):
+		return "ErrSandbox"
 	case errors.Is(err, toolbox.ErrNoProvider):
-		return errResponseData(id, CodeUnavailable, err.Error(), retryable(true))
+		return "ErrNoProvider"
+	case errors.Is(err, toolbox.ErrCycle):
+		return "ErrCycle"
+	case errors.Is(err, toolbox.ErrFailed):
+		return "ErrFailed"
+	case errors.Is(err, toolbox.ErrUnsupported):
+		return "ErrUnsupported"
+	case errors.Is(err, toolbox.ErrApproval):
+		return "ErrApproval"
 	default:
-		return errResponseData(id, CodeInternalError, err.Error(), retryable(false))
+		return ""
+	}
+}
+
+func withToolboxError(data map[string]any, err error) map[string]any {
+	if name := toolboxErrorName(err); name != "" {
+		data["toolboxError"] = name
+	}
+	return data
+}
+
+func errResponseFrom(req Request, err error) Response {
+	toolID, contractID := requestErrorIDs(req)
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		return errResponseData(req.ID, CodeUnavailable, "request timed out",
+			withToolboxError(errorData("timeout", true, toolID, contractID), err))
+	case errors.Is(err, context.Canceled):
+		return errResponseData(req.ID, CodeUnavailable, "request canceled",
+			withToolboxError(errorData("canceled", false, toolID, contractID), err))
+	case errors.Is(err, toolbox.ErrInvalid), errors.Is(err, toolbox.ErrCycle):
+		return errResponseData(req.ID, CodeInvalidParams, err.Error(),
+			withToolboxError(errorData("invalid", false, toolID, contractID), err))
+	case errors.Is(err, toolbox.ErrNotFound):
+		return errResponseData(req.ID, CodeNotFound, err.Error(),
+			withToolboxError(errorData("not_found", false, toolID, contractID), err))
+	case errors.Is(err, toolbox.ErrDenied), errors.Is(err, toolbox.ErrSandbox), errors.Is(err, toolbox.ErrApproval):
+		return errResponseData(req.ID, CodeUnauthorized, err.Error(),
+			withToolboxError(errorData("unauthorized", false, toolID, contractID), err))
+	case errors.Is(err, toolbox.ErrNoProvider):
+		return errResponseData(req.ID, CodeUnavailable, err.Error(),
+			withToolboxError(errorData("unavailable", true, toolID, contractID), err))
+	default:
+		return errResponseData(req.ID, CodeInternalError, err.Error(),
+			withToolboxError(errorData("internal", false, toolID, contractID), err))
 	}
 }

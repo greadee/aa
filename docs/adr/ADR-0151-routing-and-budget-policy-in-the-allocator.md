@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted — completed in phase 11 |
 | **Source** | [issue-impl-sep28 Issue 7](../issues/imp-7-allocation.md) (A8) |
 | **Scope** | update phase · issue-impl-sep28 (Stage 4) |
 
@@ -22,12 +22,16 @@ budgets → allocator/contract").
   and without calling a model.
 - **The budget gate is control-plane.** The expert tier is blocked fail-closed
   when cloud is disabled or the estimated cost exceeds `Budget.maxCostUsd`.
-- **Inference remains provider/execution plus verification.** Its Python
-  `routing` package stays the service's execution surface (preflight assessment,
-  cloud budgets, escalation evaluation); when the execution path is wired it
-  consumes the allocator's decision. Inference no longer *owns* the policy.
-- **Capital/contract.** The policy vocabulary is plain control-plane Go; no
-  contracts v2 change is needed (route request/response remain).
+- **Inference remains provider/execution plus verification.** The allocator's
+  `Decision` is carried to inference as `v2.RoutingDecision` and over RPC as the
+  `routingDecision` field on `route_request` and `inference.generate`. Inference
+  executes the decided locality/tier/budget and **fails closed** when the
+  decision is absent, inconsistent, or blocked (`aa.invalid_params` /
+  `aa.budget_exceeded`). The duplicate Python policy engine (~~routing/policy.py~~)
+  is retired; preflight assessment, cloud budget accounting, and escalation
+  evaluation remain execution-time helpers only.
+- **Capital/contract.** `v2.RoutingDecision` is the wire form; route
+  request/response remain the cross-module contract.
 
 ## Rationale
 
@@ -39,17 +43,19 @@ budgets → allocator/contract").
 
 ## Alternatives and consequences
 
-- **Delete the Python routing package now:** rejected — a large cross-language
-  refactor that would break the CLI/desktop/tests; staged instead.
+- **Delete the Python routing package immediately in the A8 sprint:** rejected
+  then as a large cross-language refactor; completed in phase 11 after the
+  control plane exposed a decision contract.
 - **Leave policy in inference:** rejected — it contradicts the A8 ownership split
   and duplicates policy authority.
-- Consequence: the residual — wiring the execution path to pass the allocator's
-  decision into inference and retiring the duplicate Python policy — is recorded
-  in the sprint Future register as a follow-up.
+- Consequence (resolved): the residual is complete. The standalone CLI keeps a
+  local fallback when no allocator decision is supplied; the RPC execution path
+  never falls back.
 
 ## Related
 
 - [kernel/allocator/routing module doc](../modules/kernel/routing.md)
 - [inference routing module doc](../modules/runtime/inference/routing.md)
+- [ISS-DeferPH11-6](https://github.com/greadee/aa/issues/48)
 - [ADR-0150](./ADR-0150-role-model-compute-allocation-separation.md)
 - [ADR index](./README.md)

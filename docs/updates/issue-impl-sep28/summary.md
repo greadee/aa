@@ -88,7 +88,7 @@
 
 ## Future register (deferred)
 
-- **A8 routing/budget residual:** wire the execution path to pass the allocator's routing decision into inference and retire the duplicate Python `runtime/inference/routing` policy.
+- **A8 routing/budget residual (resolved in phase 11, [#48](https://github.com/greadee/aa/issues/48)):** the allocator's `Decision` is now the `v2.RoutingDecision`/RPC `routingDecision`; inference fails closed without it and the duplicate Python policy engine is retired.
 - **A8 `desktop → ui/surfaces`:** relocate the inference desktop surface under `ui` (owned by `ph10-ui`).
 - **Reserved packages:** `registry/{teams,routines,policies}`, `runtime/lifecycle`.
 - **UI surface:** the Wails/React surface (tracked with `ui`; `ph10-ui`).

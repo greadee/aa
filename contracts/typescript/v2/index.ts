@@ -335,6 +335,16 @@ export type RoutingPolicy =
   | "local_only" | "cloud_only" | "local_first"
   | "expert_first" | "adaptive" | "budget_constrained";
 
+export interface RoutingDecision {
+  locality: "local" | "cloud";
+  tier: "local" | "expert";
+  blocked?: boolean;
+  reason?: string;
+  estimatedCostUsd?: number;
+  decisionLevel?: "routine" | "significant" | "major" | "critical";
+  requiresHumanApproval?: boolean;
+}
+
 export interface RouteRequest extends Envelope {
   kind: "route_request";
   attemptId?: Identifier;

@@ -147,6 +147,7 @@ async def test_timed_out_generate_leaves_no_idempotent_state(config) -> None:
         "method": "inference.generate",
         "params": {
             "tier": "local",
+            "routingDecision": {"locality": "local", "tier": "local"},
             "messages": [{"role": "user", "content": "hello"}],
             "idempotencyKey": "gen-timeout",
         },

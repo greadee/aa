@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	toolbox "github.com/greadee/aa/toolbox"
 )
@@ -108,14 +109,20 @@ func (s RunState) Clone() RunState {
 
 // Runtime executes a compiled plan over a Runner seam.
 type Runtime struct {
-	runner Runner
-	gates  GateEvaluator
+	runner  Runner
+	gates   GateEvaluator
+	metrics toolbox.Metrics
 }
 
 // New returns a runtime. A nil gate evaluator leaves gate and approval steps
-// awaiting approval, which fails closed.
-func New(runner Runner, gates GateEvaluator) *Runtime {
-	return &Runtime{runner: runner, gates: gates}
+// awaiting approval, which fails closed. A nil metrics value uses a no-op
+// collector.
+func New(runner Runner, gates GateEvaluator, metrics ...toolbox.Metrics) *Runtime {
+	m := toolbox.Metrics(toolbox.NoopMetrics{})
+	if len(metrics) > 0 && metrics[0] != nil {
+		m = metrics[0]
+	}
+	return &Runtime{runner: runner, gates: gates, metrics: m}
 }
 
 // Run executes a plan, resuming from prior state when supplied. It returns the
@@ -144,8 +151,10 @@ func (rt *Runtime) Run(ctx context.Context, plan Plan, prior *RunState) (RunStat
 		if res, ok := state.Results[id]; ok && res.Terminal() {
 			continue
 		}
+		started := time.Now()
 		if !depsSatisfied(plan, state, id) {
 			state.Results[id] = StepResult{ID: id, State: StepAwaitingGate, Reason: "dependencies not satisfied"}
+			rt.recordStep(step, 0, false, time.Since(started))
 			state.Status = RunFailed
 			return state, fmt.Errorf("%w: step %q dependencies not satisfied", toolbox.ErrFailed, id)
 		}
@@ -153,20 +162,28 @@ func (rt *Runtime) Run(ctx context.Context, plan Plan, prior *RunState) (RunStat
 			passed, err := rt.evaluateGate(ctx, step)
 			if err != nil {
 				state.Results[id] = StepResult{ID: id, State: StepAwaitingGate, Reason: err.Error()}
+				rt.recordStep(step, 1, false, time.Since(started))
 				state.Status = RunAwaitingApproval
 				return state, err
 			}
 			if !passed {
 				state.Results[id] = StepResult{ID: id, State: StepAwaitingGate, Reason: "gate not passed"}
+				rt.recordStep(step, 1, false, time.Since(started))
 				state.Status = RunAwaitingApproval
 				return state, fmt.Errorf("%w: step %q", toolbox.ErrApproval, id)
 			}
 			state.Results[id] = StepResult{ID: id, State: StepComplete}
+			rt.recordStep(step, 1, true, time.Since(started))
 			continue
 		}
 		if err := rt.runWithPolicy(ctx, &state, step); err != nil {
+			res := state.Results[id]
+			rt.recordStep(step, res.Attempts, false, time.Since(started))
 			return state, err
 		}
+		res := state.Results[id]
+		okState := res.State == StepComplete || res.State == StepSkipped || res.State == StepCompensated
+		rt.recordStep(step, res.Attempts, okState, time.Since(started))
 	}
 	state.Status = RunComplete
 	return state, nil
@@ -218,6 +235,10 @@ func (rt *Runtime) runWithPolicy(ctx context.Context, state *RunState, step tool
 	state.Results[step.ID] = StepResult{ID: step.ID, State: StepFailed, Attempts: attempt, Reason: lastErr.Error()}
 	state.Status = RunFailed
 	return fmt.Errorf("%w: step %q: %v", toolbox.ErrFailed, step.ID, lastErr)
+}
+
+func (rt *Runtime) recordStep(step toolbox.WorkflowStep, attempts int, success bool, latency time.Duration) {
+	rt.metrics.RecordWorkflowStep(step.ID, step.Kind, attempts, success, latency)
 }
 
 func newRunState(plan Plan) RunState {

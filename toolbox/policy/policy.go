@@ -62,17 +62,22 @@ type Engine struct {
 	mu       sync.Mutex
 	enforcer SandboxEnforcer
 	clock    toolbox.Clock
+	metrics  toolbox.Metrics
 	seq      int
 	log      []AuditEntry
 }
 
 // New returns an engine. A nil enforcer enforces no sandbox; a nil clock uses
-// wall time.
-func New(enforcer SandboxEnforcer, clock toolbox.Clock) *Engine {
+// wall time. A nil metrics value uses a no-op collector.
+func New(enforcer SandboxEnforcer, clock toolbox.Clock, metrics ...toolbox.Metrics) *Engine {
 	if clock == nil {
 		clock = toolbox.SystemClock{}
 	}
-	return &Engine{enforcer: enforcer, clock: clock}
+	m := toolbox.Metrics(toolbox.NoopMetrics{})
+	if len(metrics) > 0 && metrics[0] != nil {
+		m = metrics[0]
+	}
+	return &Engine{enforcer: enforcer, clock: clock, metrics: m}
 }
 
 // Evaluate intersects a manifest's capabilities with an execution contract and
@@ -116,6 +121,9 @@ func (e *Engine) Evaluate(m toolbox.Manifest, c toolbox.ExecutionContract) Decis
 	}
 	decision.Reason = reason(decision)
 	e.record(decision, c.ID)
+	if !decision.Allowed {
+		e.metrics.RecordDenial(decision.ToolID, decision.Reason, denialCapability(decision))
+	}
 	return decision
 }
 
@@ -188,6 +196,16 @@ func (e *Engine) Audit() []AuditEntry {
 	out := make([]AuditEntry, len(e.log))
 	copy(out, e.log)
 	return out
+}
+
+func denialCapability(d Decision) string {
+	if len(d.Missing) > 0 {
+		return string(d.Missing[0])
+	}
+	if len(d.Denied) > 0 {
+		return string(d.Denied[0])
+	}
+	return ""
 }
 
 func sortCaps(caps []toolbox.Capability) {

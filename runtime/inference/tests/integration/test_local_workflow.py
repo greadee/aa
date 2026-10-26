@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from aa_inference.decision import RoutingDecision
 from aa_inference.models.config import InferenceConfig
 from aa_inference.verification.verifier import CallableVerifier
 from tests.fixtures.helpers import EASY_LOCAL_TASK, MEDIUM_TASK, make_inference
@@ -46,7 +47,11 @@ async def test_medium_task_uses_objective_verification(
 async def test_failed_verification_reports_failure(config: InferenceConfig, fake_provider, store):
     failing = CallableVerifier("never", lambda text: (False, "always fails"))
     aa_inference = make_inference(config, fake_provider, store=store, verifier=failing)
-    result = await aa_inference.run(MEDIUM_TASK, policy="local_only")
+    result = await aa_inference.run(
+        MEDIUM_TASK,
+        policy="local_only",
+        decision=RoutingDecision(locality="local", tier="local"),
+    )
 
     assert result.status == "failed"
     assert fake_provider.cloud_calls == 0

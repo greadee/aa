@@ -26,6 +26,9 @@ import (
 	"time"
 
 	"github.com/greadee/aa/app/internal/controlplane"
+	"github.com/greadee/aa/app/internal/obsplane"
+	"github.com/greadee/aa/app/internal/syncplane"
+	"github.com/greadee/aa/app/internal/visplane"
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge/memsync"
 	"github.com/greadee/aa/kernel/allocator/planner"
@@ -46,7 +49,13 @@ import (
 	"github.com/greadee/aa/memory/retention"
 	"github.com/greadee/aa/memory/retrieval"
 	"github.com/greadee/aa/memory/store"
+	"github.com/greadee/aa/obsv/journal"
+	"github.com/greadee/aa/obsv/protocol"
 	"github.com/greadee/aa/registry/models"
+	"github.com/greadee/aa/registry/policies"
+	"github.com/greadee/aa/registry/routines"
+	"github.com/greadee/aa/registry/teams"
+	"github.com/greadee/aa/runtime/lifecycle"
 	"github.com/greadee/aa/runtime/sandbox"
 	"github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/computeruse"
@@ -55,6 +64,7 @@ import (
 	uicp "github.com/greadee/aa/ui/controlplane"
 	"github.com/greadee/aa/ui/surfaces/tui"
 	wsurface "github.com/greadee/aa/ui/surfaces/web"
+	visretention "github.com/greadee/aa/visualizer/retention"
 )
 
 const version = "0.1.0"
@@ -107,10 +117,14 @@ func serve(args []string) error {
 		return err
 	}
 	handler := controlplane.New(controlplane.Config{
-		Version: version,
-		Token:   *token,
-		Status:  g.status,
-		Backend: &backend{g: g},
+		Version:      version,
+		Token:        *token,
+		Status:       g.status,
+		Backend:      &backend{g: g},
+		Observations: observationBackend{plane: g.obs},
+		Visualizer:   visualizerBackend{plane: g.vis},
+		Registry:     definitionsBackend{g: g},
+		Lifecycle:    lifecycleBackend{manager: g.life},
 	})
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
@@ -200,6 +214,13 @@ type runtime struct {
 	graph      *planner.Graph
 	sched      *scheduler.Scheduler
 	api        *api.Service
+	syncer     *syncplane.Plane
+	obs        *obsplane.Plane
+	vis        *visplane.Plane
+	life       *lifecycle.Manager
+	teams      *teams.Registry
+	routines   *routines.Registry
+	policies   *policies.Registry
 }
 
 // status reports the aggregate host status for the control plane.
@@ -208,7 +229,11 @@ func (g *runtime) status() controlplane.Status {
 	if recs, err := g.store.ListRecords("project_record"); err == nil {
 		projects = len(recs)
 	}
-	return controlplane.Status{Projects: projects, ActiveAssignments: 0, Nodes: 1}
+	nodes := 0
+	if g.syncer != nil {
+		nodes = len(g.syncer.Nodes())
+	}
+	return controlplane.Status{Projects: projects, ActiveAssignments: 0, Nodes: nodes}
 }
 
 // backend implements controlplane.Backend over the composed graph.
@@ -253,8 +278,17 @@ func (b *backend) CreateProject(id, name string) error {
 	if err != nil {
 		return err
 	}
-	_, err = b.g.store.PutRecord(rec)
-	return err
+	if _, err = b.g.store.PutRecord(rec); err != nil {
+		return err
+	}
+	b.emit("project:"+id, protocol.Event{
+		SourceType: protocol.SourceSession,
+		Confidence: protocol.ConfidenceObserved,
+		Action:     "project.create",
+		Actor:      "control-plane",
+		Metadata:   map[string]string{"status": "created"},
+	})
+	return nil
 }
 
 func (b *backend) WorkPackages(projectID string) []controlplane.WorkPackageView {
@@ -280,6 +314,14 @@ func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (strin
 	if err := b.g.graph.Add(planner.WorkPackage{ID: id, Title: title, DependsOn: dependsOn}); err != nil {
 		return "", err
 	}
+	b.emit("project:"+projectID, protocol.Event{
+		SourceType:    protocol.SourceWorkDelta,
+		Confidence:    protocol.ConfidenceExact,
+		Action:        "work.submit",
+		Actor:         "control-plane",
+		WorkPackageID: id,
+		Metadata:      map[string]string{"status": "submitted"},
+	})
 	return id, nil
 }
 
@@ -294,6 +336,14 @@ func (b *backend) Assignments() []controlplane.AssignmentView {
 
 func (b *backend) Approve(gateID string) error {
 	b.g.api.Approve(gateID)
+	b.emit("control-plane", protocol.Event{
+		SourceType:    protocol.SourceSession,
+		Confidence:    protocol.ConfidenceObserved,
+		Action:        "gate.approve",
+		Actor:         "console",
+		WorkPackageID: gateID,
+		Metadata:      map[string]string{"status": "approved"},
+	})
 	return nil
 }
 
@@ -325,7 +375,54 @@ func (b *backend) Events(string) []json.RawMessage {
 }
 
 func (b *backend) Nodes() []controlplane.Node {
-	return []controlplane.Node{{ID: "local", Authority: true, State: "ready"}}
+	if b.g.syncer == nil {
+		return nil
+	}
+	nodes := b.g.syncer.Nodes()
+	out := make([]controlplane.Node, 0, len(nodes))
+	for _, n := range nodes {
+		out = append(out, controlplane.Node{
+			ID:        string(n.ID),
+			Name:      n.Name,
+			Authority: n.Local,
+			State:     n.State,
+		})
+	}
+	return out
+}
+
+func (b *backend) SyncStatus() controlplane.SyncStatus {
+	st := controlplane.SyncStatus{
+		Nodes:     []controlplane.SyncNode{},
+		Transfers: []controlplane.SyncTransfer{},
+	}
+	if b.g.syncer == nil {
+		return st
+	}
+	syncStatus := b.g.syncer.Status(context.Background())
+	st.LocalNode = string(syncStatus.LocalNode)
+	for _, n := range syncStatus.Nodes {
+		st.Nodes = append(st.Nodes, controlplane.SyncNode{
+			ID: string(n.ID), Name: n.Name, Local: n.Local, State: n.State,
+		})
+	}
+	for _, t := range syncStatus.Transfers {
+		created := ""
+		if !t.CreatedAt.IsZero() {
+			created = t.CreatedAt.UTC().Format(time.RFC3339Nano)
+		}
+		st.Transfers = append(st.Transfers, controlplane.SyncTransfer{
+			TransferID:    string(t.TransferID),
+			NodeID:        string(t.NodeID),
+			WorkPackageID: t.WorkPackageID,
+			ArtifactID:    t.ArtifactID,
+			State:         string(t.State),
+			Hash:          t.Hash,
+			Bytes:         t.Bytes,
+			CreatedAt:     created,
+		})
+	}
+	return st
 }
 
 func (b *backend) Tools() []controlplane.Tool {
@@ -356,6 +453,13 @@ func build(root string) (*runtime, error) {
 	}
 	proj := projection.NewMem()
 	query := retrieval.New(proj, st)
+
+	teamRegistry := teams.NewRegistry()
+	routineRegistry := routines.NewRegistry()
+	policyRegistry := policies.NewRegistry()
+	if err := loadDefinitions(st, teamRegistry, routineRegistry, policyRegistry); err != nil {
+		return nil, err
+	}
 
 	traces := repo.NewTraceRepository(st, proj)
 	memories := repo.NewMemoryRecordRepository(st, proj)
@@ -397,10 +501,51 @@ func build(root string) (*runtime, error) {
 		return nil, fmt.Errorf("runtime/sandbox: %w", err)
 	}
 
+	// Sync: one local node identity plus the composed transport seam. v1 is
+	// single-node (D6); the console's nodes read model is served from here and
+	// no remote execution is exposed.
+	seed, err := syncplane.SeedFromRoot(root)
+	if err != nil {
+		return nil, err
+	}
+	syncer := syncplane.New(syncplane.Config{Name: localNodeName(), Seed: seed})
+
+	// Observation: one owner, durable per-session journals under the state
+	// root. Retention bounds only the projected report view.
+	observations, err := obsplane.New(obsplane.Config{
+		Owner:     "app",
+		Dir:       filepath.Join(root, "obsv"),
+		Retention: journal.Policy{MaxEvents: 1000},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Visualizer: replay/live over the same obsv transport, canonical session
+	// browsing over memory, and a retained projected trail.
+	visualizerPlane, err := visplane.New(visplane.Config{
+		Observations:     observations.Server(),
+		ObservedSessions: observations.Sessions,
+		Memory:           query,
+		Retention:        visretention.Policy{MaxFrames: 500},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Worker lifecycle: instantiated and observed on the scheduler dispatch
+	// path. Execution stays disabled, so dispatch still runs worker.Disabled.
+	lifecycleManager := lifecycle.New(lifecycle.Config{
+		Sink: lifecycleObserver{plane: observations},
+	})
+
 	// Kernel control path: one project graph + scheduler, exposed in-process by
 	// kernel/api. Execution stays disabled on the core path (no model, no worker).
 	graph := planner.NewGraph("default", "plan-main")
-	sched, err := scheduler.New(graph, scheduler.Config{Registry: role_allocator.New()})
+	sched, err := scheduler.New(graph, scheduler.Config{
+		Registry:  role_allocator.New(),
+		Lifecycle: lifecycleManager,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("kernel/scheduler: %w", err)
 	}
@@ -427,7 +572,21 @@ func build(root string) (*runtime, error) {
 		graph:      graph,
 		sched:      sched,
 		api:        apiSvc,
+		syncer:     syncer,
+		obs:        observations,
+		vis:        visualizerPlane,
+		life:       lifecycleManager,
+		teams:      teamRegistry,
+		routines:   routineRegistry,
+		policies:   policyRegistry,
 	}, nil
+}
+
+func localNodeName() string {
+	if h, err := os.Hostname(); err == nil && h != "" {
+		return h
+	}
+	return "local"
 }
 
 // allowlist is a fail-closed sandbox policy: a capability is granted only when
@@ -454,6 +613,7 @@ func selfcheck() error {
 	if err != nil {
 		return err
 	}
+	defer g.obs.Close()
 
 	// Observability: record and account an event with a valid identity chain.
 	event := observability.Event{
@@ -494,6 +654,29 @@ func selfcheck() error {
 		return fmt.Errorf("sandbox: %w", err)
 	}
 
+	// Observation: journal a sandbox seam event and derive its report.
+	if !g.obs.Emit("selfcheck", protocol.Event{
+		SourceType: protocol.SourceTool,
+		Confidence: protocol.ConfidenceExact,
+		Action:     "sandbox.run",
+		Actor:      "aa",
+		Metadata:   map[string]string{"tool": "sandbox", "status": "ok"},
+	}) {
+		return fmt.Errorf("obsv: emit was rejected")
+	}
+	obsReport, err := g.obs.Report("selfcheck")
+	if err != nil {
+		return fmt.Errorf("obsv: %w", err)
+	}
+	visSessions, err := g.vis.Sessions(context.Background())
+	if err != nil {
+		return fmt.Errorf("visualizer sessions: %w", err)
+	}
+	visGraph, err := g.vis.Graph(context.Background(), "selfcheck")
+	if err != nil {
+		return fmt.Errorf("visualizer graph: %w", err)
+	}
+
 	// Job learning: default policies and in-memory seams.
 	gatePolicy := joblearn.DefaultGatePolicy()
 	bounds := tracesource.DefaultBounds()
@@ -530,11 +713,17 @@ func selfcheck() error {
 
 	fmt.Printf("aa selfcheck (%s)\n", version)
 	fmt.Printf("  models registered:   %d\n", g.models.Count())
+	fmt.Printf("  registry:            teams=%d routines=%d policies=%d\n", g.teams.Count(), g.routines.Count(), g.policies.Count())
+	fmt.Printf("  lifecycle:           workers=%d events=%d\n", len(g.life.Workers()), len(g.life.Events()))
+	fmt.Printf("  sync:                node=%s nodes=%d\n", g.syncer.LocalID(), len(g.syncer.Nodes()))
 	fmt.Printf("  observability:       %d event(s), %d account(s)\n", len(g.recorder.Events()), len(accounts))
 	fmt.Printf("  routing decision:    locality=%s tier=%s blocked=%v\n", decision.Locality, decision.Tier, decision.Blocked)
+	fmt.Printf("  routing contract:    %+v\n", decision.Contract())
 	fmt.Printf("  context bundle:      %d section(s), %d/%d tokens\n", len(bundle.Sections), bundle.TokensUsed, bundle.TokenBudget)
 	fmt.Printf("  context needs:       %d kind(s), %d term(s)\n", len(needs.Kinds), len(needs.Terms))
 	fmt.Printf("  sandbox run:         exit=%d stdout=%q\n", run.ExitCode, string(run.Stdout))
+	fmt.Printf("  observation:         events=%d lastSeq=%d sources=%d\n", obsReport.Events, obsReport.LastSequence, len(obsReport.BySourceType))
+	fmt.Printf("  visualizer:          sessions=%d graphNodes=%d graphEdges=%d\n", len(visSessions), len(visGraph.Nodes), len(visGraph.Edges))
 	fmt.Printf("  joblearn:            gatePolicy.minOutcomes=%d bounds=%+v expPolicy=%+v featureSets=%d\n",
 		gatePolicy.MinOutcomes, bounds, expPolicy, len(featureSets))
 	fmt.Printf("  experience store:    %T\n", expStore)

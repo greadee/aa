@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from aa_inference.decision import RoutingDecision
 from aa_inference.models.config import InferenceConfig
 from aa_inference.verification.verifier import CallableVerifier
 from tests.fixtures.helpers import HARD_DEBUGGING_TASK, MEDIUM_TASK, make_inference
@@ -14,7 +15,11 @@ async def test_scenario_budget_exhaustion_stops_further_cloud_calls(config: Infe
     provider = _provider()
     failing = CallableVerifier("never", lambda text: (False, "always fails"))
     aa_inference = make_inference(config, provider, store=store, verifier=failing)
-    result = await aa_inference.run(HARD_DEBUGGING_TASK, policy="cloud_only")
+    result = await aa_inference.run(
+        HARD_DEBUGGING_TASK,
+        policy="cloud_only",
+        decision=RoutingDecision(locality="cloud", tier="expert"),
+    )
 
     assert provider.cloud_calls == 1, "only the affordable cloud call may run"
     assert "budget" in result.answer.lower() or "skipped" in result.answer.lower()
@@ -27,7 +32,11 @@ async def test_budget_exhausted_before_first_cloud_call(config: InferenceConfig,
     config.max_cloud_calls_per_task = 0
     provider = _provider()
     aa_inference = make_inference(config, provider, store=store)
-    result = await aa_inference.run(MEDIUM_TASK, policy="cloud_only")
+    result = await aa_inference.run(
+        MEDIUM_TASK,
+        policy="cloud_only",
+        decision=RoutingDecision(locality="cloud", tier="expert"),
+    )
 
     assert provider.cloud_calls == 0, "provider must never be invoked when the budget is empty"
     assert result.status == "blocked"

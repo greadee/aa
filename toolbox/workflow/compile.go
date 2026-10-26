@@ -45,8 +45,14 @@ func Compile(w toolbox.Workflow) (Plan, error) {
 		if s.Kind == "gate" && len(s.Gates) == 0 {
 			return Plan{}, fmt.Errorf("%w: step %q is a gate step without gates", toolbox.ErrInvalid, s.ID)
 		}
+		// Retries is optional. A nil value means "use the runtime default"; it
+		// is valid configuration, not a skipped validation. Only an explicitly
+		// supplied negative value is rejected.
 		if s.Retries != nil && *s.Retries < 0 {
 			return Plan{}, fmt.Errorf("%w: step %q has negative retries", toolbox.ErrInvalid, s.ID)
+		}
+		if err := validateStepConfig(s); err != nil {
+			return Plan{}, err
 		}
 		deps := make([]string, 0, len(s.DependsOn))
 		seen := map[string]bool{}
@@ -123,6 +129,62 @@ func topoOrder(steps map[string]toolbox.WorkflowStep, depends map[string][]strin
 		return nil, fmt.Errorf("%w: dependency graph has a cycle", toolbox.ErrCycle)
 	}
 	return order, nil
+}
+
+// validateStepConfig validates the config block for a workflow step.
+//
+// For "parallel" steps, a "concurrency" key is required and must be a positive
+// integer (defaults to 1 when omitted).  For "conditional" steps, a "condition"
+// key is required and must be a non-empty string.
+func validateStepConfig(s toolbox.WorkflowStep) error {
+	if s.Config == nil {
+		return nil
+	}
+	switch s.Kind {
+	case "parallel":
+		return validateParallelConfig(s.Config)
+	case "conditional":
+		return validateConditionalConfig(s.Config)
+	default:
+		return nil
+	}
+}
+
+// validateParallelConfig requires a "concurrency" key with a positive integer.
+func validateParallelConfig(cfg map[string]any) error {
+	raw, ok := cfg["concurrency"]
+	if !ok {
+		return fmt.Errorf("%w: step %q (parallel) config: missing concurrency", toolbox.ErrInvalid, cfg)
+	}
+	switch v := raw.(type) {
+	case int:
+		if v <= 0 {
+			return fmt.Errorf("%w: step %q (parallel) config: concurrency must be positive", toolbox.ErrInvalid, cfg)
+		}
+	case int64:
+		if v <= 0 {
+			return fmt.Errorf("%w: step %q (parallel) config: concurrency must be positive", toolbox.ErrInvalid, cfg)
+		}
+	case float64:
+		if v <= 0 || v != float64(int(v)) {
+			return fmt.Errorf("%w: step %q (parallel) config: concurrency must be a positive integer", toolbox.ErrInvalid, cfg)
+		}
+	default:
+		return fmt.Errorf("%w: step %q (parallel) config: concurrency must be an integer", toolbox.ErrInvalid, cfg)
+	}
+	return nil
+}
+
+// validateConditionalConfig requires a "condition" key with a non-empty string.
+func validateConditionalConfig(cfg map[string]any) error {
+	raw, ok := cfg["condition"]
+	if !ok {
+		return fmt.Errorf("%w: step %q (conditional) config: missing condition", toolbox.ErrInvalid, cfg)
+	}
+	if _, ok := raw.(string); !ok {
+		return fmt.Errorf("%w: step %q (conditional) config: condition must be a string", toolbox.ErrInvalid, cfg)
+	}
+	return nil
 }
 
 // Step returns a step by ID.

@@ -105,12 +105,16 @@ Every governed error carries `data.retryable` (`true` or `false`). A caller must
 
 ## Methods
 
-### inference (model/compute routing; formerly `sifter`)
+### inference (model execution; formerly `sifter`)
+
+Inference executes the control-plane allocator's `routingDecision`; it does not
+re-decide locality, tier, or budget. A missing, inconsistent, or blocked
+decision fails closed (`aa.invalid_params` or `aa.budget_exceeded`).
 
 | Method | Params | Result |
 |---|---|---|
-| `inference.route` | `route_request` | `route_response` |
-| `inference.generate` | `{tier, messages, budget, idempotencyKey}` | `{text, usage}` |
+| `inference.route` | `route_request` (requires `routingDecision`) | `route_response` |
+| `inference.generate` | `{routingDecision, messages, budget, idempotencyKey}` | `{text, usage}` |
 | `inference.health` | `{}` | `{available, providers[]}` |
 
 ### memory (system of record)

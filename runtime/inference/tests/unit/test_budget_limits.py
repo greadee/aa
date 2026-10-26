@@ -8,6 +8,7 @@ import pytest
 
 from aa_inference.app import ComputeInference
 from aa_inference.context.compression import estimate_tokens, fit_messages
+from aa_inference.decision import RoutingDecision
 from aa_inference.decisions.classifier import DecisionClassifier
 from aa_inference.decisions.gate import DecisionGate
 from aa_inference.decisions.policy import StandingRule, StandingRuleEngine
@@ -115,7 +116,11 @@ async def test_standing_rule_cost_waiver_allows_cloud(config):
     provider = FakeProvider()
     inference = ComputeInference(cfg, provider=provider, rules=rules)
 
-    result = await inference.run("Summarize this file.", policy="cloud_only")
+    result = await inference.run(
+        "Summarize this file.",
+        policy="cloud_only",
+        decision=RoutingDecision(locality="cloud", tier="expert"),
+    )
 
     assert provider.cloud_calls >= 1
     assert result.status == "completed"
@@ -126,7 +131,11 @@ async def test_budget_without_waiver_blocks_cloud(config):
     provider = FakeProvider()
     inference = ComputeInference(cfg, provider=provider)
 
-    result = await inference.run("Summarize this file.", policy="cloud_only")
+    result = await inference.run(
+        "Summarize this file.",
+        policy="cloud_only",
+        decision=RoutingDecision(locality="cloud", tier="expert"),
+    )
 
     assert result.status == "blocked"
     assert provider.cloud_calls == 0
