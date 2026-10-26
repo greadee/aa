@@ -198,3 +198,13 @@ func TestCompileConditionalWithValidConditionSucceeds(t *testing.T) {
 		t.Fatalf("order = %v, want [a]", plan.Order)
 	}
 }
+
+func TestCompileAllowsNilRetries(t *testing.T) {
+	plan, err := Compile(wf("wf", step("a", "task")))
+	if err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+	if plan.Order[0] != "a" {
+		t.Fatalf("order = %v", plan.Order)
+	}
+}

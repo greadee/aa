@@ -45,6 +45,9 @@ func Compile(w toolbox.Workflow) (Plan, error) {
 		if s.Kind == "gate" && len(s.Gates) == 0 {
 			return Plan{}, fmt.Errorf("%w: step %q is a gate step without gates", toolbox.ErrInvalid, s.ID)
 		}
+		// Retries is optional. A nil value means "use the runtime default"; it
+		// is valid configuration, not a skipped validation. Only an explicitly
+		// supplied negative value is rejected.
 		if s.Retries != nil && *s.Retries < 0 {
 			return Plan{}, fmt.Errorf("%w: step %q has negative retries", toolbox.ErrInvalid, s.ID)
 		}

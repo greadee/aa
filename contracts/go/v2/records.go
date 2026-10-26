@@ -83,6 +83,9 @@ func (m MemoryRecord) Validate() error {
 	if m.Content.Summary == "" {
 		return fmt.Errorf("content.summary: is required")
 	}
+	// Confidence is optional. A nil value means the caller did not assert a
+	// confidence; only an explicitly supplied value is range-checked. Skipping
+	// the check for nil is intentional, not fail-open.
 	if m.Confidence != nil && (*m.Confidence < 0 || *m.Confidence > 1) {
 		return fmt.Errorf("confidence: must be between 0 and 1")
 	}
