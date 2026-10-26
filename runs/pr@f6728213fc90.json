@@ -1,0 +1,60 @@
+{
+  "id": "pr@f6728213fc90",
+  "profile": "pr",
+  "repository": "greadee/aa",
+  "ref": "f6728213fc90929884fb8abaea10fcda31d96cc9",
+  "base": "origin/main",
+  "head": "f6728213fc90929884fb8abaea10fcda31d96cc9",
+  "generated": "2026-10-26T05:37:34.1829599Z",
+  "findings": [
+    {
+      "id": "e69e6d651c17e1972903db971dfb2464",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/metrics.go",
+        "line": 88,
+        "snippet": "func NewMemMetrics"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "toolbox",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewMemMetrics",
+      "status": "new",
+      "firstSeen": "pr@f6728213fc90",
+      "lastSeen": "pr@f6728213fc90",
+      "runId": "pr@f6728213fc90"
+    },
+    {
+      "id": "90997f65042ad76bb488fd65e2057db1",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/rpc/rpc.go",
+        "line": 211,
+        "snippet": "if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {",
+      "status": "new",
+      "firstSeen": "pr@f6728213fc90",
+      "lastSeen": "pr@f6728213fc90",
+      "runId": "pr@f6728213fc90"
+    }
+  ],
+  "resolved": null,
+  "blockThreshold": "P1",
+  "archiveURL": "",
+  "coverage": {
+    "selected": 9,
+    "analyzed": 9,
+    "skipped": 0,
+    "truncated": 0,
+    "threshold": 1
+  }
+}
