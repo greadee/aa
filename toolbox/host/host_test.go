@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	toolbox "github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/policy"
@@ -259,5 +262,62 @@ func TestHostCacheIsBounded(t *testing.T) {
 	h.mu.Unlock()
 	if size != defaultCacheLimit {
 		t.Fatalf("cache size = %d, want %d", size, defaultCacheLimit)
+	}
+}
+
+type blockingProvider struct {
+	started chan struct{}
+	release chan struct{}
+	calls   int32
+}
+
+func (p *blockingProvider) Kind() string { return toolbox.KindTool }
+
+func (p *blockingProvider) Invoke(ctx context.Context, _ toolbox.Manifest, _ map[string]any) (map[string]any, error) {
+	atomic.AddInt32(&p.calls, 1)
+	select {
+	case p.started <- struct{}{}:
+	default:
+	}
+	select {
+	case <-p.release:
+		return map[string]any{"ok": true}, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func TestHostConcurrentSameKeyExecutesOnce(t *testing.T) {
+	reg := registry.New()
+	p := &blockingProvider{started: make(chan struct{}, 1), release: make(chan struct{})}
+	if err := reg.RegisterProvider(p); err != nil {
+		t.Fatalf("RegisterProvider: %v", err)
+	}
+	if err := reg.Register(manifest("tool_a")); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	h := New(reg, policy.New(nil, toolbox.NewFixedClock()))
+	inv := toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}, IdempotencyKey: "concurrent-host-k1"}
+
+	var wg sync.WaitGroup
+	errs := make([]error, 2)
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			_, errs[i] = h.Invoke(context.Background(), inv, contract("read_project"))
+		}(i)
+	}
+	<-p.started
+	time.Sleep(20 * time.Millisecond)
+	close(p.release)
+	wg.Wait()
+	if got := atomic.LoadInt32(&p.calls); got != 1 {
+		t.Fatalf("provider calls = %d, want 1", got)
+	}
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("caller %d error = %v", i, err)
+		}
 	}
 }
