@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 // APIPrefix is the base path from the OpenAPI `servers[0].url`.
@@ -69,9 +71,10 @@ func New(cfg Config) *Server {
 	s.mux.Handle("GET "+APIPrefix+"/status", s.auth(s.status))
 	s.mux.Handle("GET "+APIPrefix+"/projects", s.auth(s.projectsList))
 	s.mux.Handle("POST "+APIPrefix+"/projects", s.auth(s.projectsCreate))
+	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}", s.auth(s.projectGet))
 	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/work-packages", s.auth(s.workList))
 	s.mux.Handle("POST "+APIPrefix+"/projects/{projectId}/work-packages", s.auth(s.workSubmit))
-	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/graph", s.auth(s.workList))
+	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/graph", s.auth(s.graph))
 	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/issues", s.auth(s.issues))
 	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/strategies", s.auth(s.strategies))
 	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/events", s.auth(s.events))
@@ -159,10 +162,37 @@ func (s *Server) projectsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.cfg.Backend.CreateProject(req.ID, req.Name); err != nil {
-		writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
+		switch {
+		case errors.Is(err, ErrConflict):
+			writeError(w, http.StatusConflict, codeConflict, err.Error())
+		case errors.Is(err, ErrNotFound):
+			writeError(w, http.StatusNotFound, codeNotFound, err.Error())
+		case errors.Is(err, ErrInvalid):
+			writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
+		default:
+			writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
+		}
 		return
 	}
-	writeJSON(w, http.StatusCreated, Project{ID: req.ID, Name: req.Name})
+	project, ok := s.cfg.Backend.Project(req.ID)
+	if !ok {
+		writeError(w, http.StatusInternalServerError, codeUnavailable, "project was created but could not be read")
+		return
+	}
+	writeJSON(w, http.StatusCreated, project)
+}
+
+func (s *Server) projectGet(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeError(w, http.StatusNotFound, codeNotFound, "project not found")
+		return
+	}
+	project, ok := s.cfg.Backend.Project(r.PathValue("projectId"))
+	if !ok {
+		writeError(w, http.StatusNotFound, codeNotFound, "project not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, project)
 }
 
 func (s *Server) workList(w http.ResponseWriter, r *http.Request) {
@@ -186,12 +216,31 @@ func (s *Server) workSubmit(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, codeInvalidParams, "invalid JSON body")
 		return
 	}
-	id, err := s.cfg.Backend.SubmitWork(r.PathValue("projectId"), req.Title, req.DependsOn)
+	projectID := r.PathValue("projectId")
+	id, err := s.cfg.Backend.SubmitWork(projectID, req.Title, req.DependsOn)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+	work, ok := s.cfg.Backend.WorkPackage(projectID, id)
+	if !ok {
+		writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+		return
+	}
+	writeJSON(w, http.StatusCreated, work)
+}
+
+func (s *Server) graph(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Backend == nil {
+		writeJSON(w, http.StatusOK, v2.TaskGraph{})
+		return
+	}
+	graph, ok := s.cfg.Backend.Graph(r.PathValue("projectId"))
+	if !ok {
+		writeError(w, http.StatusNotFound, codeNotFound, "project not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, graph)
 }
 
 func (s *Server) assignments(w http.ResponseWriter, _ *http.Request) {

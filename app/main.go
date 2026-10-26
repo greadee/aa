@@ -241,9 +241,28 @@ func (b *backend) Projects() []controlplane.Project {
 	recs := b.g.projects.Projects()
 	out := make([]controlplane.Project, 0, len(recs))
 	for _, record := range recs {
-		out = append(out, controlplane.Project{ID: record.ID, Name: record.Name})
+		out = append(out, projectView(record))
 	}
 	return out
+}
+
+func (b *backend) Project(id string) (controlplane.Project, bool) {
+	record, ok := b.g.projects.Project(id)
+	if !ok {
+		return controlplane.Project{}, false
+	}
+	return projectView(record), true
+}
+
+func projectView(record v2.ProjectRecord) controlplane.Project {
+	return controlplane.Project{
+		ContractVersion: record.ContractVersion,
+		Kind:            record.Kind,
+		ID:              record.ID,
+		Name:            record.Name,
+		State:           string(record.State),
+		LayoutVersion:   record.LayoutVersion,
+	}
 }
 
 func (b *backend) CreateProject(id, name string) error {
@@ -251,6 +270,9 @@ func (b *backend) CreateProject(id, name string) error {
 		return errors.New("project id is required")
 	}
 	if _, err := b.g.projects.CreateProject(id, name); err != nil {
+		if errors.Is(err, repo.ErrExists) {
+			return controlplane.ErrConflict
+		}
 		return err
 	}
 	b.emit("project:"+id, protocol.Event{
@@ -270,14 +292,33 @@ func (b *backend) WorkPackages(projectID string) []controlplane.WorkPackageView 
 	}
 	out := make([]controlplane.WorkPackageView, 0, len(records))
 	for _, record := range records {
-		out = append(out, controlplane.WorkPackageView{
-			ID:        record.ID,
-			Title:     record.Title,
-			State:     string(record.State),
-			DependsOn: record.Dependencies,
-		})
+		out = append(out, workPackageView(record))
 	}
 	return out
+}
+
+func (b *backend) WorkPackage(projectID, id string) (controlplane.WorkPackageView, bool) {
+	record, ok := b.g.projects.WorkPackage(projectID, id)
+	if !ok {
+		return controlplane.WorkPackageView{}, false
+	}
+	return workPackageView(record), true
+}
+
+func workPackageView(record repo.WorkPackageRecord) controlplane.WorkPackageView {
+	return controlplane.WorkPackageView{
+		ContractVersion: record.ContractVersion,
+		Kind:            record.Kind,
+		ID:              record.ID,
+		Title:           record.Title,
+		State:           string(record.State),
+		Acceptance:      record.Acceptance,
+		DependsOn:       record.Dependencies,
+	}
+}
+
+func (b *backend) Graph(projectID string) (v2.TaskGraph, bool) {
+	return b.g.projects.Graph(projectID)
 }
 
 func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {

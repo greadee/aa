@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 func TestHealthUnauthenticated(t *testing.T) {
@@ -52,7 +54,15 @@ func TestStatusRequiresToken(t *testing.T) {
 
 type fakeBackend struct{}
 
-func (fakeBackend) Projects() []Project { return []Project{{ID: "p1", Name: "Alpha"}} }
+func (fakeBackend) Projects() []Project {
+	return []Project{{ContractVersion: "2.0", Kind: "project_record", ID: "p1", Name: "Alpha", State: "CREATED", LayoutVersion: "1"}}
+}
+func (fakeBackend) Project(id string) (Project, bool) {
+	if id != "p1" {
+		return Project{}, false
+	}
+	return Project{ContractVersion: "2.0", Kind: "project_record", ID: "p1", Name: "Alpha", State: "CREATED", LayoutVersion: "1"}, true
+}
 func (fakeBackend) CreateProject(id, name string) error {
 	if id == "" {
 		return errors.New("bad id")
@@ -63,7 +73,23 @@ func (fakeBackend) WorkPackages(projectID string) []WorkPackageView {
 	if projectID != "p1" {
 		return nil
 	}
-	return []WorkPackageView{{ID: "wp-1", Title: "first", State: "PROPOSED"}}
+	return []WorkPackageView{{ContractVersion: "2.0", Kind: "work_package", ID: "wp-1", Title: "first", State: "PROPOSED", Acceptance: []string{"done"}}}
+}
+func (fakeBackend) WorkPackage(projectID, id string) (WorkPackageView, bool) {
+	if projectID != "p1" || id != "wp-1" {
+		return WorkPackageView{}, false
+	}
+	return WorkPackageView{ContractVersion: "2.0", Kind: "work_package", ID: "wp-1", Title: "first", State: "PROPOSED", Acceptance: []string{"done"}}, true
+}
+func (fakeBackend) Graph(projectID string) (v2.TaskGraph, bool) {
+	if projectID != "p1" {
+		return v2.TaskGraph{}, false
+	}
+	rev := 1
+	return v2.TaskGraph{
+		Envelope: v2.Envelope{ContractVersion: "2.0", Kind: "task_graph", ID: "graph_p1", ProjectID: "p1", Revision: &rev},
+		Nodes:    []v2.TaskGraphNode{{WorkPackageID: "wp-1", Readiness: v2.ReadinessReady}},
+	}, true
 }
 func (fakeBackend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {
 	if projectID != "p1" {
@@ -139,5 +165,32 @@ func TestResourcesRequireTokenAndServe(t *testing.T) {
 	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/tools", nil)))
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "tool_screen") {
 		t.Fatalf("tools = %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+type createBackend struct {
+	fakeBackend
+	err error
+}
+
+func (b createBackend) CreateProject(string, string) error { return b.err }
+
+func TestProjectCreateErrorMapping(t *testing.T) {
+	cases := []struct {
+		err  error
+		code int
+	}{
+		{ErrConflict, http.StatusConflict},
+		{ErrInvalid, http.StatusBadRequest},
+	}
+	for _, c := range cases {
+		s := New(Config{Version: "0.1.0", Token: "secret", Status: func() Status { return Status{} }, Backend: createBackend{err: c.err}})
+		req := httptest.NewRequest(http.MethodPost, APIPrefix+"/projects", strings.NewReader(`{"id":"p1","name":"Alpha"}`))
+		req.Header.Set("Authorization", "Bearer secret")
+		rec := httptest.NewRecorder()
+		s.ServeHTTP(rec, req)
+		if rec.Code != c.code {
+			t.Fatalf("err %v = %d %s", c.err, rec.Code, rec.Body.String())
+		}
 	}
 }

@@ -406,6 +406,68 @@ func (s *State) ApprovalRecords() ([]repo.ApprovalRecord, error) {
 	return s.approvals.List()
 }
 
+// WorkPackage returns one project-scoped work package.
+func (s *State) WorkPackage(projectID, id string) (repo.WorkPackageRecord, bool) {
+	record, err := s.workRepo.Get(id)
+	if err != nil || record.ProjectID != projectID {
+		return repo.WorkPackageRecord{}, false
+	}
+	return record, true
+}
+
+// Graph returns the project's task graph in contract v2 shape.
+func (s *State) Graph(projectID string) (v2.TaskGraph, bool) {
+	s.mu.RLock()
+	project, ok := s.projects[projectID]
+	if !ok {
+		s.mu.RUnlock()
+		return v2.TaskGraph{}, false
+	}
+	graph := project.Graph
+	ready := map[string]bool{}
+	for _, id := range graph.Ready() {
+		ready[id] = true
+	}
+	revision := graph.Revision
+	nodes := make([]v2.TaskGraphNode, 0)
+	for _, wp := range graph.List() {
+		nodes = append(nodes, v2.TaskGraphNode{
+			WorkPackageID: wp.ID,
+			DependsOn:     append([]string(nil), wp.DependsOn...),
+			Readiness:     readinessFor(wp, ready),
+		})
+	}
+	s.mu.RUnlock()
+	return v2.TaskGraph{
+		Envelope: v2.Envelope{
+			ContractVersion: v2.Version,
+			Kind:            "task_graph",
+			ID:              "graph_" + projectID,
+			ProjectID:       projectID,
+			Revision:        &revision,
+		},
+		Nodes: nodes,
+	}, true
+}
+
+func readinessFor(wp planner.WorkPackage, ready map[string]bool) v2.ReadinessState {
+	switch wp.State {
+	case planner.StateCompleted:
+		return v2.ReadinessSatisfied
+	case planner.StateRunning:
+		return v2.ReadinessDispatched
+	case planner.StateReady:
+		return v2.ReadinessReady
+	case planner.StateProposed:
+		if ready[wp.ID] {
+			return v2.ReadinessReady
+		}
+		return v2.ReadinessBlocked
+	default:
+		return v2.ReadinessBlocked
+	}
+}
+
 // ProjectRuntime returns the in-process scheduler/API for one project.
 func (s *State) ProjectRuntime(projectID string) (*scheduler.Scheduler, *api.Service, bool) {
 	s.mu.RLock()

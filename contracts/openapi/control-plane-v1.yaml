@@ -83,7 +83,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProjectRecord"
+              $ref: "#/components/schemas/ProjectCreateRequest"
       responses:
         "201":
           description: Created
@@ -123,10 +123,34 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/WorkPackage"
+    post:
+      tags: [work]
+      summary: Submit a work package to a project
+      parameters:
+        - $ref: "#/components/parameters/projectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkPackageCreateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkPackage"
+        "400":
+          description: Invalid work package or unknown project
   /projects/{projectId}/graph:
     get:
       tags: [work]
       summary: Get the current dependency graph
+      description: >
+        Returns a TaskGraph snapshot. An empty project returns nodes: [] even
+        though the canonical persisted task-graph contract requires at least one
+        node.
       parameters:
         - $ref: "#/components/parameters/projectId"
       responses:
@@ -139,20 +163,22 @@ paths:
   /projects/{projectId}/events:
     get:
       tags: [work]
-      summary: Stream canonical events (server-sent events)
+      summary: List canonical events for a project
+      description: >
+        v1 returns a JSON snapshot of canonical events. Server-sent event
+        streaming is deferred; this route is not an SSE endpoint.
       parameters:
         - $ref: "#/components/parameters/projectId"
-        - name: after
-          in: query
-          schema:
-            type: integer
       responses:
         "200":
-          description: Event stream
+          description: Canonical event snapshot
           content:
-            text/event-stream:
+            application/json:
               schema:
-                type: string
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
   /projects/{projectId}/issues:
     get:
       tags: [memory]
@@ -606,6 +632,24 @@ components:
           type: string
         layoutVersion:
           type: string
+    ProjectCreateRequest:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    WorkPackageCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        dependsOn:
+          type: array
+          items:
+            type: string
     WorkPackage:
       type: object
       required: [contractVersion, kind, id, title, state, acceptance]
@@ -621,6 +665,10 @@ components:
         state:
           type: string
         acceptance:
+          type: array
+          items:
+            type: string
+        dependsOn:
           type: array
           items:
             type: string
@@ -647,6 +695,10 @@ components:
                 type: string
               readiness:
                 type: string
+              dependsOn:
+                type: array
+                items:
+                  type: string
     Issue:
       type: object
       required: [contractVersion, kind, id, title, type, status]

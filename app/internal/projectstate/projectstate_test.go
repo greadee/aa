@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/greadee/aa/kernel/allocator/planner"
 	"github.com/greadee/aa/kernel/gate"
 
 	v2 "github.com/greadee/aa/contracts/go/v2"
@@ -348,5 +349,57 @@ func TestApprovalValidation(t *testing.T) {
 	}
 	if _, err := state.RecordApproval("missing", work.ID, repo.DecisionApprove, "human", ""); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("project err = %v, want ErrNotFound", err)
+	}
+}
+
+func TestTaskGraphReadinessAndWorkPackageLookup(t *testing.T) {
+	state, _ := newState(t)
+	if _, err := state.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	empty, ok := state.Graph("p1")
+	if !ok || empty.Kind != "task_graph" || len(empty.Nodes) != 0 {
+		t.Fatalf("empty graph = %+v ok=%v", empty, ok)
+	}
+	first, err := state.SubmitWork("p1", "First", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := state.SubmitWork("p1", "Second", []string{first.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	graph, ok := state.Graph("p1")
+	if !ok || len(graph.Nodes) != 2 {
+		t.Fatalf("graph = %+v ok=%v", graph, ok)
+	}
+	readiness := map[string]string{}
+	for _, node := range graph.Nodes {
+		readiness[node.WorkPackageID] = string(node.Readiness)
+	}
+	if readiness[first.ID] != "ready" || readiness[second.ID] != "blocked" {
+		t.Fatalf("readiness = %+v", readiness)
+	}
+	project, _ := state.ProjectForWorkPackage(first.ID)
+	if err := project.Graph.SetState(first.ID, planner.StateCompleted); err != nil {
+		t.Fatal(err)
+	}
+	graph, _ = state.Graph("p1")
+	readiness = map[string]string{}
+	for _, node := range graph.Nodes {
+		readiness[node.WorkPackageID] = string(node.Readiness)
+	}
+	if readiness[first.ID] != "satisfied" || readiness[second.ID] != "ready" {
+		t.Fatalf("readiness after completion = %+v", readiness)
+	}
+	work, ok := state.WorkPackage("p1", second.ID)
+	if !ok || work.ID != second.ID {
+		t.Fatalf("work package = %+v ok=%v", work, ok)
+	}
+	if _, ok := state.WorkPackage("p2", second.ID); ok {
+		t.Fatal("work package leaked across projects")
+	}
+	if _, ok := state.Graph("missing"); ok {
+		t.Fatal("unexpected graph for missing project")
 	}
 }
