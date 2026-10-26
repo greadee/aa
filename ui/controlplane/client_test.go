@@ -17,14 +17,18 @@ func TestHTTPClient(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/status":
 			_ = json.NewEncoder(w).Encode(Status{Projects: 1, Nodes: 1})
 		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/projects":
-			_ = json.NewEncoder(w).Encode([]Project{{ID: "default", Name: "Default"}})
+			_ = json.NewEncoder(w).Encode([]Project{{ContractVersion: "2.0", Kind: "project_record", ID: "default", Name: "Default", State: "CREATED", LayoutVersion: "1"}})
+		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/projects/default":
+			_ = json.NewEncoder(w).Encode(Project{ContractVersion: "2.0", Kind: "project_record", ID: "default", Name: "Default", State: "CREATED", LayoutVersion: "1"})
+		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/projects/default/graph":
+			_ = json.NewEncoder(w).Encode(TaskGraph{ContractVersion: "2.0", Kind: "task_graph", ID: "graph_default", ProjectID: "default", Revision: 1, Nodes: []TaskGraphNode{{WorkPackageID: "wp-1", Readiness: "ready"}}})
 		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/projects":
 			w.WriteHeader(http.StatusCreated)
 		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/projects/default/work-packages":
 			_ = json.NewEncoder(w).Encode([]WorkPackage{{ID: "wp-1", State: "PROPOSED"}})
 		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/projects/default/work-packages":
 			w.WriteHeader(http.StatusCreated)
-			_ = json.NewEncoder(w).Encode(map[string]string{"id": "wp-9"})
+			_ = json.NewEncoder(w).Encode(WorkPackage{ContractVersion: "2.0", Kind: "work_package", ID: "wp-9", Title: "x", State: "PROPOSED", Acceptance: []string{"done"}})
 		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/nodes":
 			_ = json.NewEncoder(w).Encode([]Node{{ID: "local", Authority: true}})
 		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/tools":
@@ -46,6 +50,12 @@ func TestHTTPClient(t *testing.T) {
 	}
 	if ps, err := c.Projects(ctx); err != nil || len(ps) != 1 || ps[0].ID != "default" {
 		t.Fatalf("projects %v %v", ps, err)
+	}
+	if p, err := c.Project(ctx, "default"); err != nil || p.LayoutVersion != "1" {
+		t.Fatalf("project %+v %v", p, err)
+	}
+	if g, err := c.Graph(ctx, "default"); err != nil || len(g.Nodes) != 1 || g.Nodes[0].Readiness != "ready" {
+		t.Fatalf("graph %+v %v", g, err)
 	}
 	if err := c.CreateProject(ctx, "p", "n"); err != nil {
 		t.Fatal(err)
@@ -88,6 +98,12 @@ func TestFakeClient(t *testing.T) {
 	wps, _ := f.WorkPackages(ctx, "default")
 	if len(wps) != 1 || wps[0].State != "PROPOSED" {
 		t.Fatalf("work %+v", wps)
+	}
+	if _, err := f.Project(ctx, "default"); err != nil {
+		t.Fatal(err)
+	}
+	if g, err := f.Graph(ctx, "default"); err != nil || len(g.Nodes) != 1 {
+		t.Fatalf("graph %+v %v", g, err)
 	}
 	st, _ := f.Status(ctx)
 	if st.Projects == 0 || st.Nodes == 0 {

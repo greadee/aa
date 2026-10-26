@@ -99,12 +99,20 @@ func graphLines(m state.Model) []string {
 	if len(m.Work) == 0 {
 		return append(lines, "  (no work packages)")
 	}
+	readiness := map[string]string{}
+	for _, node := range m.Graph.Nodes {
+		readiness[node.WorkPackageID] = node.Readiness
+	}
 	for _, w := range m.Work {
 		deps := "-"
 		if len(w.DependsOn) > 0 {
 			deps = strings.Join(w.DependsOn, ",")
 		}
-		lines = append(lines, fmt.Sprintf("  %-8s %-10s deps=%s", w.ID, w.State, deps))
+		ready := readiness[w.ID]
+		if ready == "" {
+			ready = "-"
+		}
+		lines = append(lines, fmt.Sprintf("  %-8s %-10s %-10s deps=%s", w.ID, w.State, ready, deps))
 	}
 	lines = append(lines, "", "ASSIGNMENTS")
 	if len(m.Assignments) == 0 {
