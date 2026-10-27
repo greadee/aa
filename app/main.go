@@ -112,16 +112,7 @@ func serve(args []string) error {
 	if err != nil {
 		return err
 	}
-	handler := controlplane.New(controlplane.Config{
-		Version:      version,
-		Token:        *token,
-		Status:       g.status,
-		Backend:      &backend{g: g},
-		Observations: observationBackend{plane: g.obs},
-		Visualizer:   visualizerBackend{plane: g.vis},
-		Registry:     definitionsBackend{g: g},
-		Lifecycle:    lifecycleBackend{manager: g.life},
-	})
+	handler := newControlPlane(g, *token)
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
 
@@ -141,6 +132,19 @@ func serve(args []string) error {
 		_ = srv.Shutdown(shutdownCtx)
 	}
 	return nil
+}
+
+func newControlPlane(g *runtime, token string) http.Handler {
+	return controlplane.New(controlplane.Config{
+		Version:      version,
+		Token:        token,
+		Status:       g.status,
+		Backend:      &backend{g: g},
+		Observations: observationBackend{plane: g.obs},
+		Visualizer:   visualizerBackend{plane: g.vis},
+		Registry:     definitionsBackend{g: g},
+		Lifecycle:    lifecycleBackend{manager: g.life},
+	})
 }
 
 func defaultRoot() string {
