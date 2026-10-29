@@ -43,6 +43,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Preflight provider
+        if: ${{ inputs.closeout == true }}
+        env:
+          KEY: ${{ secrets.REVU_PROVIDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          echo "key length: ${#KEY}"
+          curl -sS --max-time 30 -o /tmp/key.json -w "key HTTP %{http_code}\n" \
+            https://openrouter.ai/api/v1/key -H "Authorization: Bearer $KEY"
+          cat /tmp/key.json; echo
+          curl -sS --max-time 60 -o /tmp/chat.json -w "chat HTTP %{http_code}\n" \
+            https://openrouter.ai/api/v1/chat/completions \
+            -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+            -d '{"model":"deepseek/deepseek-v4.1-flash","messages":[{"role":"user","content":"Reply with the single word ok"}],"max_tokens":8}'
+          cat /tmp/chat.json; echo
       - id: revu
         uses: greadee/review-engine@v1
         with:
