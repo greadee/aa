@@ -1,8 +1,9 @@
 # Review engine (revu) — Shape A: single-file, trusted PR review.
 #
-# Runs on same-repository pull requests. Static-only (no model, no provider key);
-# posts a summary comment and archives findings. For untrusted forks, use the
-# two-file collect/finalize pattern instead.
+# Runs on same-repository pull requests. When REVU_PROVIDER_API_KEY is set the
+# semantic pass queries DeepSeek V4.1 Flash through OpenRouter; otherwise it
+# falls back to the static-only review so the gate stays green without a key.
+# For untrusted forks, use the two-file collect/finalize pattern instead.
 name: revu
 
 on:
@@ -35,10 +36,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: greadee/review-engine@main
+      - uses: greadee/review-engine@v1
         with:
           profile: pr
-          semantic: "false"
+          semantic: ${{ secrets.REVU_PROVIDER_API_KEY != '' }}
+          provider: openai-compatible
+          model: deepseek/deepseek-v4.1-flash
+          base-url: https://openrouter.ai/api/v1
+          allowed-base-urls: https://openrouter.ai/api/v1
+          api-key: ${{ secrets.REVU_PROVIDER_API_KEY }}
           base: origin/${{ github.base_ref || 'main' }}
           head: ${{ github.event.pull_request.head.sha || github.sha }}
           pr: ${{ github.event.pull_request.number || inputs.pr }}
@@ -46,6 +52,3 @@ jobs:
           publish: "true"
           comment: "true"
           block: "true"
-          provider: openai-compatible
-          model: qwen/qwen3.6-35b-a3b:4bit
-          base-url: http://localhost:1234
