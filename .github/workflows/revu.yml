@@ -50,26 +50,23 @@ jobs:
         run: |
           set -euo pipefail
           echo "key length: ${#KEY}"
-          curl -sS --max-time 30 -o /tmp/key.json -w "key HTTP %{http_code}\n" \
-            https://openrouter.ai/api/v1/key -H "Authorization: Bearer $KEY"
-          cat /tmp/key.json; echo
-          curl -sS --max-time 60 -o /tmp/chat.json -w "chat HTTP %{http_code}\n" \
-            https://openrouter.ai/api/v1/chat/completions \
-            -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
-            -d '{"model":"deepseek/deepseek-v4.1-flash","messages":[{"role":"user","content":"Reply with the single word ok"}],"max_tokens":8}'
-          cat /tmp/chat.json; echo
           curl -sS --max-time 30 -o /tmp/dsmodels.json -w "deepseek models HTTP %{http_code}\n" \
             https://api.deepseek.com/models -H "Authorization: Bearer $KEY"
           cat /tmp/dsmodels.json; echo
+          curl -sS --max-time 60 -o /tmp/dschat.json -w "deepseek chat HTTP %{http_code}\n" \
+            https://api.deepseek.com/v1/chat/completions \
+            -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+            -d '{"model":"deepseek-flash","messages":[{"role":"user","content":"Reply with the single word ok"}],"max_tokens":8}'
+          cat /tmp/dschat.json; echo
       - id: revu
         uses: greadee/review-engine@v1
         with:
           profile: pr
           semantic: ${{ secrets.REVU_PROVIDER_API_KEY != '' }}
           provider: openai-compatible
-          model: deepseek/deepseek-v4.1-flash
-          base-url: https://openrouter.ai/api/v1
-          allowed-base-urls: https://openrouter.ai/api/v1
+          model: deepseek-flash
+          base-url: https://api.deepseek.com/v1
+          allowed-base-urls: https://api.deepseek.com/v1
           api-key: ${{ secrets.REVU_PROVIDER_API_KEY }}
           base: origin/${{ github.base_ref || 'main' }}
           head: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -93,7 +90,7 @@ jobs:
           {
             echo "## Sprint closeout review"
             echo
-            echo "_Model: \`deepseek/deepseek-v4.1-flash\` via OpenRouter._"
+            echo "_Model: \`DeepSeek-V4.1-Flash\` (deepseek-flash) via the DeepSeek API._"
             echo
             cat "$SUMMARY"
           } > /tmp/revu-closeout.md
