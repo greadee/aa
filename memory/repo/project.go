@@ -54,7 +54,14 @@ func (r *ProjectRepository) Create(id, name string) (v2.ProjectRecord, error) {
 
 // Get returns a project by id.
 func (r *ProjectRepository) Get(id string) (v2.ProjectRecord, error) {
-	return getTyped[v2.ProjectRecord](r.store, "project_record", id)
+	project, err := getTyped[v2.ProjectRecord](r.store, "project_record", id)
+	if err != nil {
+		return v2.ProjectRecord{}, err
+	}
+	if err := project.Validate(); err != nil {
+		return v2.ProjectRecord{}, fmt.Errorf("project record %s: %w", id, err)
+	}
+	return project, nil
 }
 
 // List returns all projects sorted by id.
@@ -67,7 +74,10 @@ func (r *ProjectRepository) List() ([]v2.ProjectRecord, error) {
 	for _, rec := range records {
 		var project v2.ProjectRecord
 		if err := decode(rec, &project); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("project record %s: %w", rec.ID, err)
+		}
+		if err := project.Validate(); err != nil {
+			return nil, fmt.Errorf("project record %s: %w", rec.ID, err)
 		}
 		out = append(out, project)
 	}

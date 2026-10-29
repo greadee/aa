@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 )
 
 // State is the lifecycle state of a work package in the graph.
@@ -36,8 +37,10 @@ type Graph struct {
 	ProjectID string
 	ID        string
 	Revision  int
-	nodes     map[string]*WorkPackage
-	order     []string
+
+	mu    sync.RWMutex
+	nodes map[string]*WorkPackage
+	order []string
 }
 
 // NewGraph returns an empty graph.
@@ -50,6 +53,8 @@ var ErrUnknownNode = errors.New("plan: unknown work package")
 
 // Add inserts a work package. The state defaults to PROPOSED.
 func (g *Graph) Add(wp WorkPackage) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	if wp.ID == "" {
 		return fmt.Errorf("plan: work package id is required")
 	}
@@ -67,6 +72,8 @@ func (g *Graph) Add(wp WorkPackage) error {
 
 // Get returns a work package by id.
 func (g *Graph) Get(id string) (WorkPackage, bool) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
 	wp, ok := g.nodes[id]
 	if !ok {
 		return WorkPackage{}, false
@@ -76,6 +83,8 @@ func (g *Graph) Get(id string) (WorkPackage, bool) {
 
 // List returns work packages in insertion order.
 func (g *Graph) List() []WorkPackage {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
 	out := make([]WorkPackage, 0, len(g.order))
 	for _, id := range g.order {
 		out = append(out, *g.nodes[id])
@@ -85,6 +94,12 @@ func (g *Graph) List() []WorkPackage {
 
 // Validate checks for missing dependencies, self-dependencies, and cycles.
 func (g *Graph) Validate() error {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	return g.validateLocked()
+}
+
+func (g *Graph) validateLocked() error {
 	for _, id := range g.order {
 		wp := g.nodes[id]
 		for _, dep := range wp.DependsOn {
@@ -96,7 +111,7 @@ func (g *Graph) Validate() error {
 			}
 		}
 	}
-	if _, err := g.Topological(); err != nil {
+	if _, err := g.topologicalLocked(); err != nil {
 		return err
 	}
 	return nil
@@ -104,6 +119,12 @@ func (g *Graph) Validate() error {
 
 // Topological returns ids in deterministic dependency order.
 func (g *Graph) Topological() ([]string, error) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	return g.topologicalLocked()
+}
+
+func (g *Graph) topologicalLocked() ([]string, error) {
 	indegree := make(map[string]int, len(g.nodes))
 	children := make(map[string][]string, len(g.nodes))
 	for _, id := range g.order {
@@ -143,6 +164,8 @@ func (g *Graph) Topological() ([]string, error) {
 
 // SetState updates a work package's state.
 func (g *Graph) SetState(id string, state State) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	wp, ok := g.nodes[id]
 	if !ok {
 		return fmt.Errorf("%w: %s", ErrUnknownNode, id)
@@ -154,6 +177,8 @@ func (g *Graph) SetState(id string, state State) error {
 // Ready returns the ids of work packages that are not yet dispatched and whose
 // dependencies are all completed, sorted by id.
 func (g *Graph) Ready() []string {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
 	var ready []string
 	for _, id := range g.order {
 		wp := g.nodes[id]

@@ -47,19 +47,32 @@ func NewApprovalRepository(s *store.Store, p projection.Projection) *ApprovalRep
 	return &ApprovalRepository{store: s, proj: p}
 }
 
+// Validate checks the record's required fields, decision enum, and timestamp.
+func (rec ApprovalRecord) Validate() error {
+	if rec.WorkPackageID == "" || rec.ProjectID == "" {
+		return fmt.Errorf("approval record: workPackageId and projectId are required")
+	}
+	if rec.Decision != DecisionApprove && rec.Decision != DecisionReject {
+		return fmt.Errorf("approval record: decision must be approve or reject")
+	}
+	if rec.Actor == "" {
+		return fmt.Errorf("approval record: actor is required")
+	}
+	if rec.DecidedAt != "" {
+		if _, err := time.Parse(time.RFC3339Nano, rec.DecidedAt); err != nil {
+			return fmt.Errorf("approval record: decidedAt: %w", err)
+		}
+	}
+	return nil
+}
+
 // Save validates and stores an approval decision, incrementing its revision.
 func (r *ApprovalRepository) Save(record ApprovalRecord) (ApprovalRecord, error) {
-	if record.WorkPackageID == "" || record.ProjectID == "" {
-		return ApprovalRecord{}, fmt.Errorf("approval record: workPackageId and projectId are required")
-	}
-	if record.Decision != DecisionApprove && record.Decision != DecisionReject {
-		return ApprovalRecord{}, fmt.Errorf("approval record: decision must be approve or reject")
-	}
-	if record.Actor == "" {
-		return ApprovalRecord{}, fmt.Errorf("approval record: actor is required")
-	}
 	if record.DecidedAt == "" {
 		record.DecidedAt = time.Now().UTC().Format(time.RFC3339Nano)
+	}
+	if err := record.Validate(); err != nil {
+		return ApprovalRecord{}, err
 	}
 	id := "approval_" + record.WorkPackageID
 	rev := revisionOf(r.store, "approval", id) + 1
@@ -71,7 +84,14 @@ func (r *ApprovalRepository) Save(record ApprovalRecord) (ApprovalRecord, error)
 
 // Get returns the current approval for a work package.
 func (r *ApprovalRepository) Get(workPackageID string) (ApprovalRecord, error) {
-	return getTyped[ApprovalRecord](r.store, "approval", "approval_"+workPackageID)
+	record, err := getTyped[ApprovalRecord](r.store, "approval", "approval_"+workPackageID)
+	if err != nil {
+		return ApprovalRecord{}, err
+	}
+	if err := record.Validate(); err != nil {
+		return ApprovalRecord{}, fmt.Errorf("approval record %s: %w", workPackageID, err)
+	}
+	return record, nil
 }
 
 // List returns all approval records sorted by work package id.
@@ -84,7 +104,10 @@ func (r *ApprovalRepository) List() ([]ApprovalRecord, error) {
 	for _, rec := range records {
 		var record ApprovalRecord
 		if err := decode(rec, &record); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("approval record %s: %w", rec.ID, err)
+		}
+		if err := record.Validate(); err != nil {
+			return nil, fmt.Errorf("approval record %s: %w", rec.ID, err)
 		}
 		out = append(out, record)
 	}

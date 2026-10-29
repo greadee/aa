@@ -33,6 +33,7 @@ func TestControlPlaneSeamsEmitObservations(t *testing.T) {
 		t.Fatalf("work events = %+v", events)
 	}
 
+	seedAwaitingGate(t, g, "default", id)
 	if err := b.Approve(id, "approve", "tester", ""); err != nil {
 		t.Fatal(err)
 	}

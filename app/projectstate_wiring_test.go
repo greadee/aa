@@ -5,7 +5,19 @@ import (
 	"testing"
 
 	"github.com/greadee/aa/app/internal/controlplane"
+	"github.com/greadee/aa/memory/repo"
 )
+
+func seedAwaitingGate(t *testing.T, g *runtime, projectID, workPackageID string) {
+	t.Helper()
+	assignments := repo.NewAssignmentRepository(g.store, g.projection)
+	if _, err := assignments.Save(repo.AssignmentRecord{
+		ID: "asg_" + workPackageID, ProjectID: projectID, WorkPackageID: workPackageID,
+		WorkerID: "w1", State: "awaiting_gates", Attempt: 1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func TestControlPlaneProjectsAndWorkAreWired(t *testing.T) {
 	root := t.TempDir()
@@ -92,6 +104,7 @@ func TestControlPlaneApprovalSurvivesRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	seedAwaitingGate(t, g, "p1", id)
 	if err := b.Approve(id, "approve", "tester", ""); err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +120,7 @@ func TestControlPlaneApprovalSurvivesRestart(t *testing.T) {
 	if err != nil || len(approvals) != 1 || approvals[0].Decision != "approve" {
 		t.Fatalf("approvals = %+v err = %v", approvals, err)
 	}
-	if reopened.projects.ActiveAssignments() != 0 {
+	if reopened.projects.ActiveAssignments() != 1 {
 		t.Fatalf("active assignments = %d", reopened.projects.ActiveAssignments())
 	}
 }
@@ -126,6 +139,7 @@ func TestControlPlaneApprovalResolutionAndReject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	seedAwaitingGate(t, g, "p1", first)
 	if err := b.Approve(first, "approve", "human", "ok"); err != nil {
 		t.Fatal(err)
 	}
@@ -136,6 +150,7 @@ func TestControlPlaneApprovalResolutionAndReject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	seedAwaitingGate(t, g, "p1", second)
 	if err := b.Approve(second, "reject", "human", "no"); err != nil {
 		t.Fatal(err)
 	}

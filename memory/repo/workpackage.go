@@ -65,7 +65,14 @@ func (r *WorkPackageRepository) Create(record WorkPackageRecord) (WorkPackageRec
 
 // Get returns a work package by id.
 func (r *WorkPackageRepository) Get(id string) (WorkPackageRecord, error) {
-	return getTyped[WorkPackageRecord](r.store, "work_package", id)
+	record, err := getTyped[WorkPackageRecord](r.store, "work_package", id)
+	if err != nil {
+		return WorkPackageRecord{}, err
+	}
+	if err := record.Validate(); err != nil {
+		return WorkPackageRecord{}, fmt.Errorf("work package record %s: %w", id, err)
+	}
+	return record, nil
 }
 
 // List returns all work packages sorted by id.
@@ -78,7 +85,10 @@ func (r *WorkPackageRepository) List() ([]WorkPackageRecord, error) {
 	for _, rec := range records {
 		var work WorkPackageRecord
 		if err := decode(rec, &work); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("work package record %s: %w", rec.ID, err)
+		}
+		if err := work.Validate(); err != nil {
+			return nil, fmt.Errorf("work package record %s: %w", rec.ID, err)
 		}
 		out = append(out, work)
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/store"
 )
@@ -56,10 +57,24 @@ func (r *AssignmentRepository) SaveJSON(data []byte) error {
 	return err
 }
 
+// Validate checks the record's required fields and state enum.
+func (rec AssignmentRecord) Validate() error {
+	if rec.ID == "" || rec.ProjectID == "" || rec.WorkPackageID == "" || rec.WorkerID == "" {
+		return fmt.Errorf("assignment record: id, projectId, workPackageId, and workerId are required")
+	}
+	if rec.Attempt < 0 {
+		return fmt.Errorf("assignment record: attempt must be non-negative")
+	}
+	if err := v2.AssignmentState(rec.State).Validate(); err != nil {
+		return fmt.Errorf("assignment record: %w", err)
+	}
+	return nil
+}
+
 // Save validates and stores an assignment record.
 func (r *AssignmentRepository) Save(record AssignmentRecord) (AssignmentRecord, error) {
-	if record.ID == "" || record.ProjectID == "" || record.WorkPackageID == "" {
-		return AssignmentRecord{}, fmt.Errorf("assignment record: id, projectId, and workPackageId are required")
+	if err := record.Validate(); err != nil {
+		return AssignmentRecord{}, err
 	}
 	rev := revisionOf(r.store, "assignment", record.ID) + 1
 	if _, err := putTyped(r.store, r.proj, "assignment", record.ID, rev, record); err != nil {
@@ -70,7 +85,14 @@ func (r *AssignmentRepository) Save(record AssignmentRecord) (AssignmentRecord, 
 
 // Get returns an assignment by id.
 func (r *AssignmentRepository) Get(id string) (AssignmentRecord, error) {
-	return getTyped[AssignmentRecord](r.store, "assignment", id)
+	record, err := getTyped[AssignmentRecord](r.store, "assignment", id)
+	if err != nil {
+		return AssignmentRecord{}, err
+	}
+	if err := record.Validate(); err != nil {
+		return AssignmentRecord{}, fmt.Errorf("assignment record %s: %w", id, err)
+	}
+	return record, nil
 }
 
 // List returns all assignment records sorted by id.
@@ -83,7 +105,10 @@ func (r *AssignmentRepository) List() ([]AssignmentRecord, error) {
 	for _, rec := range records {
 		var record AssignmentRecord
 		if err := decode(rec, &record); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("assignment record %s: %w", rec.ID, err)
+		}
+		if err := record.Validate(); err != nil {
+			return nil, fmt.Errorf("assignment record %s: %w", rec.ID, err)
 		}
 		out = append(out, record)
 	}

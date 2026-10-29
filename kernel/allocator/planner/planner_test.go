@@ -1,6 +1,10 @@
 package planner
 
-import "testing"
+import (
+	"fmt"
+	"sync"
+	"testing"
+)
 
 func testGraph(t *testing.T) *Graph {
 	t.Helper()
@@ -89,4 +93,30 @@ func TestReadiness(t *testing.T) {
 	if err := g.SetState("nope", StateReady); err == nil {
 		t.Fatal("expected unknown node error")
 	}
+}
+
+func TestGraphConcurrentReadsAndWrites(t *testing.T) {
+	g := NewGraph("p1", "g1")
+	for i := 0; i < 20; i++ {
+		id := fmt.Sprintf("wp_%d", i)
+		if err := g.Add(WorkPackage{ID: id, Title: id}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			id := fmt.Sprintf("wp_%d", i)
+			for j := 0; j < 100; j++ {
+				_, _ = g.Get(id)
+				_ = g.List()
+				_ = g.Ready()
+				_ = g.SetState(id, StateRunning)
+				_ = g.SetState(id, StateProposed)
+			}
+		}(i)
+	}
+	wg.Wait()
 }

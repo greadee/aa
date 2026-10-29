@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/kernel/allocator/planner"
@@ -85,7 +86,11 @@ func New(st *store.Store, proj projection.Projection, options ...Options) (*Stat
 		if !ok {
 			return nil, fmt.Errorf("projectstate: work package %q references unknown project %q", record.ID, record.ProjectID)
 		}
-		if err := project.Graph.Add(toPlanner(record)); err != nil {
+		workPackage, err := toPlanner(record)
+		if err != nil {
+			return nil, fmt.Errorf("projectstate: restore work package %q: %w", record.ID, err)
+		}
+		if err := project.Graph.Add(workPackage); err != nil {
 			return nil, fmt.Errorf("projectstate: restore work package %q: %w", record.ID, err)
 		}
 	}
@@ -100,7 +105,7 @@ func New(st *store.Store, proj projection.Projection, options ...Options) (*Stat
 		if err := project.Graph.Validate(); err != nil {
 			return nil, fmt.Errorf("projectstate: validate project %q: %w", id, err)
 		}
-		if err := attachRuntime(project, s.opts, assignmentSink{repo: s.assignments}); err != nil {
+		if err := attachRuntime(project, s.opts, assignmentSink{assignments: s.assignments, work: s.workRepo}); err != nil {
 			return nil, fmt.Errorf("projectstate: project %q: %w", id, err)
 		}
 	}
@@ -118,6 +123,7 @@ func (s *State) restoreAssignments() error {
 	if err != nil {
 		return fmt.Errorf("projectstate: list assignments: %w", err)
 	}
+	byProject := map[string][]scheduler.RestoreAssignment{}
 	for _, assignment := range assignments {
 		project, ok := s.projects[assignment.ProjectID]
 		if !ok {
@@ -125,6 +131,38 @@ func (s *State) restoreAssignments() error {
 		}
 		if _, ok := project.Graph.Get(assignment.WorkPackageID); !ok {
 			return fmt.Errorf("projectstate: assignment %q references unknown work package %q", assignment.ID, assignment.WorkPackageID)
+		}
+		byProject[assignment.ProjectID] = append(byProject[assignment.ProjectID], scheduler.RestoreAssignment{
+			ID:             assignment.ID,
+			ProjectID:      assignment.ProjectID,
+			WorkPackageID:  assignment.WorkPackageID,
+			WorkerID:       assignment.WorkerID,
+			State:          assignment.State,
+			Attempt:        assignment.Attempt,
+			LeaseOwner:     assignment.LeaseOwner,
+			LeaseExpiresAt: assignment.LeaseExpiresAt,
+		})
+	}
+	now := time.Now().UTC()
+	for projectID, records := range byProject {
+		project := s.projects[projectID]
+		updated, err := project.Scheduler.Restore(records, now)
+		if err != nil {
+			return fmt.Errorf("projectstate: restore assignments for %q: %w", projectID, err)
+		}
+		for _, record := range updated {
+			if _, err := s.assignments.Save(repo.AssignmentRecord{
+				ID:             record.ID,
+				ProjectID:      record.ProjectID,
+				WorkPackageID:  record.WorkPackageID,
+				WorkerID:       record.WorkerID,
+				State:          record.State,
+				Attempt:        record.Attempt,
+				LeaseOwner:     record.LeaseOwner,
+				LeaseExpiresAt: record.LeaseExpiresAt,
+			}); err != nil {
+				return fmt.Errorf("projectstate: reconcile assignment %q: %w", record.ID, err)
+			}
 		}
 	}
 	return nil
@@ -230,7 +268,7 @@ func (s *State) createLocked(id, name string) (v2.ProjectRecord, error) {
 		Record: record,
 		Graph:  planner.NewGraph(record.ID, "graph_"+record.ID),
 	}
-	if err := attachRuntime(project, s.opts, assignmentSink{repo: s.assignments}); err != nil {
+	if err := attachRuntime(project, s.opts, assignmentSink{assignments: s.assignments, work: s.workRepo}); err != nil {
 		return v2.ProjectRecord{}, err
 	}
 	s.projects[id] = project
@@ -283,7 +321,11 @@ func (s *State) SubmitWork(projectID, title string, dependsOn []string) (repo.Wo
 	if err != nil {
 		return repo.WorkPackageRecord{}, err
 	}
-	if err := project.Graph.Add(toPlanner(record)); err != nil {
+	workPackage, err := toPlanner(record)
+	if err != nil {
+		return repo.WorkPackageRecord{}, err
+	}
+	if err := project.Graph.Add(workPackage); err != nil {
 		return repo.WorkPackageRecord{}, err
 	}
 	return record, nil
@@ -343,17 +385,18 @@ func (s *State) RecordApproval(projectID, workPackageID, decision, actor, reason
 	if actor == "" {
 		return repo.ApprovalRecord{}, fmt.Errorf("%w: actor is required", ErrInvalidApproval)
 	}
-	s.mu.RLock()
+	// Serialize the entire decision: lookup, pending-gate validation, durable
+	// save, and gate application. Concurrent approve/reject calls for one work
+	// package therefore produce exactly one decision.
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	project, ok := s.projects[projectID]
 	if !ok {
-		s.mu.RUnlock()
 		return repo.ApprovalRecord{}, fmt.Errorf("%w: project %q", ErrNotFound, projectID)
 	}
 	if _, ok := project.Graph.Get(workPackageID); !ok {
-		s.mu.RUnlock()
 		return repo.ApprovalRecord{}, fmt.Errorf("%w: work package %q", ErrNotFound, workPackageID)
 	}
-	s.mu.RUnlock()
 
 	if _, err := s.approvals.Get(workPackageID); err == nil {
 		return repo.ApprovalRecord{}, fmt.Errorf("%w: work package %q", ErrApprovalResolved, workPackageID)
@@ -364,10 +407,21 @@ func (s *State) RecordApproval(projectID, workPackageID, decision, actor, reason
 	if err != nil {
 		return repo.ApprovalRecord{}, err
 	}
-	for _, assignment := range assignments {
-		if assignment.WorkPackageID == workPackageID && terminalAssignmentState(assignment.State) {
-			return repo.ApprovalRecord{}, fmt.Errorf("%w: work package %q assignment is %s", ErrApprovalResolved, workPackageID, assignment.State)
+	var latest *repo.AssignmentRecord
+	for i := range assignments {
+		assignment := &assignments[i]
+		if assignment.WorkPackageID != workPackageID {
+			continue
 		}
+		if latest == nil || assignment.Attempt >= latest.Attempt {
+			latest = assignment
+		}
+	}
+	if latest == nil {
+		return repo.ApprovalRecord{}, fmt.Errorf("%w: work package %q has no pending gate", ErrApprovalResolved, workPackageID)
+	}
+	if latest.State != "awaiting_gates" {
+		return repo.ApprovalRecord{}, fmt.Errorf("%w: work package %q assignment is %s", ErrApprovalResolved, workPackageID, latest.State)
 	}
 
 	record, err := s.approvals.Save(repo.ApprovalRecord{
@@ -385,20 +439,11 @@ func (s *State) RecordApproval(projectID, workPackageID, decision, actor, reason
 	} else {
 		project.API.Reject(workPackageID, reason)
 	}
-	// Advance an already-running assignment if it is awaiting gates. A
-	// pre-approval has no in-memory assignment yet; that error is intentionally
-	// ignored and the decision is applied when the gate is evaluated.
+	// The durable record and the gate now agree. Resolve advances an in-memory
+	// awaiting-gates assignment; its error is ignored because a restarted
+	// process may not have restored scheduler state yet.
 	_, _ = project.API.Resolve(workPackageID)
 	return record, nil
-}
-
-func terminalAssignmentState(state string) bool {
-	switch state {
-	case "accepted", "failed", "canceled", "expired":
-		return true
-	default:
-		return false
-	}
 }
 
 // ApprovalRecords returns all durable approval decisions.
@@ -480,7 +525,8 @@ func (s *State) ProjectRuntime(projectID string) (*scheduler.Scheduler, *api.Ser
 }
 
 type assignmentSink struct {
-	repo *repo.AssignmentRepository
+	assignments *repo.AssignmentRepository
+	work        *repo.WorkPackageRepository
 }
 
 func (assignmentSink) Event(int, string, map[string]any) error { return nil }
@@ -489,10 +535,42 @@ func (s assignmentSink) Record(kind, id string, data []byte) error {
 	if kind != "assignment" {
 		return nil
 	}
-	return s.repo.SaveJSON(data)
+	return s.assignments.SaveJSON(data)
 }
 
-func toPlanner(record repo.WorkPackageRecord) planner.WorkPackage {
+// RecordWorkPackageState durably records scheduler lifecycle transitions so a
+// completed or running work package keeps its state across restart.
+func (s assignmentSink) RecordWorkPackageState(projectID, workPackageID, state string) error {
+	contractState, err := toContractState(state)
+	if err != nil {
+		return err
+	}
+	_, err = s.work.UpdateState(workPackageID, contractState)
+	return err
+}
+
+func toContractState(state string) (v2.WorkPackageState, error) {
+	switch state {
+	case string(planner.StateProposed):
+		return v2.WorkPackageProposed, nil
+	case string(planner.StateReady):
+		return v2.WorkPackageReady, nil
+	case string(planner.StateRunning):
+		return v2.WorkPackageRunning, nil
+	case string(planner.StateCompleted):
+		return v2.WorkPackageComplete, nil
+	case string(planner.StateDeficient):
+		return v2.WorkPackageDeficient, nil
+	default:
+		return "", fmt.Errorf("unknown planner state %q", state)
+	}
+}
+
+func toPlanner(record repo.WorkPackageRecord) (planner.WorkPackage, error) {
+	state, err := fromContractState(record.State)
+	if err != nil {
+		return planner.WorkPackage{}, err
+	}
 	return planner.WorkPackage{
 		ID:           record.ID,
 		Title:        record.Title,
@@ -500,22 +578,26 @@ func toPlanner(record repo.WorkPackageRecord) planner.WorkPackage {
 		Capabilities: append([]string(nil), record.Capabilities...),
 		DependsOn:    append([]string(nil), record.Dependencies...),
 		Acceptance:   append([]string(nil), record.Acceptance...),
-		State:        fromContractState(record.State),
-	}
+		State:        state,
+	}, nil
 }
 
-func fromContractState(state v2.WorkPackageState) planner.State {
+// fromContractState maps every canonical work-package state explicitly. Unknown
+// states fail closed instead of being silently treated as PROPOSED.
+func fromContractState(state v2.WorkPackageState) (planner.State, error) {
 	switch state {
+	case v2.WorkPackageProposed:
+		return planner.StateProposed, nil
 	case v2.WorkPackageReady:
-		return planner.StateReady
-	case v2.WorkPackageRunning, v2.WorkPackageQueued:
-		return planner.StateRunning
+		return planner.StateReady, nil
+	case v2.WorkPackageQueued, v2.WorkPackageRunning, v2.WorkPackageVerifying:
+		return planner.StateRunning, nil
 	case v2.WorkPackageComplete, v2.WorkPackageVerified:
-		return planner.StateCompleted
+		return planner.StateCompleted, nil
 	case v2.WorkPackageDeficient:
-		return planner.StateDeficient
+		return planner.StateDeficient, nil
 	default:
-		return planner.StateProposed
+		return "", fmt.Errorf("unknown work package state %q", state)
 	}
 }
 
