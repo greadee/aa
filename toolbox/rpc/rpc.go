@@ -211,13 +211,17 @@ func (s *Service) doHandle(ctx context.Context, req Request) Response {
 	// AA is optional on the wire for compatibility, but every request is
 	// bounded. An explicit positive TimeoutMS overrides the server default.
 	timeout := defaultTimeout
-	if req.AA != nil && req.AA.TimeoutMS > 0 {
-		if req.AA.TimeoutMS > int(maxRequestTimeout/time.Millisecond) {
-			toolID, contractID := requestErrorIDs(req)
-			return errResponseData(req.ID, CodeInvalidParams, "timeoutMs exceeds the server maximum",
-				errorData("invalid", false, toolID, contractID))
+	if req.AA != nil {
+		// AA is optional on the wire for compatibility. When it is present, a
+		// positive TimeoutMS overrides the bounded server default.
+		if req.AA.TimeoutMS > 0 {
+			if req.AA.TimeoutMS > int(maxRequestTimeout/time.Millisecond) {
+				toolID, contractID := requestErrorIDs(req)
+				return errResponseData(req.ID, CodeInvalidParams, "timeoutMs exceeds the server maximum",
+					errorData("invalid", false, toolID, contractID))
+			}
+			timeout = time.Duration(req.AA.TimeoutMS) * time.Millisecond
 		}
-		timeout = time.Duration(req.AA.TimeoutMS) * time.Millisecond
 	}
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithTimeout(ctx, timeout)

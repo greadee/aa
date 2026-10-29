@@ -55,6 +55,7 @@ import (
 	"github.com/greadee/aa/runtime/sandbox"
 	"github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/computeruse"
+	"github.com/greadee/aa/toolbox/host"
 	"github.com/greadee/aa/toolbox/policy"
 	"github.com/greadee/aa/toolbox/registry"
 	uicp "github.com/greadee/aa/ui/controlplane"
@@ -566,6 +567,12 @@ func build(root string) (*runtime, error) {
 	toolReg := registry.New()
 	if err := toolReg.Register(computeruse.Manifest("tool_screen")); err != nil {
 		return nil, fmt.Errorf("toolbox/registry: %w", err)
+	}
+	// The deterministic fake provider is opt-in for offline pilots and tests.
+	if os.Getenv("AA_TOOLBOX_FAKE_PROVIDER") == "1" {
+		if err := toolReg.RegisterProvider(host.NewFakeProvider(toolbox.KindTool)); err != nil {
+			return nil, fmt.Errorf("toolbox/host: %w", err)
+		}
 	}
 
 	sb, err := sandbox.New(sandbox.Config{
