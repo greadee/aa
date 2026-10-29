@@ -1,5 +1,7 @@
 name: probe-models
-on: workflow_dispatch
+on:
+  pull_request:
+    branches: [main]
 permissions:
   contents: read
   models: read
