@@ -58,53 +58,72 @@ type Config struct {
 
 // Server is the control-plane HTTP handler.
 type Server struct {
-	cfg Config
-	mux *http.ServeMux
+	cfg    Config
+	mux    *http.ServeMux
+	routes []string
 }
 
 // New returns a control-plane handler.
 func New(cfg Config) *Server {
 	s := &Server{cfg: cfg, mux: http.NewServeMux()}
-	// /health is unauthenticated per the spec (security: []).
-	s.mux.HandleFunc("GET "+APIPrefix+"/health", s.health)
-	// Everything else carries the bearer token.
-	s.mux.Handle("GET "+APIPrefix+"/status", s.auth(s.status))
-	s.mux.Handle("GET "+APIPrefix+"/projects", s.auth(s.projectsList))
-	s.mux.Handle("POST "+APIPrefix+"/projects", s.auth(s.projectsCreate))
-	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}", s.auth(s.projectGet))
-	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/work-packages", s.auth(s.workList))
-	s.mux.Handle("POST "+APIPrefix+"/projects/{projectId}/work-packages", s.auth(s.workSubmit))
-	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/graph", s.auth(s.graph))
-	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/issues", s.auth(s.issues))
-	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/strategies", s.auth(s.strategies))
-	s.mux.Handle("GET "+APIPrefix+"/projects/{projectId}/events", s.auth(s.events))
-	s.mux.Handle("GET "+APIPrefix+"/assignments", s.auth(s.assignments))
-	s.mux.Handle("GET "+APIPrefix+"/nodes", s.auth(s.nodes))
-	s.mux.Handle("GET "+APIPrefix+"/sync/status", s.auth(s.syncStatus))
-	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}", s.auth(s.observations))
-	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}/stream", s.auth(s.observationStream))
-	s.mux.Handle("GET "+APIPrefix+"/observations/{sessionId}/report", s.auth(s.observationReport))
-	s.mux.Handle("POST "+APIPrefix+"/observations/{sessionId}/codex", s.auth(s.observationCodex))
-	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions", s.auth(s.visualizerSessions))
-	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/timeline", s.auth(s.visualizerTimeline))
-	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/graph", s.auth(s.visualizerGraph))
-	s.mux.Handle("GET "+APIPrefix+"/visualizer/sessions/{sessionId}/stream", s.auth(s.visualizerStream))
-	s.mux.Handle("GET "+APIPrefix+"/teams", s.auth(s.teamsList))
-	s.mux.Handle("POST "+APIPrefix+"/teams", s.auth(s.teamAdd))
-	s.mux.Handle("GET "+APIPrefix+"/teams/{teamId}", s.auth(s.teamGet))
-	s.mux.Handle("GET "+APIPrefix+"/routines", s.auth(s.routinesList))
-	s.mux.Handle("POST "+APIPrefix+"/routines", s.auth(s.routineAdd))
-	s.mux.Handle("GET "+APIPrefix+"/routines/{routineId}", s.auth(s.routineGet))
-	s.mux.Handle("GET "+APIPrefix+"/policies", s.auth(s.policiesList))
-	s.mux.Handle("POST "+APIPrefix+"/policies", s.auth(s.policyAdd))
-	s.mux.Handle("GET "+APIPrefix+"/policies/{policyId}", s.auth(s.policyGet))
-	s.mux.Handle("GET "+APIPrefix+"/workers", s.auth(s.workers))
-	s.mux.Handle("GET "+APIPrefix+"/workers/events", s.auth(s.workerEvents))
-	s.mux.Handle("GET "+APIPrefix+"/tools", s.auth(s.tools))
-	s.mux.Handle("POST "+APIPrefix+"/approvals/{gateId}", s.auth(s.approve))
+	routes := []struct {
+		pattern string
+		handler http.HandlerFunc
+		public  bool
+	}{
+		// /health is unauthenticated per the spec (security: []).
+		{"GET " + APIPrefix + "/health", s.health, true},
+		{"GET " + APIPrefix + "/status", s.status, false},
+		{"GET " + APIPrefix + "/projects", s.projectsList, false},
+		{"POST " + APIPrefix + "/projects", s.projectsCreate, false},
+		{"GET " + APIPrefix + "/projects/{projectId}", s.projectGet, false},
+		{"GET " + APIPrefix + "/projects/{projectId}/work-packages", s.workList, false},
+		{"POST " + APIPrefix + "/projects/{projectId}/work-packages", s.workSubmit, false},
+		{"GET " + APIPrefix + "/projects/{projectId}/graph", s.graph, false},
+		{"GET " + APIPrefix + "/projects/{projectId}/issues", s.issues, false},
+		{"GET " + APIPrefix + "/projects/{projectId}/strategies", s.strategies, false},
+		{"GET " + APIPrefix + "/projects/{projectId}/events", s.events, false},
+		{"GET " + APIPrefix + "/assignments", s.assignments, false},
+		{"GET " + APIPrefix + "/nodes", s.nodes, false},
+		{"GET " + APIPrefix + "/sync/status", s.syncStatus, false},
+		{"GET " + APIPrefix + "/observations/{sessionId}", s.observations, false},
+		{"GET " + APIPrefix + "/observations/{sessionId}/stream", s.observationStream, false},
+		{"GET " + APIPrefix + "/observations/{sessionId}/report", s.observationReport, false},
+		{"POST " + APIPrefix + "/observations/{sessionId}/codex", s.observationCodex, false},
+		{"GET " + APIPrefix + "/visualizer/sessions", s.visualizerSessions, false},
+		{"GET " + APIPrefix + "/visualizer/sessions/{sessionId}/timeline", s.visualizerTimeline, false},
+		{"GET " + APIPrefix + "/visualizer/sessions/{sessionId}/graph", s.visualizerGraph, false},
+		{"GET " + APIPrefix + "/visualizer/sessions/{sessionId}/stream", s.visualizerStream, false},
+		{"GET " + APIPrefix + "/teams", s.teamsList, false},
+		{"POST " + APIPrefix + "/teams", s.teamAdd, false},
+		{"GET " + APIPrefix + "/teams/{teamId}", s.teamGet, false},
+		{"GET " + APIPrefix + "/routines", s.routinesList, false},
+		{"POST " + APIPrefix + "/routines", s.routineAdd, false},
+		{"GET " + APIPrefix + "/routines/{routineId}", s.routineGet, false},
+		{"GET " + APIPrefix + "/policies", s.policiesList, false},
+		{"POST " + APIPrefix + "/policies", s.policyAdd, false},
+		{"GET " + APIPrefix + "/policies/{policyId}", s.policyGet, false},
+		{"GET " + APIPrefix + "/workers", s.workers, false},
+		{"GET " + APIPrefix + "/workers/events", s.workerEvents, false},
+		{"GET " + APIPrefix + "/tools", s.tools, false},
+		{"POST " + APIPrefix + "/approvals/{gateId}", s.approve, false},
+	}
+	for _, route := range routes {
+		s.routes = append(s.routes, route.pattern)
+		if route.public {
+			s.mux.HandleFunc(route.pattern, route.handler)
+			continue
+		}
+		s.mux.Handle(route.pattern, s.auth(route.handler))
+	}
 	// Anything else under the prefix is not found (JSON, same error vocabulary).
 	s.mux.HandleFunc(APIPrefix+"/", s.notFound)
 	return s
+}
+
+// Routes returns the registered route patterns in stable order.
+func (s *Server) Routes() []string {
+	return append([]string(nil), s.routes...)
 }
 
 func (s *Server) notFound(w http.ResponseWriter, _ *http.Request) {
@@ -200,7 +219,16 @@ func (s *Server) workList(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, []WorkPackageView{})
 		return
 	}
-	writeJSON(w, http.StatusOK, s.cfg.Backend.WorkPackages(r.PathValue("projectId")))
+	projectID := r.PathValue("projectId")
+	if _, ok := s.cfg.Backend.Project(projectID); !ok {
+		writeError(w, http.StatusNotFound, codeNotFound, "project not found")
+		return
+	}
+	work := s.cfg.Backend.WorkPackages(projectID)
+	if work == nil {
+		work = []WorkPackageView{}
+	}
+	writeJSON(w, http.StatusOK, work)
 }
 
 func (s *Server) workSubmit(w http.ResponseWriter, r *http.Request) {
@@ -217,9 +245,20 @@ func (s *Server) workSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	projectID := r.PathValue("projectId")
+	if _, ok := s.cfg.Backend.Project(projectID); !ok {
+		writeError(w, http.StatusNotFound, codeNotFound, "project not found")
+		return
+	}
 	id, err := s.cfg.Backend.SubmitWork(projectID, req.Title, req.DependsOn)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
+		switch {
+		case errors.Is(err, ErrNotFound):
+			writeError(w, http.StatusNotFound, codeNotFound, err.Error())
+		case errors.Is(err, ErrConflict):
+			writeError(w, http.StatusConflict, codeConflict, err.Error())
+		default:
+			writeError(w, http.StatusBadRequest, codeInvalidParams, err.Error())
+		}
 		return
 	}
 	work, ok := s.cfg.Backend.WorkPackage(projectID, id)

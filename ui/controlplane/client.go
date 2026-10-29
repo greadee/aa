@@ -104,6 +104,8 @@ type Client interface {
 	SubmitWork(ctx context.Context, projectID, title string, dependsOn []string) (string, error)
 	Assignments(ctx context.Context) ([]Assignment, error)
 	Approve(ctx context.Context, gateID string) error
+	Reject(ctx context.Context, gateID, actor, reason string) error
+	Decide(ctx context.Context, gateID, decision, actor, reason string) error
 	Nodes(ctx context.Context) ([]Node, error)
 	Tools(ctx context.Context) ([]Tool, error)
 }
@@ -230,7 +232,21 @@ func (c *HTTPClient) Assignments(ctx context.Context) ([]Assignment, error) {
 
 // Approve implements Client.
 func (c *HTTPClient) Approve(ctx context.Context, gateID string) error {
-	return c.do(ctx, http.MethodPost, "/approvals/"+gateID, map[string]string{"decision": "approve", "actor": "console"}, nil)
+	return c.Decide(ctx, gateID, "approve", "console", "")
+}
+
+// Reject records a rejection decision for a gate.
+func (c *HTTPClient) Reject(ctx context.Context, gateID, actor, reason string) error {
+	return c.Decide(ctx, gateID, "reject", actor, reason)
+}
+
+// Decide records an approval decision. Decision must be approve or reject.
+func (c *HTTPClient) Decide(ctx context.Context, gateID, decision, actor, reason string) error {
+	return c.do(ctx, http.MethodPost, "/approvals/"+gateID, map[string]string{
+		"decision": decision,
+		"actor":    actor,
+		"reason":   reason,
+	}, nil)
 }
 
 // Nodes implements Client.

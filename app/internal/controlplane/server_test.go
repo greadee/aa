@@ -58,10 +58,14 @@ func (fakeBackend) Projects() []Project {
 	return []Project{{ContractVersion: "2.0", Kind: "project_record", ID: "p1", Name: "Alpha", State: "CREATED", LayoutVersion: "1"}}
 }
 func (fakeBackend) Project(id string) (Project, bool) {
-	if id != "p1" {
+	switch id {
+	case "p1":
+		return Project{ContractVersion: "2.0", Kind: "project_record", ID: "p1", Name: "Alpha", State: "CREATED", LayoutVersion: "1"}, true
+	case "empty":
+		return Project{ContractVersion: "2.0", Kind: "project_record", ID: "empty", Name: "Empty", State: "CREATED", LayoutVersion: "1"}, true
+	default:
 		return Project{}, false
 	}
-	return Project{ContractVersion: "2.0", Kind: "project_record", ID: "p1", Name: "Alpha", State: "CREATED", LayoutVersion: "1"}, true
 }
 func (fakeBackend) CreateProject(id, name string) error {
 	if id == "" {
@@ -74,6 +78,31 @@ func (fakeBackend) WorkPackages(projectID string) []WorkPackageView {
 		return nil
 	}
 	return []WorkPackageView{{ContractVersion: "2.0", Kind: "work_package", ID: "wp-1", Title: "first", State: "PROPOSED", Acceptance: []string{"done"}}}
+}
+
+func TestWorkListUnknownAndEmptyProject(t *testing.T) {
+	s := New(Config{Version: "0.1.0", Token: "secret", Backend: fakeBackend{}})
+
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/projects/nope/work-packages", nil)))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown project = %d %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"code":"aa.not_found"`) {
+		t.Fatalf("unknown project body = %s", rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/projects/empty/work-packages", nil)))
+	if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != "[]" {
+		t.Fatalf("empty project = %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodPost, APIPrefix+"/projects/nope/work-packages", strings.NewReader(`{"title":"x"}`))))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("submit unknown project = %d %s", rec.Code, rec.Body.String())
+	}
 }
 func (fakeBackend) WorkPackage(projectID, id string) (WorkPackageView, bool) {
 	if projectID != "p1" || id != "wp-1" {

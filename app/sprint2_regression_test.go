@@ -102,8 +102,8 @@ func TestComposedControlPlaneRestartAndContractRegression(t *testing.T) {
 	if secondID == "" || secondID == firstID {
 		t.Fatalf("second id = %q", secondID)
 	}
-	if status, _ := apiRequest(t, srv, http.MethodPost, "/api/v1/projects/missing/work-packages", `{"title":"x"}`); status != http.StatusBadRequest {
-		t.Fatalf("unknown project submit = %d, want 400", status)
+	if status, _ := apiRequest(t, srv, http.MethodPost, "/api/v1/projects/missing/work-packages", `{"title":"x"}`); status != http.StatusNotFound {
+		t.Fatalf("unknown project submit = %d, want 404", status)
 	}
 
 	status, body = apiRequest(t, srv, http.MethodGet, "/api/v1/projects/p1/work-packages", "")
@@ -136,6 +136,12 @@ func TestComposedControlPlaneRestartAndContractRegression(t *testing.T) {
 	assignments := repo.NewAssignmentRepository(g.store, g.projection)
 	if _, err := assignments.Save(repo.AssignmentRecord{
 		ID: "asg_p1_1", ProjectID: "p1", WorkPackageID: firstID,
+		WorkerID: "w1", State: "awaiting_gates", Attempt: 1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := assignments.Save(repo.AssignmentRecord{
+		ID: "asg_p1_2", ProjectID: "p1", WorkPackageID: secondID,
 		WorkerID: "w1", State: "awaiting_gates", Attempt: 1,
 	}); err != nil {
 		t.Fatal(err)
@@ -180,10 +186,10 @@ func TestComposedControlPlaneRestartAndContractRegression(t *testing.T) {
 	if nodes, _ := graph["nodes"].([]any); len(nodes) != 2 {
 		t.Fatalf("graph after restart = %+v", graph)
 	}
-	if statuses := g2.projects.AssignmentStatuses(); len(statuses) != 1 || statuses[0].State != "awaiting_gates" {
+	if statuses := g2.projects.AssignmentStatuses(); len(statuses) != 2 {
 		t.Fatalf("assignments after restart = %+v", statuses)
 	}
-	if g2.projects.ActiveAssignments() != 1 {
+	if g2.projects.ActiveAssignments() != 2 {
 		t.Fatalf("active assignments after restart = %d", g2.projects.ActiveAssignments())
 	}
 	approvals, err := g2.projects.ApprovalRecords()

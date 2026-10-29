@@ -147,6 +147,16 @@ func newControlPlane(g *runtime, token string) http.Handler {
 	})
 }
 
+// toolboxMetrics selects the toolbox metrics exporter. The default no-op
+// collector preserves existing behavior; AA_TOOLBOX_METRICS=log enables the
+// structured-JSON exporter on stderr.
+func toolboxMetrics() toolbox.Metrics {
+	if os.Getenv("AA_TOOLBOX_METRICS") == "log" {
+		return toolbox.NewLogMetrics(os.Stderr)
+	}
+	return toolbox.NoopMetrics{}
+}
+
 func defaultRoot() string {
 	if v := os.Getenv("AA_ROOT"); v != "" {
 		return v
@@ -378,29 +388,65 @@ func (b *backend) Approve(gateID, decision, actor, reason string) error {
 	return nil
 }
 
-func (b *backend) records(kind string) []json.RawMessage {
+func (b *backend) recordsForProject(kind, projectID string) []json.RawMessage {
 	recs, err := b.g.store.ListRecords(kind)
 	if err != nil {
 		return nil
 	}
 	out := make([]json.RawMessage, 0, len(recs))
 	for _, r := range recs {
-		out = append(out, r.Data)
+		var envelope struct {
+			ProjectID string `json:"projectId"`
+		}
+		if err := json.Unmarshal(r.Data, &envelope); err != nil {
+			continue
+		}
+		if envelope.ProjectID == projectID {
+			out = append(out, r.Data)
+		}
 	}
 	return out
 }
 
-func (b *backend) Issues(string) []json.RawMessage     { return b.records("issue") }
-func (b *backend) Strategies(string) []json.RawMessage { return b.records("strategy") }
+func (b *backend) Issues(projectID string) []json.RawMessage {
+	return b.recordsForProject("issue", projectID)
+}
 
-func (b *backend) Events(string) []json.RawMessage {
+func (b *backend) Strategies(projectID string) []json.RawMessage {
+	return b.recordsForProject("strategy", projectID)
+}
+
+// Events returns the project's observation events. Project lifecycle events use
+// the "project:<id>" session topic; work events are correlated through their
+// work package. This keeps one project's event stream from exposing another's.
+func (b *backend) Events(projectID string) []json.RawMessage {
 	evs, err := b.g.store.Events()
 	if err != nil {
 		return nil
 	}
 	out := make([]json.RawMessage, 0, len(evs))
 	for _, e := range evs {
-		out = append(out, e.Data)
+		var event struct {
+			ProjectID     string `json:"projectId"`
+			SessionID     string `json:"sessionId"`
+			WorkPackageID string `json:"workPackageId"`
+		}
+		if err := json.Unmarshal(e.Data, &event); err != nil {
+			continue
+		}
+		if event.ProjectID == projectID {
+			out = append(out, e.Data)
+			continue
+		}
+		if event.SessionID == "project:"+projectID {
+			out = append(out, e.Data)
+			continue
+		}
+		if event.WorkPackageID != "" {
+			if _, ok := b.g.projects.WorkPackage(projectID, event.WorkPackageID); ok {
+				out = append(out, e.Data)
+			}
+		}
 	}
 	return out
 }
@@ -505,7 +551,7 @@ func build(root string) (*runtime, error) {
 	}
 
 	enforcer := sandbox.NewEnforcer()
-	policyEngine := policy.New(enforcer, toolbox.SystemClock{})
+	policyEngine := policy.New(enforcer, toolbox.SystemClock{}, toolboxMetrics())
 
 	// Computer-use capability: wired with the declared Headless driver (no
 	// desktop backend in this build). The provider is a live, reachable
