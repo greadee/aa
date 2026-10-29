@@ -321,3 +321,33 @@ func TestHostConcurrentSameKeyExecutesOnce(t *testing.T) {
 		}
 	}
 }
+
+func TestCachedResultIsDeepCopied(t *testing.T) {
+	h, p, _ := newHost(t)
+	p.SetResult("tool_a", map[string]any{
+		"nested": map[string]any{"x": 1},
+		"list":   []any{map[string]any{"y": 2}},
+	})
+	inv := toolbox.Invocation{ToolID: "tool_a", Input: map[string]any{"x": 1}, IdempotencyKey: "deep-copy-k1"}
+
+	first, err := h.Invoke(context.Background(), inv, contract("read_project"))
+	if err != nil {
+		t.Fatalf("first Invoke: %v", err)
+	}
+	first.Output["nested"].(map[string]any)["x"] = 999
+	first.Output["list"].([]any)[0].(map[string]any)["y"] = 999
+
+	second, err := h.Invoke(context.Background(), inv, contract("read_project"))
+	if err != nil {
+		t.Fatalf("second Invoke: %v", err)
+	}
+	if got := second.Output["nested"].(map[string]any)["x"]; got != 1 {
+		t.Fatalf("cached nested output mutated: %v", got)
+	}
+	if got := second.Output["list"].([]any)[0].(map[string]any)["y"]; got != 2 {
+		t.Fatalf("cached list output mutated: %v", got)
+	}
+	if len(p.Calls()) != 1 {
+		t.Fatalf("provider calls = %d, want 1", len(p.Calls()))
+	}
+}

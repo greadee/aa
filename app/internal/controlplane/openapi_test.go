@@ -29,8 +29,12 @@ func TestOpenAPIPaths(t *testing.T) {
 		{http.MethodGet, APIPrefix + "/status", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/projects", "", http.StatusOK},
 		{http.MethodPost, APIPrefix + "/projects", `{"id":"p1","name":"Alpha"}`, http.StatusCreated},
+		{http.MethodGet, APIPrefix + "/projects/p1", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/projects/nope", "", http.StatusNotFound},
 		{http.MethodGet, APIPrefix + "/projects/p1/work-packages", "", http.StatusOK},
+		{http.MethodGet, APIPrefix + "/projects/nope/work-packages", "", http.StatusNotFound},
 		{http.MethodPost, APIPrefix + "/projects/p1/work-packages", `{"title":"x"}`, http.StatusCreated},
+		{http.MethodPost, APIPrefix + "/projects/nope/work-packages", `{"title":"x"}`, http.StatusNotFound},
 		{http.MethodGet, APIPrefix + "/projects/p1/graph", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/projects/p1/issues", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/projects/p1/strategies", "", http.StatusOK},
@@ -56,7 +60,7 @@ func TestOpenAPIPaths(t *testing.T) {
 		{http.MethodGet, APIPrefix + "/workers", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/workers/events", "", http.StatusOK},
 		{http.MethodGet, APIPrefix + "/tools", "", http.StatusOK},
-		{http.MethodPost, APIPrefix + "/approvals/g1", "", http.StatusOK},
+		{http.MethodPost, APIPrefix + "/approvals/g1", `{"decision":"approve","actor":"tester"}`, http.StatusOK},
 		{http.MethodGet, APIPrefix + "/nope", "", http.StatusNotFound},
 	}
 	for _, c := range cases {
@@ -70,6 +74,37 @@ func TestOpenAPIPaths(t *testing.T) {
 		s.ServeHTTP(rec, req)
 		if rec.Code != c.want {
 			t.Errorf("%s %s = %d, want %d (%s)", c.method, c.path, rec.Code, c.want, strings.TrimSpace(rec.Body.String()))
+		}
+	}
+}
+
+func TestOpenAPIResponseShapes(t *testing.T) {
+	s := New(Config{
+		Version: "0.1.0",
+		Token:   "t",
+		Status:  func() Status { return Status{} },
+		Backend: fakeBackend{},
+	})
+	cases := []struct {
+		method, path, body string
+		want               []string
+	}{
+		{http.MethodGet, APIPrefix + "/projects/p1", "", []string{`"kind":"project_record"`, `"layoutVersion":"1"`}},
+		{http.MethodGet, APIPrefix + "/projects/p1/graph", "", []string{`"kind":"task_graph"`, `"nodes"`}},
+		{http.MethodPost, APIPrefix + "/projects/p1/work-packages", `{"title":"first"}`, []string{`"kind":"work_package"`, `"acceptance"`}},
+	}
+	for _, c := range cases {
+		req := httptest.NewRequest(c.method, c.path, strings.NewReader(c.body))
+		req.Header.Set("Authorization", "Bearer t")
+		rec := httptest.NewRecorder()
+		s.ServeHTTP(rec, req)
+		if rec.Code < 200 || rec.Code >= 300 {
+			t.Fatalf("%s %s = %d %s", c.method, c.path, rec.Code, rec.Body.String())
+		}
+		for _, want := range c.want {
+			if !strings.Contains(rec.Body.String(), want) {
+				t.Fatalf("%s %s body = %s, want %q", c.method, c.path, rec.Body.String(), want)
+			}
 		}
 	}
 }

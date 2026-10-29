@@ -8,6 +8,7 @@ package scheduler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -122,6 +123,57 @@ func New(graph *planner.Graph, cfg Config) (*Scheduler, error) {
 	}, nil
 }
 
+// RestoreAssignment is the durable assignment shape used to seed scheduler
+// state on startup. LeaseExpiresAt is RFC3339Nano.
+type RestoreAssignment struct {
+	ID             string
+	ProjectID      string
+	WorkPackageID  string
+	WorkerID       string
+	State          string
+	Attempt        int
+	LeaseOwner     string
+	LeaseExpiresAt string
+}
+
+// Restore seeds assignments and attempt counters from durable records. It
+// reconciles expired leases and returns the records whose state changed so the
+// caller can persist them.
+func (o *Scheduler) Restore(records []RestoreAssignment, now time.Time) ([]RestoreAssignment, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	var updated []RestoreAssignment
+	for _, record := range records {
+		assignment := &Assignment{
+			ID:            record.ID,
+			ProjectID:     record.ProjectID,
+			WorkPackageID: record.WorkPackageID,
+			WorkerID:      record.WorkerID,
+			State:         State(record.State),
+			Attempt:       record.Attempt,
+		}
+		if record.LeaseExpiresAt != "" {
+			expires, err := time.Parse(time.RFC3339Nano, record.LeaseExpiresAt)
+			if err != nil {
+				return nil, fmt.Errorf("scheduler: restore assignment %s lease: %w", record.ID, err)
+			}
+			assignment.Lease = Lease{Owner: record.LeaseOwner, ExpiresAt: expires}
+		}
+		if err := assignment.Expire(now); err != nil {
+			return nil, err
+		}
+		o.assignments[assignment.WorkPackageID] = assignment
+		if assignment.Attempt > o.attempts[assignment.WorkPackageID] {
+			o.attempts[assignment.WorkPackageID] = assignment.Attempt
+		}
+		if assignment.State != State(record.State) {
+			record.State = string(assignment.State)
+			updated = append(updated, record)
+		}
+	}
+	return updated, nil
+}
+
 // DispatchReport describes the outcome of dispatching or resolving one unit.
 type DispatchReport struct {
 	WorkPackageID  string      `json:"workPackageId"`
@@ -197,10 +249,16 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 		}
 	}
 	assignment.LeaseFor(string(selected.ID), o.cfg.Now(), o.cfg.LeaseTTL)
-	_ = o.graph.SetState(workPackageID, planner.StateRunning)
+	o.setWorkPackageState(workPackageID, planner.StateRunning)
 	o.emit("EXECUTION_STARTED", map[string]any{
 		"workPackageId": workPackageID, "assignmentId": assignmentID, "workerId": string(selected.ID),
 	})
+	if err := o.recordAssignment(assignment); err != nil {
+		_ = assignment.Transition(StateFailed)
+		o.setWorkPackageState(workPackageID, planner.StateDeficient)
+		o.mu.Unlock()
+		return DispatchReport{}, err
+	}
 	o.mu.Unlock()
 
 	var instanceID string
@@ -223,14 +281,22 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 			o.mu.Lock()
 			_ = assignment.Transition(StateCanceled)
 			o.assignments[workPackageID] = assignment
+			persistErr := o.recordAssignment(assignment)
 			o.mu.Unlock()
+			if persistErr != nil {
+				return DispatchReport{}, persistErr
+			}
 			return DispatchReport{}, err
 		}
 		o.mu.Lock()
 		_ = assignment.Transition(StateFailed)
-		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
+		o.setWorkPackageState(workPackageID, planner.StateDeficient)
 		o.assignments[workPackageID] = assignment
+		persistErr := o.recordAssignment(assignment)
 		o.mu.Unlock()
+		if persistErr != nil {
+			return DispatchReport{}, persistErr
+		}
 		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed"}, nil
 	}
 
@@ -258,25 +324,34 @@ func (o *Scheduler) dispatchOne(ctx context.Context, workPackageID string) (Disp
 	o.assignments[workPackageID] = assignment
 	o.results[workPackageID] = result
 	o.recordTelemetry(assignment, result)
+	if err := o.recordAssignment(assignment); err != nil {
+		return DispatchReport{}, err
+	}
 
 	report := gate.Evaluate(o.cfg.Gates, o.subject(workPackageID, result))
 
 	if result.Status != "succeeded" && result.Status != "partial" {
 		_ = assignment.Transition(StateFailed)
-		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
+		o.setWorkPackageState(workPackageID, planner.StateDeficient)
+		if err := o.recordAssignment(assignment); err != nil {
+			return DispatchReport{}, err
+		}
 		return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: "failed", Gates: report, IntakeAccepted: accepted}, nil
 	}
 
 	if err := assignment.Transition(StateAwaitingGates); err != nil {
 		return DispatchReport{}, err
 	}
+	if err := o.recordAssignment(assignment); err != nil {
+		return DispatchReport{}, err
+	}
 	if report.Passed {
-		return o.accept(assignment, report, accepted), nil
+		return o.accept(assignment, report, accepted)
 	}
 	status := "pending"
 	if !report.Pending {
 		_ = assignment.Transition(StateFailed)
-		_ = o.graph.SetState(workPackageID, planner.StateDeficient)
+		o.setWorkPackageState(workPackageID, planner.StateDeficient)
 		status = "failed"
 	}
 	return DispatchReport{WorkPackageID: workPackageID, WorkerID: string(selected.ID), State: string(assignment.State), Status: status, Gates: report, IntakeAccepted: accepted}, nil
@@ -296,13 +371,16 @@ func (o *Scheduler) Resolve(workPackageID string) (DispatchReport, error) {
 	result := o.results[workPackageID]
 	report := gate.Evaluate(o.cfg.Gates, o.subject(workPackageID, result))
 	if report.Passed {
-		return o.accept(assignment, report, true), nil
+		return o.accept(assignment, report, true)
 	}
 	if report.Pending {
 		return DispatchReport{WorkPackageID: workPackageID, WorkerID: assignment.WorkerID, State: string(assignment.State), Status: "pending", Gates: report}, nil
 	}
 	_ = assignment.Transition(StateFailed)
-	_ = o.graph.SetState(workPackageID, planner.StateDeficient)
+	o.setWorkPackageState(workPackageID, planner.StateDeficient)
+	if err := o.recordAssignment(assignment); err != nil {
+		return DispatchReport{}, err
+	}
 	return DispatchReport{WorkPackageID: workPackageID, WorkerID: assignment.WorkerID, State: string(assignment.State), Status: "failed", Gates: report}, nil
 }
 
@@ -311,6 +389,15 @@ func (o *Scheduler) Approve(workPackageID string) {
 	for _, g := range o.cfg.Gates {
 		if approver, ok := g.(interface{ Approve(string) }); ok {
 			approver.Approve(workPackageID)
+		}
+	}
+}
+
+// Reject records a negative human decision in every rejector gate.
+func (o *Scheduler) Reject(workPackageID, reason string) {
+	for _, g := range o.cfg.Gates {
+		if rejector, ok := g.(interface{ Reject(string, string) }); ok {
+			rejector.Reject(workPackageID, reason)
 		}
 	}
 }
@@ -342,6 +429,19 @@ type AssignmentStatus struct {
 	Attempt       int    `json:"attempt"`
 }
 
+// AssignmentRecord is the serializable assignment shape emitted through
+// Sink.Record. It maps directly to memory/repo.AssignmentRecord.
+type AssignmentRecord struct {
+	ID             string `json:"id"`
+	ProjectID      string `json:"projectId"`
+	WorkPackageID  string `json:"workPackageId"`
+	WorkerID       string `json:"workerId"`
+	State          string `json:"state"`
+	Attempt        int    `json:"attempt"`
+	LeaseOwner     string `json:"leaseOwner,omitempty"`
+	LeaseExpiresAt string `json:"leaseExpiresAt,omitempty"`
+}
+
 // ProjectStatus is a read view of the project.
 type ProjectStatus struct {
 	ProjectID    string                `json:"projectId"`
@@ -364,9 +464,61 @@ func (o *Scheduler) Status() ProjectStatus {
 	return status
 }
 
-func (o *Scheduler) accept(assignment *Assignment, report gate.Report, accepted bool) DispatchReport {
+// setWorkPackageState updates the in-memory graph and, when the sink supports
+// it, the durable work-package record. Persistence failure is observable through
+// a structured event but does not change the in-memory result.
+func (o *Scheduler) setWorkPackageState(workPackageID string, state planner.State) {
+	_ = o.graph.SetState(workPackageID, state)
+	sink, ok := o.cfg.Sink.(interface {
+		RecordWorkPackageState(projectID, workPackageID, state string) error
+	})
+	if !ok {
+		return
+	}
+	if err := sink.RecordWorkPackageState(o.projectID, workPackageID, string(state)); err != nil {
+		o.emit("WORK_PACKAGE_STATE_PERSIST_FAILED", map[string]any{
+			"workPackageId": workPackageID,
+			"state":         string(state),
+			"error":         err.Error(),
+		})
+	}
+}
+
+func (o *Scheduler) recordAssignment(assignment *Assignment) error {
+	record := AssignmentRecord{
+		ID:            assignment.ID,
+		ProjectID:     assignment.ProjectID,
+		WorkPackageID: assignment.WorkPackageID,
+		WorkerID:      assignment.WorkerID,
+		State:         string(assignment.State),
+		Attempt:       assignment.Attempt,
+		LeaseOwner:    assignment.Lease.Owner,
+	}
+	if !assignment.Lease.ExpiresAt.IsZero() {
+		record.LeaseExpiresAt = assignment.Lease.ExpiresAt.UTC().Format(time.RFC3339Nano)
+	}
+	data, err := json.Marshal(record)
+	if err != nil {
+		return fmt.Errorf("scheduler: marshal assignment %s: %w", assignment.ID, err)
+	}
+	if err := o.cfg.Sink.Record("assignment", assignment.ID, data); err != nil {
+		o.emit("ASSIGNMENT_PERSIST_FAILED", map[string]any{
+			"assignmentId":  assignment.ID,
+			"workPackageId": assignment.WorkPackageID,
+			"state":         string(assignment.State),
+			"error":         err.Error(),
+		})
+		return fmt.Errorf("scheduler: persist assignment %s: %w", assignment.ID, err)
+	}
+	return nil
+}
+
+func (o *Scheduler) accept(assignment *Assignment, report gate.Report, accepted bool) (DispatchReport, error) {
 	_ = assignment.Transition(StateAccepted)
-	_ = o.graph.SetState(assignment.WorkPackageID, planner.StateCompleted)
+	o.setWorkPackageState(assignment.WorkPackageID, planner.StateCompleted)
+	if err := o.recordAssignment(assignment); err != nil {
+		return DispatchReport{}, err
+	}
 	o.emit("WORK_ACCEPTED", map[string]any{
 		"workPackageId": assignment.WorkPackageID, "assignmentId": assignment.ID,
 	})
@@ -377,7 +529,7 @@ func (o *Scheduler) accept(assignment *Assignment, report gate.Report, accepted 
 		Status:         "succeeded",
 		Gates:          report,
 		IntakeAccepted: accepted,
-	}
+	}, nil
 }
 
 func (o *Scheduler) subject(workPackageID string, result worker.Result) gate.Subject {

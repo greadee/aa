@@ -143,9 +143,12 @@ type cacheResult struct {
 	fingerprint string        // canonical request identity for conflict detection
 }
 
-// Metrics and MetricsSnapshot are retained as source-compatible aliases for
-// callers that used the former rpc-local metrics type. Use toolbox.MemMetrics
-// for new code.
+// Metrics and MetricsSnapshot preserve the former rpc-local type names. The
+// aliases keep existing type references compiling, but they are not a full
+// source or wire compatibility guarantee: the toolbox.Metrics interface gained
+// RecordRPC and RecordRPCError, unkeyed MetricsSnapshot literals gained fields,
+// and snapshot JSON keys changed from Go field names to lower-camel tags. See
+// docs/modules/toolbox/metrics.md for the migration notes.
 type Metrics = toolbox.MemMetrics
 type MetricsSnapshot = toolbox.MetricsSnapshot
 
@@ -208,13 +211,17 @@ func (s *Service) doHandle(ctx context.Context, req Request) Response {
 	// AA is optional on the wire for compatibility, but every request is
 	// bounded. An explicit positive TimeoutMS overrides the server default.
 	timeout := defaultTimeout
-	if req.AA != nil && req.AA.TimeoutMS > 0 {
-		if req.AA.TimeoutMS > int(maxRequestTimeout/time.Millisecond) {
-			toolID, contractID := requestErrorIDs(req)
-			return errResponseData(req.ID, CodeInvalidParams, "timeoutMs exceeds the server maximum",
-				errorData("invalid", false, toolID, contractID))
+	if req.AA != nil {
+		// AA is optional on the wire for compatibility. When it is present, a
+		// positive TimeoutMS overrides the bounded server default.
+		if req.AA.TimeoutMS > 0 {
+			if req.AA.TimeoutMS > int(maxRequestTimeout/time.Millisecond) {
+				toolID, contractID := requestErrorIDs(req)
+				return errResponseData(req.ID, CodeInvalidParams, "timeoutMs exceeds the server maximum",
+					errorData("invalid", false, toolID, contractID))
+			}
+			timeout = time.Duration(req.AA.TimeoutMS) * time.Millisecond
 		}
-		timeout = time.Duration(req.AA.TimeoutMS) * time.Millisecond
 	}
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithTimeout(ctx, timeout)

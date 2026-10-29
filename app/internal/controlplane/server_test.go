@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	v2 "github.com/greadee/aa/contracts/go/v2"
 )
 
 func TestHealthUnauthenticated(t *testing.T) {
@@ -52,7 +54,19 @@ func TestStatusRequiresToken(t *testing.T) {
 
 type fakeBackend struct{}
 
-func (fakeBackend) Projects() []Project { return []Project{{ID: "p1", Name: "Alpha"}} }
+func (fakeBackend) Projects() []Project {
+	return []Project{{ContractVersion: "2.0", Kind: "project_record", ID: "p1", Name: "Alpha", State: "CREATED", LayoutVersion: "1"}}
+}
+func (fakeBackend) Project(id string) (Project, bool) {
+	switch id {
+	case "p1":
+		return Project{ContractVersion: "2.0", Kind: "project_record", ID: "p1", Name: "Alpha", State: "CREATED", LayoutVersion: "1"}, true
+	case "empty":
+		return Project{ContractVersion: "2.0", Kind: "project_record", ID: "empty", Name: "Empty", State: "CREATED", LayoutVersion: "1"}, true
+	default:
+		return Project{}, false
+	}
+}
 func (fakeBackend) CreateProject(id, name string) error {
 	if id == "" {
 		return errors.New("bad id")
@@ -63,7 +77,48 @@ func (fakeBackend) WorkPackages(projectID string) []WorkPackageView {
 	if projectID != "p1" {
 		return nil
 	}
-	return []WorkPackageView{{ID: "wp-1", Title: "first", State: "PROPOSED"}}
+	return []WorkPackageView{{ContractVersion: "2.0", Kind: "work_package", ID: "wp-1", Title: "first", State: "PROPOSED", Acceptance: []string{"done"}}}
+}
+
+func TestWorkListUnknownAndEmptyProject(t *testing.T) {
+	s := New(Config{Version: "0.1.0", Token: "secret", Backend: fakeBackend{}})
+
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/projects/nope/work-packages", nil)))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown project = %d %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"code":"aa.not_found"`) {
+		t.Fatalf("unknown project body = %s", rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/projects/empty/work-packages", nil)))
+	if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != "[]" {
+		t.Fatalf("empty project = %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodPost, APIPrefix+"/projects/nope/work-packages", strings.NewReader(`{"title":"x"}`))))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("submit unknown project = %d %s", rec.Code, rec.Body.String())
+	}
+}
+func (fakeBackend) WorkPackage(projectID, id string) (WorkPackageView, bool) {
+	if projectID != "p1" || id != "wp-1" {
+		return WorkPackageView{}, false
+	}
+	return WorkPackageView{ContractVersion: "2.0", Kind: "work_package", ID: "wp-1", Title: "first", State: "PROPOSED", Acceptance: []string{"done"}}, true
+}
+func (fakeBackend) Graph(projectID string) (v2.TaskGraph, bool) {
+	if projectID != "p1" {
+		return v2.TaskGraph{}, false
+	}
+	rev := 1
+	return v2.TaskGraph{
+		Envelope: v2.Envelope{ContractVersion: "2.0", Kind: "task_graph", ID: "graph_p1", ProjectID: "p1", Revision: &rev},
+		Nodes:    []v2.TaskGraphNode{{WorkPackageID: "wp-1", Readiness: v2.ReadinessReady}},
+	}, true
 }
 func (fakeBackend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {
 	if projectID != "p1" {
@@ -71,11 +126,11 @@ func (fakeBackend) SubmitWork(projectID, title string, dependsOn []string) (stri
 	}
 	return "wp-1", nil
 }
-func (fakeBackend) Assignments() []AssignmentView       { return []AssignmentView{} }
-func (fakeBackend) Approve(gateID string) error         { return nil }
-func (fakeBackend) Issues(string) []json.RawMessage     { return nil }
-func (fakeBackend) Strategies(string) []json.RawMessage { return nil }
-func (fakeBackend) Events(string) []json.RawMessage     { return nil }
+func (fakeBackend) Assignments() []AssignmentView                        { return []AssignmentView{} }
+func (fakeBackend) Approve(gateID, decision, actor, reason string) error { return nil }
+func (fakeBackend) Issues(string) []json.RawMessage                      { return nil }
+func (fakeBackend) Strategies(string) []json.RawMessage                  { return nil }
+func (fakeBackend) Events(string) []json.RawMessage                      { return nil }
 func (fakeBackend) Nodes() []Node {
 	return []Node{{ID: "local", Authority: true, State: "ready"}}
 }
@@ -139,5 +194,32 @@ func TestResourcesRequireTokenAndServe(t *testing.T) {
 	s.ServeHTTP(rec, withToken(httptest.NewRequest(http.MethodGet, APIPrefix+"/tools", nil)))
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "tool_screen") {
 		t.Fatalf("tools = %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+type createBackend struct {
+	fakeBackend
+	err error
+}
+
+func (b createBackend) CreateProject(string, string) error { return b.err }
+
+func TestProjectCreateErrorMapping(t *testing.T) {
+	cases := []struct {
+		err  error
+		code int
+	}{
+		{ErrConflict, http.StatusConflict},
+		{ErrInvalid, http.StatusBadRequest},
+	}
+	for _, c := range cases {
+		s := New(Config{Version: "0.1.0", Token: "secret", Status: func() Status { return Status{} }, Backend: createBackend{err: c.err}})
+		req := httptest.NewRequest(http.MethodPost, APIPrefix+"/projects", strings.NewReader(`{"id":"p1","name":"Alpha"}`))
+		req.Header.Set("Authorization", "Bearer secret")
+		rec := httptest.NewRecorder()
+		s.ServeHTTP(rec, req)
+		if rec.Code != c.code {
+			t.Fatalf("err %v = %d %s", c.err, rec.Code, rec.Body.String())
+		}
 	}
 }

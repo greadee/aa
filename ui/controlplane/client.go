@@ -22,18 +22,42 @@ type Status struct {
 	Nodes             int `json:"nodes"`
 }
 
-// Project is a project summary.
+// Project is a project record summary.
 type Project struct {
-	ID   string `json:"id"`
-	Name string `json:"name,omitempty"`
+	ContractVersion string `json:"contractVersion,omitempty"`
+	Kind            string `json:"kind,omitempty"`
+	ID              string `json:"id"`
+	Name            string `json:"name,omitempty"`
+	State           string `json:"state,omitempty"`
+	LayoutVersion   string `json:"layoutVersion,omitempty"`
 }
 
-// WorkPackage is a work-package summary.
+// WorkPackage is a work-package record summary.
 type WorkPackage struct {
-	ID        string   `json:"id"`
-	Title     string   `json:"title,omitempty"`
-	State     string   `json:"state,omitempty"`
-	DependsOn []string `json:"dependsOn,omitempty"`
+	ContractVersion string   `json:"contractVersion,omitempty"`
+	Kind            string   `json:"kind,omitempty"`
+	ID              string   `json:"id"`
+	Title           string   `json:"title,omitempty"`
+	State           string   `json:"state,omitempty"`
+	Acceptance      []string `json:"acceptance,omitempty"`
+	DependsOn       []string `json:"dependsOn,omitempty"`
+}
+
+// TaskGraphNode is one node in the task graph read model.
+type TaskGraphNode struct {
+	WorkPackageID string   `json:"workPackageId"`
+	DependsOn     []string `json:"dependsOn,omitempty"`
+	Readiness     string   `json:"readiness"`
+}
+
+// TaskGraph is the task graph read model.
+type TaskGraph struct {
+	ContractVersion string          `json:"contractVersion,omitempty"`
+	Kind            string          `json:"kind,omitempty"`
+	ID              string          `json:"id"`
+	ProjectID       string          `json:"projectId,omitempty"`
+	Revision        int             `json:"revision,omitempty"`
+	Nodes           []TaskGraphNode `json:"nodes"`
 }
 
 // Assignment is an assignment summary.
@@ -73,11 +97,15 @@ func (e *Error) Error() string { return fmt.Sprintf("%s (%d): %s", e.Code, e.Sta
 type Client interface {
 	Status(ctx context.Context) (Status, error)
 	Projects(ctx context.Context) ([]Project, error)
+	Project(ctx context.Context, id string) (Project, error)
 	CreateProject(ctx context.Context, id, name string) error
 	WorkPackages(ctx context.Context, projectID string) ([]WorkPackage, error)
+	Graph(ctx context.Context, projectID string) (TaskGraph, error)
 	SubmitWork(ctx context.Context, projectID, title string, dependsOn []string) (string, error)
 	Assignments(ctx context.Context) ([]Assignment, error)
 	Approve(ctx context.Context, gateID string) error
+	Reject(ctx context.Context, gateID, actor, reason string) error
+	Decide(ctx context.Context, gateID, decision, actor, reason string) error
 	Nodes(ctx context.Context) ([]Node, error)
 	Tools(ctx context.Context) ([]Tool, error)
 }
@@ -162,6 +190,13 @@ func (c *HTTPClient) Projects(ctx context.Context) ([]Project, error) {
 	return out, err
 }
 
+// Project implements Client.
+func (c *HTTPClient) Project(ctx context.Context, id string) (Project, error) {
+	var project Project
+	err := c.do(ctx, http.MethodGet, "/projects/"+id, nil, &project)
+	return project, err
+}
+
 // CreateProject implements Client.
 func (c *HTTPClient) CreateProject(ctx context.Context, id, name string) error {
 	return c.do(ctx, http.MethodPost, "/projects", map[string]string{"id": id, "name": name}, nil)
@@ -174,11 +209,16 @@ func (c *HTTPClient) WorkPackages(ctx context.Context, projectID string) ([]Work
 	return out, err
 }
 
+// Graph implements Client.
+func (c *HTTPClient) Graph(ctx context.Context, projectID string) (TaskGraph, error) {
+	var graph TaskGraph
+	err := c.do(ctx, http.MethodGet, "/projects/"+projectID+"/graph", nil, &graph)
+	return graph, err
+}
+
 // SubmitWork implements Client.
 func (c *HTTPClient) SubmitWork(ctx context.Context, projectID, title string, dependsOn []string) (string, error) {
-	var out struct {
-		ID string `json:"id"`
-	}
+	var out WorkPackage
 	err := c.do(ctx, http.MethodPost, "/projects/"+projectID+"/work-packages", map[string]any{"title": title, "dependsOn": dependsOn}, &out)
 	return out.ID, err
 }
@@ -192,7 +232,21 @@ func (c *HTTPClient) Assignments(ctx context.Context) ([]Assignment, error) {
 
 // Approve implements Client.
 func (c *HTTPClient) Approve(ctx context.Context, gateID string) error {
-	return c.do(ctx, http.MethodPost, "/approvals/"+gateID, map[string]string{"decision": "approve", "actor": "console"}, nil)
+	return c.Decide(ctx, gateID, "approve", "console", "")
+}
+
+// Reject records a rejection decision for a gate.
+func (c *HTTPClient) Reject(ctx context.Context, gateID, actor, reason string) error {
+	return c.Decide(ctx, gateID, "reject", actor, reason)
+}
+
+// Decide records an approval decision. Decision must be approve or reject.
+func (c *HTTPClient) Decide(ctx context.Context, gateID, decision, actor, reason string) error {
+	return c.do(ctx, http.MethodPost, "/approvals/"+gateID, map[string]string{
+		"decision": decision,
+		"actor":    actor,
+		"reason":   reason,
+	}, nil)
 }
 
 // Nodes implements Client.

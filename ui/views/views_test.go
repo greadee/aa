@@ -31,3 +31,16 @@ func TestRenderToolsView(t *testing.T) {
 		t.Fatalf("tools view:\n%s", out)
 	}
 }
+
+func TestRenderGraphReadiness(t *testing.T) {
+	m := state.Model{
+		Active:    state.ViewGraph,
+		ProjectID: "default",
+		Work:      []controlplane.WorkPackage{{ID: "wp-1", Title: "first", State: "PROPOSED"}},
+		Graph:     controlplane.TaskGraph{Nodes: []controlplane.TaskGraphNode{{WorkPackageID: "wp-1", Readiness: "ready"}}},
+	}
+	out := Render(m)
+	if !strings.Contains(out, "ready") {
+		t.Fatalf("readiness missing:\n%s", out)
+	}
+}

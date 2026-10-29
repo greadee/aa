@@ -87,7 +87,24 @@ func copyMap(in map[string]any) map[string]any {
 	}
 	out := make(map[string]any, len(in))
 	for k, v := range in {
-		out[k] = v
+		out[k] = copyValue(v)
 	}
 	return out
+}
+
+func copyValue(v any) any {
+	switch value := v.(type) {
+	case map[string]any:
+		return copyMap(value)
+	case []any:
+		out := make([]any, len(value))
+		for i, item := range value {
+			out[i] = copyValue(item)
+		}
+		return out
+	case []string:
+		return append([]string(nil), value...)
+	default:
+		return v
+	}
 }

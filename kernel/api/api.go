@@ -69,6 +69,13 @@ func (s *Service) Approve(workPackageID string) {
 	s.orch.Approve(workPackageID)
 }
 
+// Reject records a negative human decision for a work package.
+func (s *Service) Reject(workPackageID, reason string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.orch.Reject(workPackageID, reason)
+}
+
 // Resolve re-evaluates gates for a work package that is awaiting gates.
 func (s *Service) Resolve(workPackageID string) (scheduler.DispatchReport, error) {
 	s.mu.Lock()

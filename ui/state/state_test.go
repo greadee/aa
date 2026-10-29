@@ -15,6 +15,9 @@ func TestLoadAndCycle(t *testing.T) {
 	if m.Status.Projects == 0 || len(m.Nodes) == 0 || len(m.Tools) == 0 {
 		t.Fatalf("model not loaded: %+v", m)
 	}
+	if m.Project.ID != "default" || m.Graph.Kind != "task_graph" {
+		t.Fatalf("project state not loaded: %+v", m)
+	}
 	if got := Cycle(ViewProjects, 1); got != ViewGraph {
 		t.Fatalf("cycle forward = %s", got)
 	}

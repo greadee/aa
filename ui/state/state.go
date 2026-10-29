@@ -30,8 +30,10 @@ type Model struct {
 	Active      View
 	ProjectID   string
 	Status      controlplane.Status
+	Project     controlplane.Project
 	Projects    []controlplane.Project
 	Work        []controlplane.WorkPackage
+	Graph       controlplane.TaskGraph
 	Assignments []controlplane.Assignment
 	Nodes       []controlplane.Node
 	Tools       []controlplane.Tool
@@ -47,8 +49,10 @@ func Load(ctx context.Context, c controlplane.Client, projectID string) (Model, 
 		return m, err
 	}
 	m.Status = st
+	m.Project, _ = c.Project(ctx, projectID)
 	m.Projects, _ = c.Projects(ctx)
 	m.Work, _ = c.WorkPackages(ctx, projectID)
+	m.Graph, _ = c.Graph(ctx, projectID)
 	m.Assignments, _ = c.Assignments(ctx)
 	m.Nodes, _ = c.Nodes(ctx)
 	m.Tools, _ = c.Tools(ctx)

@@ -35,6 +35,7 @@ Let the platform gain tools and change workflows without changing core code, whi
 |---|---|
 | [`computer-use`](./computer-use.md) | Computer-use tool capability (screen capture / input injection) with permission and sandbox declarations. |
 | [`host`](./host.md) | Package host is the provider-agnostic tool invocation host. |
+| [`metrics`](./metrics.md) | Metrics interface, in-memory counters, structured-log exporter, and compatibility notes. |
 | [`policy`](./policy.md) | Package policy decides whether a caller may invoke a tool. |
 | [`registry`](./registry.md) | Package registry holds validated tool, plugin, and MCP manifests and the provider that executes each tool kind. |
 | [`rpc`](./rpc.md) | Package rpc exposes aa-toolbox over the aa inter-module RPC v1 methods. |

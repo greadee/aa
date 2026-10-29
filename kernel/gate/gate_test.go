@@ -49,3 +49,18 @@ func TestEvaluateFailure(t *testing.T) {
 		t.Fatalf("report = %+v", report)
 	}
 }
+
+func TestHumanGateReject(t *testing.T) {
+	g := NewHumanGate()
+	g.Reject("wp_1", "not safe")
+	d := g.Evaluate(Subject{WorkPackageID: "wp_1"})
+	if d.Passed || d.Pending || d.Reason != "rejected: not safe" {
+		t.Fatalf("decision = %+v", d)
+	}
+	// Approval must not override a rejection.
+	g.Approve("wp_1")
+	d = g.Evaluate(Subject{WorkPackageID: "wp_1"})
+	if d.Passed || d.Pending {
+		t.Fatalf("decision after approve = %+v", d)
+	}
+}

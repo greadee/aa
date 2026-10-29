@@ -1,0 +1,164 @@
+package main
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/greadee/aa/app/internal/controlplane"
+	"github.com/greadee/aa/memory/repo"
+)
+
+func seedAwaitingGate(t *testing.T, g *runtime, projectID, workPackageID string) {
+	t.Helper()
+	assignments := repo.NewAssignmentRepository(g.store, g.projection)
+	if _, err := assignments.Save(repo.AssignmentRecord{
+		ID: "asg_" + workPackageID, ProjectID: projectID, WorkPackageID: workPackageID,
+		WorkerID: "w1", State: "awaiting_gates", Attempt: 1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestControlPlaneProjectsAndWorkAreWired(t *testing.T) {
+	root := t.TempDir()
+	g, err := build(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.obs.Close()
+	b := &backend{g: g}
+
+	if _, err := b.SubmitWork("default", "default work", nil); err != nil {
+		t.Fatalf("default submit: %v", err)
+	}
+	if err := b.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	id, err := b.SubmitWork("p1", "project work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id == "" {
+		t.Fatal("empty work id")
+	}
+	work := b.WorkPackages("p1")
+	if len(work) != 1 || work[0].ID != id {
+		t.Fatalf("work = %+v", work)
+	}
+	if _, err := b.SubmitWork("missing", "work", nil); err == nil {
+		t.Fatal("expected unknown project error")
+	}
+	if err := b.Approve("missing", "approve", "tester", ""); err == nil {
+		t.Fatal("expected unknown gate error")
+	}
+	if len(b.Projects()) != 2 {
+		t.Fatalf("projects = %+v", b.Projects())
+	}
+}
+
+func TestControlPlaneProjectWorkSurvivesRestart(t *testing.T) {
+	root := t.TempDir()
+	g, err := build(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := &backend{g: g}
+	if err := b.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	id, err := b.SubmitWork("p1", "project work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := g.obs.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	reopened, err := build(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.obs.Close()
+	b2 := &backend{g: reopened}
+	work := b2.WorkPackages("p1")
+	if len(work) != 1 || work[0].ID != id {
+		t.Fatalf("work after restart = %+v", work)
+	}
+	// The default project is seeded idempotently, not duplicated.
+	if len(b2.Projects()) != 2 {
+		t.Fatalf("projects after restart = %+v", b2.Projects())
+	}
+}
+
+func TestControlPlaneApprovalSurvivesRestart(t *testing.T) {
+	root := t.TempDir()
+	g, err := build(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := &backend{g: g}
+	if err := b.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	id, err := b.SubmitWork("p1", "project work", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seedAwaitingGate(t, g, "p1", id)
+	if err := b.Approve(id, "approve", "tester", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.obs.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := build(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.obs.Close()
+	approvals, err := reopened.projects.ApprovalRecords()
+	if err != nil || len(approvals) != 1 || approvals[0].Decision != "approve" {
+		t.Fatalf("approvals = %+v err = %v", approvals, err)
+	}
+	if reopened.projects.ActiveAssignments() != 1 {
+		t.Fatalf("active assignments = %d", reopened.projects.ActiveAssignments())
+	}
+}
+
+func TestControlPlaneApprovalResolutionAndReject(t *testing.T) {
+	g, err := build(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.obs.Close()
+	b := &backend{g: g}
+	if err := b.CreateProject("p1", "Project One"); err != nil {
+		t.Fatal(err)
+	}
+	first, err := b.SubmitWork("p1", "first", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seedAwaitingGate(t, g, "p1", first)
+	if err := b.Approve(first, "approve", "human", "ok"); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Approve(first, "approve", "human", "again"); !errors.Is(err, controlplane.ErrConflict) {
+		t.Fatalf("duplicate err = %v, want conflict", err)
+	}
+	second, err := b.SubmitWork("p1", "second", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seedAwaitingGate(t, g, "p1", second)
+	if err := b.Approve(second, "reject", "human", "no"); err != nil {
+		t.Fatal(err)
+	}
+	approvals, err := g.projects.ApprovalRecords()
+	if err != nil || len(approvals) != 2 {
+		t.Fatalf("approvals = %+v err = %v", approvals, err)
+	}
+	if approvals[0].Decision != "approve" && approvals[0].Decision != "reject" {
+		t.Fatalf("approvals = %+v", approvals)
+	}
+}

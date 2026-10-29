@@ -21,20 +21,17 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"sync"
 	"syscall"
 	"time"
 
 	"github.com/greadee/aa/app/internal/controlplane"
 	"github.com/greadee/aa/app/internal/obsplane"
+	"github.com/greadee/aa/app/internal/projectstate"
 	"github.com/greadee/aa/app/internal/syncplane"
 	"github.com/greadee/aa/app/internal/visplane"
 	v2 "github.com/greadee/aa/contracts/go/v2"
 	"github.com/greadee/aa/forge/memsync"
-	"github.com/greadee/aa/kernel/allocator/planner"
-	"github.com/greadee/aa/kernel/allocator/role_allocator"
 	"github.com/greadee/aa/kernel/allocator/routing"
-	"github.com/greadee/aa/kernel/api"
 	aaContext "github.com/greadee/aa/kernel/context"
 	"github.com/greadee/aa/kernel/joblearn"
 	"github.com/greadee/aa/kernel/joblearn/attribution"
@@ -43,7 +40,6 @@ import (
 	"github.com/greadee/aa/kernel/joblearn/promote"
 	"github.com/greadee/aa/kernel/joblearn/tracesource"
 	"github.com/greadee/aa/kernel/observability"
-	"github.com/greadee/aa/kernel/scheduler"
 	"github.com/greadee/aa/memory/projection"
 	"github.com/greadee/aa/memory/repo"
 	"github.com/greadee/aa/memory/retention"
@@ -59,6 +55,7 @@ import (
 	"github.com/greadee/aa/runtime/sandbox"
 	"github.com/greadee/aa/toolbox"
 	"github.com/greadee/aa/toolbox/computeruse"
+	"github.com/greadee/aa/toolbox/host"
 	"github.com/greadee/aa/toolbox/policy"
 	"github.com/greadee/aa/toolbox/registry"
 	uicp "github.com/greadee/aa/ui/controlplane"
@@ -116,16 +113,7 @@ func serve(args []string) error {
 	if err != nil {
 		return err
 	}
-	handler := controlplane.New(controlplane.Config{
-		Version:      version,
-		Token:        *token,
-		Status:       g.status,
-		Backend:      &backend{g: g},
-		Observations: observationBackend{plane: g.obs},
-		Visualizer:   visualizerBackend{plane: g.vis},
-		Registry:     definitionsBackend{g: g},
-		Lifecycle:    lifecycleBackend{manager: g.life},
-	})
+	handler := newControlPlane(g, *token)
 	srv := &http.Server{Addr: *addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	fmt.Fprintf(os.Stderr, "aa control plane listening on http://%s%s\n", *addr, controlplane.APIPrefix)
 
@@ -145,6 +133,29 @@ func serve(args []string) error {
 		_ = srv.Shutdown(shutdownCtx)
 	}
 	return nil
+}
+
+func newControlPlane(g *runtime, token string) http.Handler {
+	return controlplane.New(controlplane.Config{
+		Version:      version,
+		Token:        token,
+		Status:       g.status,
+		Backend:      &backend{g: g},
+		Observations: observationBackend{plane: g.obs},
+		Visualizer:   visualizerBackend{plane: g.vis},
+		Registry:     definitionsBackend{g: g},
+		Lifecycle:    lifecycleBackend{manager: g.life},
+	})
+}
+
+// toolboxMetrics selects the toolbox metrics exporter. The default no-op
+// collector preserves existing behavior; AA_TOOLBOX_METRICS=log enables the
+// structured-JSON exporter on stderr.
+func toolboxMetrics() toolbox.Metrics {
+	if os.Getenv("AA_TOOLBOX_METRICS") == "log" {
+		return toolbox.NewLogMetrics(os.Stderr)
+	}
+	return toolbox.NoopMetrics{}
 }
 
 func defaultRoot() string {
@@ -211,9 +222,7 @@ type runtime struct {
 	traceSink  *promote.MemorySink
 	computer   *computeruse.Provider
 	tools      *registry.Registry
-	graph      *planner.Graph
-	sched      *scheduler.Scheduler
-	api        *api.Service
+	projects   *projectstate.State
 	syncer     *syncplane.Plane
 	obs        *obsplane.Plane
 	vis        *visplane.Plane
@@ -226,59 +235,59 @@ type runtime struct {
 // status reports the aggregate host status for the control plane.
 func (g *runtime) status() controlplane.Status {
 	projects := 0
-	if recs, err := g.store.ListRecords("project_record"); err == nil {
-		projects = len(recs)
+	active := 0
+	if g.projects != nil {
+		projects = len(g.projects.Projects())
+		active = g.projects.ActiveAssignments()
 	}
 	nodes := 0
 	if g.syncer != nil {
 		nodes = len(g.syncer.Nodes())
 	}
-	return controlplane.Status{Projects: projects, ActiveAssignments: 0, Nodes: nodes}
+	return controlplane.Status{Projects: projects, ActiveAssignments: active, Nodes: nodes}
 }
 
 // backend implements controlplane.Backend over the composed graph.
 type backend struct {
-	g   *runtime
-	mu  sync.Mutex
-	seq int
+	g *runtime
 }
 
 func (b *backend) Projects() []controlplane.Project {
-	recs, err := b.g.store.ListRecords("project_record")
-	if err != nil {
-		return nil
-	}
+	recs := b.g.projects.Projects()
 	out := make([]controlplane.Project, 0, len(recs))
-	for _, r := range recs {
-		var m struct {
-			Name string `json:"name"`
-		}
-		_ = json.Unmarshal(r.Data, &m)
-		out = append(out, controlplane.Project{ID: r.ID, Name: m.Name})
+	for _, record := range recs {
+		out = append(out, projectView(record))
 	}
 	return out
+}
+
+func (b *backend) Project(id string) (controlplane.Project, bool) {
+	record, ok := b.g.projects.Project(id)
+	if !ok {
+		return controlplane.Project{}, false
+	}
+	return projectView(record), true
+}
+
+func projectView(record v2.ProjectRecord) controlplane.Project {
+	return controlplane.Project{
+		ContractVersion: record.ContractVersion,
+		Kind:            record.Kind,
+		ID:              record.ID,
+		Name:            record.Name,
+		State:           string(record.State),
+		LayoutVersion:   record.LayoutVersion,
+	}
 }
 
 func (b *backend) CreateProject(id, name string) error {
 	if id == "" {
 		return errors.New("project id is required")
 	}
-	data, err := json.Marshal(map[string]any{
-		"contractVersion": "2.0",
-		"kind":            "project_record",
-		"id":              id,
-		"name":            name,
-		"state":           "CREATED",
-		"layoutVersion":   "1",
-	})
-	if err != nil {
-		return err
-	}
-	rec, err := store.NewRecord("project_record", id, 1, data)
-	if err != nil {
-		return err
-	}
-	if _, err = b.g.store.PutRecord(rec); err != nil {
+	if _, err := b.g.projects.CreateProject(id, name); err != nil {
+		if errors.Is(err, repo.ErrExists) {
+			return controlplane.ErrConflict
+		}
 		return err
 	}
 	b.emit("project:"+id, protocol.Event{
@@ -292,26 +301,44 @@ func (b *backend) CreateProject(id, name string) error {
 }
 
 func (b *backend) WorkPackages(projectID string) []controlplane.WorkPackageView {
-	if projectID != b.g.graph.ProjectID {
+	records, err := b.g.projects.WorkPackages(projectID)
+	if err != nil {
 		return nil
 	}
-	wps := b.g.api.Status().WorkPackages
-	out := make([]controlplane.WorkPackageView, 0, len(wps))
-	for _, wp := range wps {
-		out = append(out, controlplane.WorkPackageView{ID: wp.ID, Title: wp.Title, State: string(wp.State), DependsOn: wp.DependsOn})
+	out := make([]controlplane.WorkPackageView, 0, len(records))
+	for _, record := range records {
+		out = append(out, workPackageView(record))
 	}
 	return out
 }
 
-func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {
-	if projectID != b.g.graph.ProjectID {
-		return "", fmt.Errorf("unknown project %q", projectID)
+func (b *backend) WorkPackage(projectID, id string) (controlplane.WorkPackageView, bool) {
+	record, ok := b.g.projects.WorkPackage(projectID, id)
+	if !ok {
+		return controlplane.WorkPackageView{}, false
 	}
-	b.mu.Lock()
-	b.seq++
-	id := fmt.Sprintf("wp-%d", b.seq)
-	b.mu.Unlock()
-	if err := b.g.graph.Add(planner.WorkPackage{ID: id, Title: title, DependsOn: dependsOn}); err != nil {
+	return workPackageView(record), true
+}
+
+func workPackageView(record repo.WorkPackageRecord) controlplane.WorkPackageView {
+	return controlplane.WorkPackageView{
+		ContractVersion: record.ContractVersion,
+		Kind:            record.Kind,
+		ID:              record.ID,
+		Title:           record.Title,
+		State:           string(record.State),
+		Acceptance:      record.Acceptance,
+		DependsOn:       record.Dependencies,
+	}
+}
+
+func (b *backend) Graph(projectID string) (v2.TaskGraph, bool) {
+	return b.g.projects.Graph(projectID)
+}
+
+func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {
+	record, err := b.g.projects.SubmitWork(projectID, title, dependsOn)
+	if err != nil {
 		return "", err
 	}
 	b.emit("project:"+projectID, protocol.Event{
@@ -319,14 +346,14 @@ func (b *backend) SubmitWork(projectID, title string, dependsOn []string) (strin
 		Confidence:    protocol.ConfidenceExact,
 		Action:        "work.submit",
 		Actor:         "control-plane",
-		WorkPackageID: id,
+		WorkPackageID: record.ID,
 		Metadata:      map[string]string{"status": "submitted"},
 	})
-	return id, nil
+	return record.ID, nil
 }
 
 func (b *backend) Assignments() []controlplane.AssignmentView {
-	as := b.g.api.Status().Assignments
+	as := b.g.projects.AssignmentStatuses()
 	out := make([]controlplane.AssignmentView, 0, len(as))
 	for _, a := range as {
 		out = append(out, controlplane.AssignmentView{ID: a.ID, WorkPackageID: a.WorkPackageID, WorkerID: a.WorkerID, State: a.State, Attempt: a.Attempt})
@@ -334,42 +361,93 @@ func (b *backend) Assignments() []controlplane.AssignmentView {
 	return out
 }
 
-func (b *backend) Approve(gateID string) error {
-	b.g.api.Approve(gateID)
+func (b *backend) Approve(gateID, decision, actor, reason string) error {
+	project, ok := b.g.projects.ProjectForWorkPackage(gateID)
+	if !ok {
+		return controlplane.ErrNotFound
+	}
+	if _, err := b.g.projects.RecordApproval(project.Record.ID, gateID, decision, actor, reason); err != nil {
+		switch {
+		case errors.Is(err, projectstate.ErrNotFound):
+			return controlplane.ErrNotFound
+		case errors.Is(err, projectstate.ErrApprovalResolved):
+			return controlplane.ErrConflict
+		case errors.Is(err, projectstate.ErrInvalidApproval):
+			return controlplane.ErrInvalid
+		default:
+			return err
+		}
+	}
 	b.emit("control-plane", protocol.Event{
 		SourceType:    protocol.SourceSession,
 		Confidence:    protocol.ConfidenceObserved,
-		Action:        "gate.approve",
-		Actor:         "console",
+		Action:        "gate." + decision,
+		Actor:         actor,
 		WorkPackageID: gateID,
-		Metadata:      map[string]string{"status": "approved"},
+		Metadata:      map[string]string{"status": decision + "d", "decision": decision, "reason": reason},
 	})
 	return nil
 }
 
-func (b *backend) records(kind string) []json.RawMessage {
+func (b *backend) recordsForProject(kind, projectID string) []json.RawMessage {
 	recs, err := b.g.store.ListRecords(kind)
 	if err != nil {
 		return nil
 	}
 	out := make([]json.RawMessage, 0, len(recs))
 	for _, r := range recs {
-		out = append(out, r.Data)
+		var envelope struct {
+			ProjectID string `json:"projectId"`
+		}
+		if err := json.Unmarshal(r.Data, &envelope); err != nil {
+			continue
+		}
+		if envelope.ProjectID == projectID {
+			out = append(out, r.Data)
+		}
 	}
 	return out
 }
 
-func (b *backend) Issues(string) []json.RawMessage     { return b.records("issue") }
-func (b *backend) Strategies(string) []json.RawMessage { return b.records("strategy") }
+func (b *backend) Issues(projectID string) []json.RawMessage {
+	return b.recordsForProject("issue", projectID)
+}
 
-func (b *backend) Events(string) []json.RawMessage {
+func (b *backend) Strategies(projectID string) []json.RawMessage {
+	return b.recordsForProject("strategy", projectID)
+}
+
+// Events returns the project's observation events. Project lifecycle events use
+// the "project:<id>" session topic; work events are correlated through their
+// work package. This keeps one project's event stream from exposing another's.
+func (b *backend) Events(projectID string) []json.RawMessage {
 	evs, err := b.g.store.Events()
 	if err != nil {
 		return nil
 	}
 	out := make([]json.RawMessage, 0, len(evs))
 	for _, e := range evs {
-		out = append(out, e.Data)
+		var event struct {
+			ProjectID     string `json:"projectId"`
+			SessionID     string `json:"sessionId"`
+			WorkPackageID string `json:"workPackageId"`
+		}
+		if err := json.Unmarshal(e.Data, &event); err != nil {
+			continue
+		}
+		if event.ProjectID == projectID {
+			out = append(out, e.Data)
+			continue
+		}
+		if event.SessionID == "project:"+projectID {
+			out = append(out, e.Data)
+			continue
+		}
+		if event.WorkPackageID != "" {
+			if _, ok := b.g.projects.WorkPackage(projectID, event.WorkPackageID); ok {
+				out = append(out, e.Data)
+			}
+		}
 	}
 	return out
 }
@@ -474,7 +552,7 @@ func build(root string) (*runtime, error) {
 	}
 
 	enforcer := sandbox.NewEnforcer()
-	policyEngine := policy.New(enforcer, toolbox.SystemClock{})
+	policyEngine := policy.New(enforcer, toolbox.SystemClock{}, toolboxMetrics())
 
 	// Computer-use capability: wired with the declared Headless driver (no
 	// desktop backend in this build). The provider is a live, reachable
@@ -489,6 +567,12 @@ func build(root string) (*runtime, error) {
 	toolReg := registry.New()
 	if err := toolReg.Register(computeruse.Manifest("tool_screen")); err != nil {
 		return nil, fmt.Errorf("toolbox/registry: %w", err)
+	}
+	// The deterministic fake provider is opt-in for offline pilots and tests.
+	if os.Getenv("AA_TOOLBOX_FAKE_PROVIDER") == "1" {
+		if err := toolReg.RegisterProvider(host.NewFakeProvider(toolbox.KindTool)); err != nil {
+			return nil, fmt.Errorf("toolbox/host: %w", err)
+		}
 	}
 
 	sb, err := sandbox.New(sandbox.Config{
@@ -539,19 +623,14 @@ func build(root string) (*runtime, error) {
 		Sink: lifecycleObserver{plane: observations},
 	})
 
-	// Kernel control path: one project graph + scheduler, exposed in-process by
-	// kernel/api. Execution stays disabled on the core path (no model, no worker).
-	graph := planner.NewGraph("default", "plan-main")
-	sched, err := scheduler.New(graph, scheduler.Config{
-		Registry:  role_allocator.New(),
-		Lifecycle: lifecycleManager,
-	})
+	// Durable multi-project control path. Execution stays disabled on the core
+	// path until Sprint 3 wires the deterministic runtime.
+	projects, err := projectstate.New(st, proj, projectstate.Options{Lifecycle: lifecycleManager})
 	if err != nil {
-		return nil, fmt.Errorf("kernel/scheduler: %w", err)
+		return nil, fmt.Errorf("projectstate: %w", err)
 	}
-	apiSvc, err := api.New(api.Config{Scheduler: sched})
-	if err != nil {
-		return nil, fmt.Errorf("kernel/api: %w", err)
+	if _, _, err := projects.EnsureProject("default", "Default"); err != nil {
+		return nil, fmt.Errorf("projectstate: default project: %w", err)
 	}
 
 	return &runtime{
@@ -569,9 +648,7 @@ func build(root string) (*runtime, error) {
 		traceSink:  traceSink,
 		computer:   computerProvider,
 		tools:      toolReg,
-		graph:      graph,
-		sched:      sched,
-		api:        apiSvc,
+		projects:   projects,
 		syncer:     syncer,
 		obs:        observations,
 		vis:        visualizerPlane,

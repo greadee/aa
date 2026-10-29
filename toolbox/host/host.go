@@ -119,7 +119,7 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 			return toolbox.Result{}, fmt.Errorf("%w: idempotency key reused with a different input", toolbox.ErrConflict)
 		}
 		h.metrics.RecordCacheHit(key)
-		result := cached.result
+		result := cloneResult(cached.result)
 		result.Replayed = true
 		success = true
 		return result, nil
@@ -139,6 +139,7 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 			if err != nil {
 				return toolbox.Result{}, err
 			}
+			result = cloneResult(result)
 			result.Replayed = true
 			success = true
 			return result, nil
@@ -155,9 +156,9 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 	result := toolbox.Result{ToolID: inv.ToolID, Output: output}
 
 	h.mu.Lock()
-	call.result, call.err = result, err
+	call.result, call.err = cloneResult(result), err
 	if err == nil {
-		h.storeLocked(key, hostCacheEntry{result: result, inputHash: inputHash})
+		h.storeLocked(key, hostCacheEntry{result: cloneResult(result), inputHash: inputHash})
 	}
 	delete(h.inflight, key)
 	close(call.done)
@@ -167,7 +168,49 @@ func (h *Host) Invoke(ctx context.Context, inv toolbox.Invocation, contract tool
 		return toolbox.Result{}, err
 	}
 	success = true
-	return result, nil
+	return cloneResult(result), nil
+}
+
+// cloneResult returns a deep copy so cached results and concurrent callers never
+// share reference-typed output. Callers may mutate a returned Output freely
+// without corrupting the idempotency cache or another caller's result.
+func cloneResult(result toolbox.Result) toolbox.Result {
+	result.Output = cloneOutput(result.Output)
+	return result
+}
+
+func cloneOutput(in map[string]any) map[string]any {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		out[k] = cloneValue(v)
+	}
+	return out
+}
+
+func cloneValue(v any) any {
+	switch value := v.(type) {
+	case map[string]any:
+		return cloneOutput(value)
+	case []any:
+		out := make([]any, len(value))
+		for i, item := range value {
+			out[i] = cloneValue(item)
+		}
+		return out
+	case []string:
+		return append([]string(nil), value...)
+	case map[string]string:
+		out := make(map[string]string, len(value))
+		for k, item := range value {
+			out[k] = item
+		}
+		return out
+	default:
+		return v
+	}
 }
 
 // storeLocked inserts a cache entry and evicts the oldest entry when the cache
