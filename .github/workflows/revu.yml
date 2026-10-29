@@ -58,6 +58,9 @@ jobs:
             -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
             -d '{"model":"deepseek/deepseek-v4.1-flash","messages":[{"role":"user","content":"Reply with the single word ok"}],"max_tokens":8}'
           cat /tmp/chat.json; echo
+          curl -sS --max-time 30 -o /tmp/dsmodels.json -w "deepseek models HTTP %{http_code}\n" \
+            https://api.deepseek.com/models -H "Authorization: Bearer $KEY"
+          cat /tmp/dsmodels.json; echo
       - id: revu
         uses: greadee/review-engine@v1
         with:
