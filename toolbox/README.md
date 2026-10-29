@@ -19,6 +19,10 @@ The tool, plugin, and MCP registry plus the configurable workflow runtime.
 | `workflow` | The workflow compiler (validate + deterministic topological plan) and the resumable runtime |
 | `rpc` | The `toolbox.invoke`, `toolbox.compileWorkflow`, and `toolbox.registry` adapter |
 
+Metrics: `toolbox.NoopMetrics` is the default, `toolbox.MemMetrics` provides
+in-process counters, and `toolbox.LogMetrics` is the structured-JSON exporter.
+See [docs/modules/toolbox/metrics.md](../docs/modules/toolbox/metrics.md).
+
 ## Testing
 
 ```sh

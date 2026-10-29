@@ -143,9 +143,12 @@ type cacheResult struct {
 	fingerprint string        // canonical request identity for conflict detection
 }
 
-// Metrics and MetricsSnapshot are retained as source-compatible aliases for
-// callers that used the former rpc-local metrics type. Use toolbox.MemMetrics
-// for new code.
+// Metrics and MetricsSnapshot preserve the former rpc-local type names. The
+// aliases keep existing type references compiling, but they are not a full
+// source or wire compatibility guarantee: the toolbox.Metrics interface gained
+// RecordRPC and RecordRPCError, unkeyed MetricsSnapshot literals gained fields,
+// and snapshot JSON keys changed from Go field names to lower-camel tags. See
+// docs/modules/toolbox/metrics.md for the migration notes.
 type Metrics = toolbox.MemMetrics
 type MetricsSnapshot = toolbox.MetricsSnapshot
 
