@@ -1,0 +1,21 @@
+{
+  "id": "pr@9e40fbf63a14",
+  "profile": "pr",
+  "repository": "greadee/aa",
+  "ref": "9e40fbf63a145621b0c2f721da07c4aefca9343a",
+  "base": "origin/main",
+  "head": "9e40fbf63a145621b0c2f721da07c4aefca9343a",
+  "generated": "2026-10-29T20:24:51.038907352Z",
+  "findings": [],
+  "resolved": null,
+  "blockThreshold": "P1",
+  "archiveURL": "",
+  "coverage": {
+    "selected": 47,
+    "analyzed": 0,
+    "skipped": 0,
+    "truncated": 0,
+    "failedBatches": 3,
+    "threshold": 1
+  }
+}
