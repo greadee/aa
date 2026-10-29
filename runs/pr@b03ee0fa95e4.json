@@ -1,0 +1,60 @@
+{
+  "id": "pr@b03ee0fa95e4",
+  "profile": "pr",
+  "repository": "greadee/aa",
+  "ref": "b03ee0fa95e4721e351e04908b04a020a84927fc",
+  "base": "origin/main",
+  "head": "b03ee0fa95e4721e351e04908b04a020a84927fc",
+  "generated": "2026-10-29T18:35:15.285335781Z",
+  "findings": [
+    {
+      "id": "6f295b72b8a299045e0fdf501fca24be",
+      "title": "Exported function has only test callers (not wired into production)",
+      "classification": "Maintainability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/host/fake.go",
+        "line": 30,
+        "snippet": "func NewFakeProvider"
+      },
+      "impact": "Behavior is exercised only by tests; production never reaches it.",
+      "recommendation": "Wire the symbol into a composition root, or remove it.",
+      "scope": "toolbox/host",
+      "detector": "detector.orphan",
+      "anchor": "orphan:NewFakeProvider",
+      "status": "new",
+      "firstSeen": "pr@b03ee0fa95e4",
+      "lastSeen": "pr@b03ee0fa95e4",
+      "runId": "pr@b03ee0fa95e4"
+    },
+    {
+      "id": "90997f65042ad76bb488fd65e2057db1",
+      "title": "Possible fail-open guard: nil check short-circuits a check",
+      "classification": "Reliability",
+      "severity": "P2",
+      "evidence": {
+        "file": "toolbox/rpc/rpc.go",
+        "line": 214,
+        "snippet": "if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {"
+      },
+      "impact": "A missing dependency can silently disable the guarded check.",
+      "recommendation": "Fail closed when the dependency is absent, or document why open is safe.",
+      "detector": "detector.fail-open",
+      "anchor": "fail-open:if req.AA != nil \u0026\u0026 req.AA.TimeoutMS \u003e 0 {",
+      "status": "new",
+      "firstSeen": "pr@b03ee0fa95e4",
+      "lastSeen": "pr@b03ee0fa95e4",
+      "runId": "pr@b03ee0fa95e4"
+    }
+  ],
+  "resolved": null,
+  "blockThreshold": "P1",
+  "archiveURL": "",
+  "coverage": {
+    "selected": 45,
+    "analyzed": 45,
+    "skipped": 0,
+    "truncated": 0,
+    "threshold": 1
+  }
+}
