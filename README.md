@@ -29,3 +29,11 @@ The durable knowledge record lives in [`docs/`](docs/index/README.md). The optim
 ## Status
 
 Pre-implementation. The architecture and phase plan are complete; work proceeds phase by phase. See [docs/index/phases.md](docs/index/phases.md).
+
+## License
+
+[MIT](LICENSE.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
