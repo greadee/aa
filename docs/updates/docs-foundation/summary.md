@@ -80,6 +80,12 @@ contract parity gate.
 | F10 external links not actually checked | P3 | documented: offline lychee/checker policy is explicit |
 | F11 trailing blank lines in comment templates | P3 | fixed |
 
+A second fresh-context verification pass confirmed F1–F11 and raised four minor
+follow-ups: a residual "reserved lifecycle" phrase (N1), a CONTRIBUTING external-
+link contradiction (N2), a media table separator (N3), a mixed canonical heading
+(N4), Phase 12 naming (N5), and the local PyYAML requirement (N6). All six were
+fixed in the audit-follow-up commit.
+
 **Sign-off:** no P0/P1 findings remain.
 
 ## Validation

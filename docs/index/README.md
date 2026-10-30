@@ -53,7 +53,7 @@ They are preserved as evidence and must not be read as current-state claims.
 When a historical decision is superseded, add a dated note to that document and
 link the replacement; do not rewrite the record.
 
-## Canonical documents
+## Key documents
 
 - **Optimized architecture:** [../architecture/README.md](../architecture/README.md)
 - **Architecture Decision Records:** [../adr/README.md](../adr/README.md)

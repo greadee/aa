@@ -610,16 +610,21 @@ Each phase is a GitHub milestone with a tracking issue, a phase branch equal to 
 - **Exit:** every deferred module implemented (or removed) and composed in the daemon; repository audit clean.
 - **Testing:** per-module suites + control-plane integration.
 
-### Phase 12 — Hardening, auth & release
-- **Goal:** a releasable v1.
-- **Deliverables:** threat model and security review; real authn/authz (pairing, device keys, mTLS); performance/load; chaos/recovery; packaging/installers; release gates and versioning; docs completion; repository audits; migration guides.
-- **Exit:** release checklist complete; audits pass.
-- **Testing:** full matrix, security review, chaos, release-gate automation.
+### Phase 12 — Hardening, auth & security
+- **Goal:** make v1 secure and resilient.
+- **Deliverables:** threat model and security review; real authn/authz (pairing, device keys, mTLS); performance/load; chaos/recovery; security regression tests; repository audits; migration notes.
+- **Exit:** P0/P1 findings closed; auth is enforced; audits pass.
+- **Testing:** full matrix, security review, chaos/recovery.
 
-> **Program note (Sprint 3, 2026-10-30):** the current planning program splits
-> this work into Phase 12 (hardening, authn/authz, security, audits) and Phase 13
-> (release gates, packaging, `CHANGELOG.md`, final docs). The repository publishes
-> those phase folders and plans only when each phase begins.
+### Phase 13 — Release & distribution
+- **Goal:** a releasable, installable v1.
+- **Deliverables:** release gates and versioning; packaging/installers; signed artifacts; `CHANGELOG.md`; docs completion; migration guides; release workflow.
+- **Exit:** release checklist complete; artifacts reproducible; clean-install and upgrade paths pass.
+- **Testing:** release-gate automation, clean-install smoke, upgrade/migration.
+
+> **Program note (Sprint 3, 2026-10-30):** the Phase 12 security/hardening work
+> and the Phase 13 release work are separate planning phases. The repository
+> publishes those phase folders and plans only when each phase begins.
 
 ---
 

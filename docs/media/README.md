@@ -4,7 +4,7 @@ This folder holds the media referenced by the README. Assets are small,
 reviewable, and reproducible. Do not commit large binaries.
 
 | Asset | Purpose | Format | Alt text | Status |
-|---|---|---|---|---|---|
+|---|---|---|---|---|
 | [`terminal-selfcheck.svg`](terminal-selfcheck.svg) | `aa selfcheck` terminal capture | SVG | Terminal capture of the deterministic aa selfcheck composition output | committed |
 | [`console-tui.svg`](console-tui.svg) | Offline `aa console --fake` TUI capture | SVG | Terminal capture of the offline aa console text surface | committed |
 | [`console-web.svg`](console-web.svg) | Read-only web surface content capture | SVG | Content capture of the read-only aa web console | committed; owner browser screenshot optional |

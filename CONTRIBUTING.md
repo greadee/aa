@@ -11,7 +11,7 @@ directive beside the code you are changing (`aa-*.md`).
 Requirements:
 
 - Go 1.26
-- Python 3.12+
+- Python 3.12+ and PyYAML for the local template checker
 - Node 20+ (TypeScript contracts only)
 - Git and GitHub CLI (`gh`)
 
@@ -95,8 +95,10 @@ For documentation:
 ```sh
 python3 tools/docs/check_links.py
 python3 tools/docs/check_media.py
+python3 -m pip install --quiet pyyaml
 python3 tools/docs/check_templates.py
-# external links are checked by the online lychee job, not by --offline
+# external links are not checked while lychee runs with --offline; add a
+# scheduled online run if external link rot becomes a maintenance concern.
 lychee --offline --include-fragments "./**/*.md"
 ```
 
