@@ -37,6 +37,10 @@ type Model struct {
 	Assignments []controlplane.Assignment
 	Nodes       []controlplane.Node
 	Tools       []controlplane.Tool
+	Issues      []controlplane.MemoryItem
+	Strategies  []controlplane.MemoryItem
+	Sessions    []controlplane.VisualizerSession
+	Report      controlplane.ObservationReport
 	Message     string
 }
 
@@ -56,6 +60,12 @@ func Load(ctx context.Context, c controlplane.Client, projectID string) (Model, 
 	m.Assignments, _ = c.Assignments(ctx)
 	m.Nodes, _ = c.Nodes(ctx)
 	m.Tools, _ = c.Tools(ctx)
+	m.Issues, _ = c.Issues(ctx, projectID)
+	m.Strategies, _ = c.Strategies(ctx, projectID)
+	m.Sessions, _ = c.VisualizerSessions(ctx)
+	if len(m.Sessions) > 0 {
+		m.Report, _ = c.ObservationReport(ctx, m.Sessions[0].ID)
+	}
 	return m, nil
 }
 

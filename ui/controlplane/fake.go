@@ -17,6 +17,10 @@ type Fake struct {
 	decisions   map[string]string
 	nodes       []Node
 	tools       []Tool
+	issues      map[string][]MemoryItem
+	strategies  map[string][]MemoryItem
+	sessions    []VisualizerSession
+	reports     map[string]ObservationReport
 	seq         int
 }
 
@@ -28,6 +32,14 @@ func NewFake() *Fake {
 		decisions: map[string]string{},
 		nodes:     []Node{{ID: "local", Authority: true, State: "ready"}},
 		tools:     []Tool{{ID: "tool_screen", Kind: "builtin", Sandbox: true}},
+		issues: map[string][]MemoryItem{
+			"default": {{ContractVersion: "2.0", Kind: "issue", ID: "issue-demo", ProjectID: "default", Title: "Demo issue", Status: "open", Severity: "P3"}},
+		},
+		strategies: map[string][]MemoryItem{
+			"default": {{ContractVersion: "2.0", Kind: "strategy", ID: "strategy-demo", ProjectID: "default", Title: "Deterministic first", Lifecycle: "ACTIVE", Guidance: "Run selfcheck before execution."}},
+		},
+		sessions: []VisualizerSession{{ID: "session-demo", ProjectID: "default", EventCount: 0}},
+		reports:  map[string]ObservationReport{"session-demo": {SessionID: "session-demo"}},
 	}
 }
 
@@ -192,4 +204,37 @@ func (f *Fake) Tools(context.Context) ([]Tool, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]Tool(nil), f.tools...), nil
+}
+
+func (f *Fake) Issues(_ context.Context, projectID string) ([]MemoryItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if _, ok := f.findProjectLocked(projectID); !ok {
+		return nil, notFound(fmt.Sprintf("project %q not found", projectID))
+	}
+	return append([]MemoryItem(nil), f.issues[projectID]...), nil
+}
+
+func (f *Fake) Strategies(_ context.Context, projectID string) ([]MemoryItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if _, ok := f.findProjectLocked(projectID); !ok {
+		return nil, notFound(fmt.Sprintf("project %q not found", projectID))
+	}
+	return append([]MemoryItem(nil), f.strategies[projectID]...), nil
+}
+
+func (f *Fake) VisualizerSessions(context.Context) ([]VisualizerSession, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]VisualizerSession(nil), f.sessions...), nil
+}
+
+func (f *Fake) ObservationReport(_ context.Context, sessionID string) (ObservationReport, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if report, ok := f.reports[sessionID]; ok {
+		return report, nil
+	}
+	return ObservationReport{}, notFound(fmt.Sprintf("session %q not found", sessionID))
 }

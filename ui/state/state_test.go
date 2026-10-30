@@ -18,6 +18,12 @@ func TestLoadAndCycle(t *testing.T) {
 	if m.Project.ID != "default" || m.Graph.Kind != "task_graph" {
 		t.Fatalf("project state not loaded: %+v", m)
 	}
+	if len(m.Issues) == 0 || len(m.Strategies) == 0 {
+		t.Fatalf("memory read model not loaded: %+v", m)
+	}
+	if len(m.Sessions) == 0 || m.Report.SessionID == "" {
+		t.Fatalf("reports read model not loaded: %+v", m)
+	}
 	if got := Cycle(ViewProjects, 1); got != ViewGraph {
 		t.Fatalf("cycle forward = %s", got)
 	}

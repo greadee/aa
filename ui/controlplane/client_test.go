@@ -35,6 +35,14 @@ func TestHTTPClient(t *testing.T) {
 			_ = json.NewEncoder(w).Encode([]Node{{ID: "local", Authority: true}})
 		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/tools":
 			_ = json.NewEncoder(w).Encode([]Tool{{ID: "tool_screen"}})
+		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/projects/default/issues":
+			_ = json.NewEncoder(w).Encode([]MemoryItem{{ID: "issue-demo", Title: "Demo issue", Status: "open"}})
+		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/projects/default/strategies":
+			_ = json.NewEncoder(w).Encode([]MemoryItem{{ID: "strategy-demo", Title: "Demo strategy", Lifecycle: "ACTIVE"}})
+		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/visualizer/sessions":
+			_ = json.NewEncoder(w).Encode([]VisualizerSession{{ID: "session-demo", ProjectID: "default", EventCount: 2}})
+		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/observations/session-demo/report":
+			_ = json.NewEncoder(w).Encode(ObservationReport{SessionID: "session-demo", Events: 2})
 		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/approvals/g1":
 			w.WriteHeader(http.StatusOK)
 		default:
@@ -77,6 +85,18 @@ func TestHTTPClient(t *testing.T) {
 	if _, err := c.Tools(ctx); err != nil {
 		t.Fatal(err)
 	}
+	if issues, err := c.Issues(ctx, "default"); err != nil || len(issues) != 1 || issues[0].ID != "issue-demo" {
+		t.Fatalf("issues %v %v", issues, err)
+	}
+	if strategies, err := c.Strategies(ctx, "default"); err != nil || len(strategies) != 1 || strategies[0].ID != "strategy-demo" {
+		t.Fatalf("strategies %v %v", strategies, err)
+	}
+	if sessions, err := c.VisualizerSessions(ctx); err != nil || len(sessions) != 1 || sessions[0].ID != "session-demo" {
+		t.Fatalf("sessions %v %v", sessions, err)
+	}
+	if report, err := c.ObservationReport(ctx, "session-demo"); err != nil || report.Events != 2 {
+		t.Fatalf("report %+v %v", report, err)
+	}
 	if gotAuth != "Bearer tok" {
 		t.Fatalf("authorization = %q", gotAuth)
 	}
@@ -113,6 +133,18 @@ func TestFakeClient(t *testing.T) {
 	}
 	if err := f.Approve(ctx, id); err != nil {
 		t.Fatal(err)
+	}
+	if issues, err := f.Issues(ctx, "default"); err != nil || len(issues) == 0 {
+		t.Fatalf("fake issues %v %v", issues, err)
+	}
+	if strategies, err := f.Strategies(ctx, "default"); err != nil || len(strategies) == 0 {
+		t.Fatalf("fake strategies %v %v", strategies, err)
+	}
+	if sessions, err := f.VisualizerSessions(ctx); err != nil || len(sessions) == 0 {
+		t.Fatalf("fake sessions %v %v", sessions, err)
+	}
+	if report, err := f.ObservationReport(ctx, "session-demo"); err != nil || report.SessionID != "session-demo" {
+		t.Fatalf("fake report %+v %v", report, err)
 	}
 }
 

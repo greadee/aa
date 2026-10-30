@@ -1,0 +1,52 @@
+@startuml
+title v1 docs foundation — summary (as built)
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:Open Sprint 3 issues (#85..#92, #76);
+:Open PR #93 against dev and link issues;
+
+partition "Foundation" {
+  :Finalize DoD and templates (#85);
+  :MIT license + metadata (#86);
+}
+
+partition "Public surface" {
+  :Docs entry and current state (#88);
+  :README rewrite (#87);
+  :Current diagrams (#89);
+  :Media + validation (#90);
+}
+
+partition "Reconcile" {
+  :Stale claims + dated supersession notes (#91);
+  :CLI reference and index cleanup;
+}
+
+partition "Contract gate" {
+  :go/ast contract shape helper;
+  :Field, optionality, and type-category parity;
+  :Fix drift + self-tests + CI on dev (#76);
+}
+
+partition "Closeout" {
+  :Local link, anchor, media, template checks;
+  :Go, Python, TypeScript, and quickstart validation;
+  :Fresh-context post-docs audit;
+  :No P0/P1 findings;
+}
+
+:PR #93 ready to merge to dev;
+
+stop
+
+note right
+  Owner actions remain for the social preview
+  and optional video/browser screenshot.
+  External links are not checked offline.
+end note
+
+@enduml
