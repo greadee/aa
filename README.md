@@ -122,6 +122,8 @@ flowchart TB
 
 ### Runtime and deployment view
 
+In v1, one kernel host runs as the execution authority on Machine A. It owns the scheduler, observation journal, memory store, and control-plane API, while inference and forge adapters run as local sidecars. Replicas and workers communicate through `aa-sync` and remain read-only; they never gain execution authority.
+
 ```mermaid
 flowchart LR
     subgraph MachineA["Machine A (authority)"]
@@ -154,6 +156,8 @@ flowchart LR
 
 ### Primary end-to-end flow
 
+This sequence follows one objective through the full control-plane path: planning, issue/checkpoint creation, routing, context and execution-contract compilation, execution, human verification, memory recording, and forge update. Observation events are emitted throughout, so the resulting work history is visualizable and replayable.
+
 ```mermaid
 sequenceDiagram
     participant U as User (ui)
@@ -185,6 +189,8 @@ sequenceDiagram
 ```
 
 ### Memory and event layering
+
+Layered memory is a feature, not just storage layout: live observation stays ephemeral, working context stays bounded, project history becomes canonical, institutional knowledge remains durable, and workforce learning is promoted only through evidence gates. Each layer has its own authority, retention, and promotion rule, and learning feeds back into working context without rewriting canonical history.
 
 ```mermaid
 flowchart TB
