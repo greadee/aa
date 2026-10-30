@@ -78,6 +78,11 @@ state directory (default `.aa`).
 The shipped surfaces are the CLI, TUI, and read-only web console. Execution is
 opt-in and disabled by default.
 
+## NEED TO UPLOAD WORTHY MEDIA
+- a TUI capture of `aa console --fake`;
+- a read-only web console capture from `aa console --web`;
+- a short demo video or GIF;
+
 ## Architecture
 
 ### Architecture overview
@@ -230,15 +235,7 @@ design, decisions, and phase plan. The
 | [`visualizer`](docs/modules/visualizer/README.md) | Time-travel replay, deterministic layout, session browsing |
 | [`ui`](docs/modules/ui/README.md) | Unified interface: CLI, TUI, and read-only web surfaces |
 
-## Media needed
-
-Product screenshots, GIFs, and demo video are not committed yet. Please provide:
-
-- a terminal capture of `aa selfcheck`;
-- a TUI capture of `aa console --fake`;
-- a read-only web console capture from `aa console --web`;
-- a short demo video or GIF;
-- optionally, a social-preview image.
+## Commands and Format 
 
 The exact commands and format guidance are in
 [docs/media/README.md](docs/media/README.md). The README will link to the media
