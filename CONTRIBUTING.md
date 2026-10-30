@@ -44,7 +44,7 @@ go run ./app console --fake
 go run ./app console --web
 ```
 
-`aa serve` requires a bearer token on every path except `/health`; set
+`aa serve` requires a bearer token on every path except `/api/v1/health`; set
 `AA_CONTROL_TOKEN` or pass `--token`. The empty token is only for local
 development.
 

@@ -15,8 +15,8 @@ the unnumbered [update phases](../updates/) (refactors, edits, corrections).
 | [aa-sync](../modules/sync/README.md) | Remote sync, transfer, and parallelization transport |
 | [aa-forge](../modules/forge/README.md) | Git/GitHub lifecycle orchestration |
 | [aa-toolbox](../modules/toolbox/README.md) | Tools/plugins/MCP and workflow runtime |
-| [aa-visualizer](../modules/visualizer/README.md) | 3D graph, replay, and time-travel browsing |
-| [aa-ui](../modules/ui/README.md) | Unified interface: CLI and TUI surfaces (scaffold) |
+| [aa-visualizer](../modules/visualizer/README.md) | Deterministic graph layout, replay, and time-travel browsing (3D surface deferred) |
+| [aa-ui](../modules/ui/README.md) | Unified interface: CLI, TUI, and read-only web surfaces |
 
 Index of records: [docs/modules/README.md](../modules/README.md).
 

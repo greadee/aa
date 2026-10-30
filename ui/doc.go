@@ -2,6 +2,7 @@
 // control plane, built on pluggable surfaces so a web or desktop surface can be
 // added later.
 //
-// It is scaffolded only. It is delivered in `ph10-ui`, last. See
-// docs/architecture/README.md.
+// The CLI, TUI, and read-only web surfaces are delivered over the
+// control-plane client, including the offline fake client. The desktop surface
+// is deferred to v2. See docs/current-state.md and docs/architecture/README.md.
 package ui

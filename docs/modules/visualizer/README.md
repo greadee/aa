@@ -6,11 +6,11 @@
 
 ## Responsibility
 
-Make work tangible: render the current session live and any past session as a replayable, debuggable 3D graph.
+Make work tangible: render the current session live and any past session as a replayable, debuggable graph. The deterministic layout and replay core is delivered; the Wails/React/Three surface is deferred.
 
 ## Owns
 
-- The 3D graph renderer and deterministic layout.
+- The deterministic 3D layout and graph projection (the Wails/React/Three renderer is deferred).
 - Time-travel replay and the session trail.
 - The live bridge from `obsv` to the renderer.
 - Session browsing over `memory`.

@@ -15,6 +15,6 @@ Each module folder carries `README.md` (overview, owns/must-not, submodules) and
 | [aa-sync](./sync/README.md) | Move files and work between machines securely and resiliently, and coordinate parallel work across machines without assuming execution authority. |
 | [aa-forge](./forge/README.md) | Automate the Git and GitHub engineering lifecycle as first-class, auditable objects, and keep the durable record in `memory` in sync. |
 | [aa-toolbox](./toolbox/README.md) | Let the platform gain tools and change workflows without changing core code, while keeping capability grants explicit and enforcing sandbox rules. |
-| [aa-visualizer](./visualizer/README.md) | Make work tangible: render the current session live and any past session as a replayable, debuggable 3D graph. |
+| [aa-visualizer](./visualizer/README.md) | Make work tangible: render the current session live and any past session as a replayable, debuggable graph. The deterministic layout/replay core is delivered; the 3D surface is deferred. |
 | [aa-ui](./ui/README.md) | Provide one place for a human to drive and inspect the whole platform, without coupling to module internals. |
 | [github-os](./github-os/README.md) | Process documentation: issues/sub-problems, module updates, phases, sprints, PRs, review, audits, ADRs. |

@@ -26,20 +26,25 @@ The plan is authored at the **start** of the phase. The summary is authored at t
 
 ## Phase roadmap
 
-| Phase | Folder | Scope |
-|---|---|---|
-| 0 | `ph0-scaffold` | Foundation, governance, repository and documentation scaffolding |
-| 1 | `ph1-contracts` | Contract spine (`aa-contracts`) |
-| 2 | `ph2-memory` | `aa-memory` system of record |
-| 3 | `ph3-kernel` | `aa-kernel` control plane |
-| 4 | `ph4-sifter` | `runtime/inference` model provider/execution integration (formerly `aa-sifter`; compute moved to `kernel/allocator`) |
-| 5 | `ph5-forge` | `aa-forge` git/GitHub orchestration |
-| 6 | `ph6-sync` | `aa-sync` remote/offline/parallel completion |
-| 7 | `ph7-toolbox` | `aa-toolbox` plugins/MCP and configurable workflows |
-| 8 | `ph8-visualizer` | `aa-visualizer` completion |
-| 9 | `ph9-joblearn` | Job learning and optimization loop |
-| 10 | `phase10a-controlplane`, `phase10b-console` | Control plane & console — unified interface |
-| 11 | `ph11-postreq` | console-postreq (post-console implementations) |
-| 12 | `p12-release` | Hardening, auth, security, release, docs, audits |
+| Phase | Folder | Scope | Status |
+|---|---|---|---|
+| 0 | `ph0-scaffold` | Foundation, governance, repository and documentation scaffolding | Delivered |
+| 1 | `ph1-contracts` | Contract spine (`aa-contracts`) | Delivered |
+| 2 | `ph2-memory` | `aa-memory` system of record | Delivered |
+| 3 | `ph3-kernel` | `aa-kernel` control plane | Delivered |
+| 4 | `ph4-sifter` | `runtime/inference` model provider/execution integration (formerly `aa-sifter`; compute moved to `kernel/allocator`) | Delivered |
+| 5 | `ph5-forge` | `aa-forge` git/GitHub orchestration | Delivered |
+| 6 | `ph6-sync` | `aa-sync` remote/offline/parallel completion | Delivered |
+| 7 | `ph7-toolbox` | `aa-toolbox` plugins/MCP and configurable workflows | Delivered |
+| 8 | `ph8-visualizer` | `aa-visualizer` replay/layout/browse core (3D surface deferred) | Delivered |
+| 9 | `ph9-joblearn` | Job learning and optimization loop | Delivered |
+| 10 | `phase10a-controlplane`, `phase10b-console` | Control plane and console — unified interface | Delivered |
+| 11 | `ph11-postreq` | Post-console modules: sync, obsv, visualizer, registry extras, lifecycle | Delivered |
+| 12 | `p12-release` | Hardening, real authn/authz, security, performance, release, final docs, audits | Next |
+
+The docs foundation is an **update phase** (`docs-foundation`), not a numbered
+phase; its plan is [../updates/docs-foundation/plan.md](../updates/docs-foundation/plan.md).
+The Phase 12 plan and the follow-on release phase are still pending; this index
+does not publish them early.
 
 The full phase plan with goals, deliverables, exit criteria, and testing is in the [architecture document](../architecture/README.md#11-end-to-end-phase-plan).
