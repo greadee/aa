@@ -27,15 +27,20 @@ GitHub is the durable **execution** record. This `docs/` tree is the durable **k
 
 ## Canonical vs historical
 
-**Canonical** documents describe the system as it is today. If they disagree with
-code, they are bugs and must be fixed.
+**As-built canonical** documents describe the system as it is today. If they
+disagree with code, they are bugs and must be fixed.
 
 - [README.md](../../README.md), [CONTRIBUTING.md](../../CONTRIBUTING.md)
-- [Current state](../current-state.md)
-- [Architecture](../architecture/README.md) and the [ADR store](../adr/README.md)
+- [Current state](../current-state.md) — the as-built authority
+- [Current diagrams](../architecture/diagrams.md)
 - [Module documentation](../modules/README.md)
 - [Reference](../reference/README.md)
 - [GitHub OS](../github-os/README.md) and [Definitions of Done](../github-os/definitions-of-done.md)
+
+**Target design and decisions** are canonical as intent, not as current behavior.
+The [architecture document](../architecture/README.md) describes the target
+system; the [ADR store](../adr/README.md) records accepted decisions. When they
+differ from today's behavior, [current-state.md](../current-state.md) wins.
 
 **Historical** documents record what was planned or true at a point in time.
 They are preserved as evidence and must not be read as current-state claims.

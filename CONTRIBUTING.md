@@ -44,9 +44,9 @@ go run ./app console --fake
 go run ./app console --web
 ```
 
-`aa serve` requires a bearer token on every path except `/api/v1/health`; set
-`AA_CONTROL_TOKEN` or pass `--token`. The empty token is only for local
-development.
+`aa serve` requires a bearer token on every path except `/api/v1/health` **when
+a token is configured**; set `AA_CONTROL_TOKEN` or pass `--token`. An empty token
+disables the check and is only acceptable for local development.
 
 ## Branch and commit rules
 
@@ -93,6 +93,10 @@ ruff format --check . && ruff check . && mypy && pytest
 For documentation:
 
 ```sh
+python3 tools/docs/check_links.py
+python3 tools/docs/check_media.py
+python3 tools/docs/check_templates.py
+# external links are checked by the online lychee job, not by --offline
 lychee --offline --include-fragments "./**/*.md"
 ```
 

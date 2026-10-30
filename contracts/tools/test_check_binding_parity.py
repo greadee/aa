@@ -143,10 +143,13 @@ class Failure(TypedDict, total=False):
         self.assertNotIn("class_", py["classes"]["Failure"]["fields"])
 
     def test_arrays_and_maps_compare_by_category(self):
-        go = {"types": {"T": go_struct(fields=[
-            go_field("items", "[]Reference"),
-            go_field("metadata", "map[string]any"),
-        ])}}
+        go = {"types": {
+            "Reference": go_struct(fields=[go_field("id", "string")]),
+            "T": go_struct(fields=[
+                go_field("items", "[]Reference"),
+                go_field("metadata", "map[string]any"),
+            ]),
+        }}
         ts = parse_ts("""
 export interface Reference { id: string; }
 export interface T {
@@ -155,9 +158,36 @@ export interface T {
 }
 """)
         py = parse_py("""
+class Reference(TypedDict, total=True):
+    id: str
 class T(TypedDict, total=True):
     items: List[Dict[str, Any]]
     metadata: Dict[str, Any]
+""")
+        self.assertEqual(diff_models(go, ts, py), [])
+
+    def test_typescript_or_python_only_type_is_detected(self):
+        go = {"types": {"T": go_struct(fields=[go_field("id", "string")])}}
+        ts = parse_ts("""
+export interface T { id: string; }
+export interface Extra { id: string; }
+""")
+        py = parse_py("""
+class T(TypedDict, total=True):
+    id: str
+class Extra(TypedDict, total=True):
+    id: str
+""")
+        problems = diff_models(go, ts, py)
+        self.assertTrue(any("TypeScript declaration without Go struct: Extra" in p for p in problems), problems)
+        self.assertTrue(any("Python TypedDict without Go struct: Extra" in p for p in problems), problems)
+
+    def test_required_wrapper_wins_inside_total_false(self):
+        go = {"types": {"T": go_struct(fields=[go_field("id", "string", False)])}}
+        ts = parse_ts("export interface T {\n  id: string;\n}\n")
+        py = parse_py("""
+class T(TypedDict, total=False):
+    id: Required[str]
 """)
         self.assertEqual(diff_models(go, ts, py), [])
 

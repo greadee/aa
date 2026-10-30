@@ -19,7 +19,7 @@ is [`app/main.go`](../../app/main.go).
 | Flag | Default | Meaning |
 |---|---|---|
 | `--addr` | `127.0.0.1:7100` | Loopback listen address |
-| `--token` | `$AA_CONTROL_TOKEN` | Bearer token required on every path except `/api/v1/health` |
+| `--token` | `$AA_CONTROL_TOKEN` | Bearer token required on every path except `/api/v1/health` when set; empty disables the check |
 | `--root` | `$AA_ROOT` or `.aa` | Durable state root |
 
 ## `aa console`

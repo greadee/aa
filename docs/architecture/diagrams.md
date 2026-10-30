@@ -64,14 +64,14 @@ flowchart TB
     kernel --> memory
     kernel --> obsv
     kernel --> toolbox
-    runtime --> inference
+    runtime -.->|optional sidecar| inference
     runtime --> contracts
     state --> memory
     memory --> contracts
     obsv --> contracts
     vis --> contracts
     toolbox --> contracts
-    forge --> memory
+    forge -.->|memsync library| memory
     forge --> contracts
     sync --> contracts
     registry --> contracts
@@ -81,7 +81,9 @@ flowchart TB
 
 Text fallback: console → app daemon → project state and planes; kernel dispatches
 to runtime and toolbox; memory is canonical; obsv and visualizer are read paths;
-forge and sync are world adapters; contracts is the shared boundary.
+forge and sync are world adapters; forge lifecycle/template and inference are
+libraries/optional services rather than default daemon wiring; contracts is the
+shared boundary.
 
 ## 2. Contracts and generated bindings
 
@@ -162,14 +164,15 @@ flowchart LR
     tui -->|HTTP + bearer| serve
     web -->|HTTP + bearer| serve
     serve --> state
-    serve --> inference
-    serve --> gh
+    serve -.->|optional, not wired| inference
+    serve -.->|forge adapters, not wired| gh
     fake -.->|offline| tui
 ```
 
 Text fallback: one local daemon owns state and serves loopback HTTP; both console
 surfaces use the same client; the fake client bypasses the daemon for offline
-development; inference and forge are adapters, not authorities.
+development; inference and forge are adapters/optional services, not authorities; they are
+not wired into the default v1 daemon.
 
 ## 5. End-to-end deterministic sequence
 

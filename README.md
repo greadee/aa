@@ -18,8 +18,13 @@ The v1 core is implemented and composed in the `app/` daemon:
   tools, observations, visualizer, registry, and lifecycle reads;
 - CLI, TUI, and read-only web console surfaces;
 - deterministic scheduler, allocator, gates, runtime sandbox, result intake,
-  memory store/repo/retrieval, registry definitions, toolbox, forge lifecycle,
-  single-node sync, observation, and visualizer core.
+  memory store/repo/retrieval, registry definitions, toolbox, single-node sync,
+  observation, and visualizer core.
+
+The forge lifecycle/template libraries, the optional Python inference sidecar,
+and the GitHub adapters exist in the repository but are not all wired into the
+default v1 daemon. The [current state](docs/current-state.md) page separates
+composed behavior from available libraries.
 
 Still in progress or deliberately deferred: real authn/authz, release packaging,
 performance/chaos testing, the Wails/React/Three visualizer surface, and the
@@ -60,9 +65,11 @@ plane:
 go run ./app console --fake
 ```
 
-`aa serve` binds `127.0.0.1:7100` by default and requires the bearer token on
-every path except `/api/v1/health`. Use a real token outside local development.
-`AA_ROOT` selects the state directory (default `.aa`).
+`aa serve` binds `127.0.0.1:7100` by default. When `--token` (or
+`AA_CONTROL_TOKEN`) is set, every path except `/api/v1/health` requires that
+bearer token. **An empty token disables the check**, so always set a token
+outside local development. Loopback is not authentication. `AA_ROOT` selects the
+state directory (default `.aa`).
 
 ## Architecture
 
@@ -71,7 +78,7 @@ flowchart LR
     console["ui console<br/>CLI · TUI · web"]
     app["app<br/>composition root + HTTP control plane"]
     kernel["kernel<br/>allocator · scheduler · gates · context"]
-    runtime["runtime<br/>worker · sandbox · intake · inference"]
+    runtime["runtime<br/>worker · sandbox · intake · inference (optional)"]
     memory["memory<br/>records · projection · retrieval"]
     registry["registry<br/>roles · models · teams · routines · policies"]
     toolbox["toolbox<br/>tools · policy · workflows"]

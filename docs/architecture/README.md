@@ -616,6 +616,11 @@ Each phase is a GitHub milestone with a tracking issue, a phase branch equal to 
 - **Exit:** release checklist complete; audits pass.
 - **Testing:** full matrix, security review, chaos, release-gate automation.
 
+> **Program note (Sprint 3, 2026-10-30):** the current planning program splits
+> this work into Phase 12 (hardening, authn/authz, security, audits) and Phase 13
+> (release gates, packaging, `CHANGELOG.md`, final docs). The repository publishes
+> those phase folders and plans only when each phase begins.
+
 ---
 
 ## 12. Architectural decisions

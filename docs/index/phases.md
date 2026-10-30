@@ -40,11 +40,12 @@ The plan is authored at the **start** of the phase. The summary is authored at t
 | 9 | `ph9-joblearn` | Job learning and optimization loop | Delivered |
 | 10 | `phase10a-controlplane`, `phase10b-console` | Control plane and console — unified interface | Delivered |
 | 11 | `ph11-postreq` | Post-console modules: sync, obsv, visualizer, registry extras, lifecycle | Delivered |
-| 12 | `p12-release` | Hardening, real authn/authz, security, performance, release, final docs, audits | Next |
+| 12 | `p12-release` | Hardening, real authn/authz, security, performance, audits | Next |
+| 13 | `p13-release` | Release gates, packaging/installers, `CHANGELOG.md`, final docs completion | Planned |
 
 The docs foundation is an **update phase** (`docs-foundation`), not a numbered
 phase; its plan is [../updates/docs-foundation/plan.md](../updates/docs-foundation/plan.md).
-The Phase 12 plan and the follow-on release phase are still pending; this index
-does not publish them early.
+The Phase 12 and Phase 13 plans are still pending; this index does not publish
+them early.
 
 The full phase plan with goals, deliverables, exit criteria, and testing is in the [architecture document](../architecture/README.md#11-end-to-end-phase-plan).

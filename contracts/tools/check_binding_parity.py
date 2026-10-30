@@ -166,7 +166,7 @@ def parse_py(text: str) -> dict[str, Any]:
             field_name = field_match.group(1)
             field_type = field_match.group(2).strip()
             json_name = "class" if field_name == "class_" else field_name
-            optional = total_false or _py_has_not_required(field_type)
+            optional = _py_is_optional(field_type, total_false)
             fields[json_name] = {"type": field_type, "optional": optional}
         classes[name] = {"fields": fields, "bases": bases_out, "total_false": total_false}
     return {"classes": classes}
@@ -185,8 +185,13 @@ def expand_py(model: dict[str, Any], name: str, seen: tuple[str, ...] = ()) -> d
     return fields
 
 
-def _py_has_not_required(field_type: str) -> bool:
-    return bool(re.match(r"^(NotRequired|Required)\[", field_type.strip())) and field_type.strip().startswith("NotRequired[")
+def _py_is_optional(field_type: str, total_false: bool) -> bool:
+    field_type = field_type.strip()
+    if field_type.startswith("NotRequired["):
+        return True
+    if field_type.startswith("Required["):
+        return False
+    return total_false
 
 
 # ---------------------------------------------------------------------------
@@ -300,9 +305,12 @@ def _category_name(category: tuple[str, ...]) -> str:
 def diff_models(go: dict[str, Any], ts: dict[str, Any], py: dict[str, Any]) -> list[str]:
     problems: list[str] = []
     go_types = go["types"]
-    for name in sorted(go_types):
-        if go_types[name].get("kind") != "struct":
-            continue
+    go_struct_names = {name for name, shape in go_types.items() if shape.get("kind") == "struct"}
+    for name in sorted(set(ts["interfaces"]) - go_struct_names):
+        problems.append(f"TypeScript declaration without Go struct: {name}")
+    for name in sorted(set(py["classes"]) - go_struct_names):
+        problems.append(f"Python TypedDict without Go struct: {name}")
+    for name in sorted(go_struct_names):
         go_fields = expand_go(go_types, name)
         ts_fields = expand_ts(ts, name)
         py_fields = expand_py(py, name)

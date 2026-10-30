@@ -1,7 +1,7 @@
 # v1 docs foundation — sprint plan
 
 > **Type:** update phase (`docs-foundation`). **Branch:** `docs/v1-foundation` based on `dev`.
-> **PR:** opened against `dev`.
+> **PR:** #93 against `dev`. **Status:** complete — see [summary.md](summary.md).
 
 ## Objective
 
@@ -56,17 +56,17 @@ field-level cross-language binding parity, not name-only parity.
 - Docs link check (`lychee --offline --include-fragments`).
 - README quickstart from a clean state.
 - Issue/PR template rendering.
-- `python contracts/tools/check_binding_parity.py` and its self-tests.
+- `python3 contracts/tools/check_binding_parity.py` and its self-tests.
 - Post-docs audit recorded on the PR.
 
 ## Exit criteria
 
-- [ ] Every Sprint 3 issue has acceptance evidence.
-- [ ] New engineer can run `aa selfcheck` and the console in under five minutes.
-- [ ] Media and architecture diagrams are present.
-- [ ] Known limitations and current state are accurate.
-- [ ] Templates and DoD are complete and linked.
-- [ ] License, contributing, and repository metadata are set.
-- [ ] Docs indexes are consolidated and stale claims reconciled.
-- [ ] Contract binding parity checks fields, types, optionality, and direction.
-- [ ] PR reviewed and merged to `dev`.
+- [x] Every Sprint 3 issue has acceptance evidence.
+- [x] New engineer can run `aa selfcheck` and the console in under five minutes.
+- [x] Media and architecture diagrams are present.
+- [x] Known limitations and current state are accurate.
+- [x] Templates and DoD are complete and linked.
+- [x] License, contributing, and repository metadata are set.
+- [x] Docs indexes are consolidated and stale claims reconciled.
+- [x] Contract binding parity checks fields, types, optionality, and direction.
+- [x] PR reviewed, post-docs audit signed, and merged to `dev`.

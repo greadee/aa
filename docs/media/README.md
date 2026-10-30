@@ -3,14 +3,14 @@
 This folder holds the media referenced by the README. Assets are small,
 reviewable, and reproducible. Do not commit large binaries.
 
-| Asset | Purpose | Format | Status |
-|---|---|---|---|
-| [`terminal-selfcheck.svg`](terminal-selfcheck.svg) | `aa selfcheck` terminal capture | SVG | committed |
-| [`console-tui.svg`](console-tui.svg) | Offline `aa console --fake` TUI capture | SVG | committed |
-| [`console-web.svg`](console-web.svg) | Read-only web surface content capture | SVG | committed; owner browser screenshot optional |
-| [`architecture.svg`](architecture.svg) | Current composition image for the README | SVG | committed |
-| [`social-preview.svg`](social-preview.svg) | Source artwork for the GitHub social preview | SVG | source committed; owner upload required |
-| `demo-video` | Short product walkthrough | external link | owner action |
+| Asset | Purpose | Format | Alt text | Status |
+|---|---|---|---|---|---|
+| [`terminal-selfcheck.svg`](terminal-selfcheck.svg) | `aa selfcheck` terminal capture | SVG | Terminal capture of the deterministic aa selfcheck composition output | committed |
+| [`console-tui.svg`](console-tui.svg) | Offline `aa console --fake` TUI capture | SVG | Terminal capture of the offline aa console text surface | committed |
+| [`console-web.svg`](console-web.svg) | Read-only web surface content capture | SVG | Content capture of the read-only aa web console | committed; owner browser screenshot optional |
+| [`architecture.svg`](architecture.svg) | Current composition image for the README | SVG | As-built aa v1 composition diagram | committed |
+| [`social-preview.svg`](social-preview.svg) | Source artwork for the GitHub social preview | SVG | aa wordmark and tagline on a dark background | source committed; owner upload required |
+| `demo-video` | Short product walkthrough | external link | Short aa product walkthrough | owner action |
 
 ## Reproduction
 
@@ -30,7 +30,7 @@ changing any documentation link.
 ## Validation
 
 ```sh
-python tools/docs/check_media.py
+python3 tools/docs/check_media.py
 ```
 
 The check enforces non-empty alt text, existing local targets, a 2 MiB limit, and

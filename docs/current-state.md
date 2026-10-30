@@ -18,15 +18,18 @@ update records explain how the code got here and are not current-state claims.
   control-plane client; a deterministic fake client supports offline use.
 - **Kernel** — allocator/routing, planner, scheduler, gates, context compiler,
   observability, and job learning.
-- **Runtime** — worker instances, sandbox isolation, result intake, and the
-  optional Python inference sidecar.
+- **Runtime** — worker instances, sandbox isolation, and result intake. The
+  optional Python inference sidecar is delivered as a service but is not wired
+  into the default v1 daemon.
 - **Memory** — canonical records, store, repositories, projection, retrieval,
   retention, and promotion.
 - **Registry** — roles, models, teams, routines, policies, and capabilities as
   durable definitions.
 - **Toolbox** — tool/plugin/MCP registry, policy engine, host, idempotent
   invocation, and workflow runtime.
-- **Forge** — lifecycle, templates, fake/real adapters, and memory sync.
+- **Forge** — lifecycle, template, fake/real adapter, and memory-sync libraries.
+  The v1 daemon constructs the memory-sync exporter but does not drive live
+  GitHub mutations.
 - **Sync** — identity, pairing, transfer, revision sync, distribution,
   parallel coordination, and the single-node registry used in v1.
 - **Observation** — protocol, emitter, journal, transport, reports, and Codex

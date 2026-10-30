@@ -71,8 +71,10 @@ core path, and a documented release artifact.
 | registry: teams, routines, policies; runtime/lifecycle | reserved | **v2** (D4) |
 
 > **Composition update — 2026-10-30:** the rows above record the Sprint 2
-> starting state. All modules in this table are now composed in `app/`, except
-> the deferred desktop and 3D surfaces described in the note above.
+> starting state. The core modules in this table are now composed in `app/`;
+> the deferred desktop/3D surfaces remain out. Forge lifecycle/template and the
+> Python inference sidecar exist as libraries/optional services but are not all
+> wired into the default daemon. See [current-state.md](../../current-state.md).
 
 ## Control-plane server
 

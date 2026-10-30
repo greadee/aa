@@ -66,7 +66,7 @@
     <g fill="#8b949e" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
       <text x="40" y="690">Read: console → app daemon → project state/read models.</text>
       <text x="40" y="712">Write: app → project state → memory; scheduler dispatches through runtime; results return through intake.</text>
-      <text x="40" y="734">Observation flows into memory and visualization; forge/sync/toolbox remain adapters and never own execution authority.</text>
+      <text x="40" y="734">Observation flows into memory and visualization; forge/sync/toolbox are adapters/libraries and never own execution authority. Forge lifecycle/template and inference are not default daemon wiring.</text>
       <text x="40" y="772" fill="#7ee787">Full maps: docs/architecture/diagrams.md</text>
     </g>
   </g>

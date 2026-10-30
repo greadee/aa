@@ -16,4 +16,3 @@
 ### Owner and next action
 
 ### Linked issues
-

@@ -13,4 +13,3 @@
 - Replaced:
 
 ### Validation impact
-
