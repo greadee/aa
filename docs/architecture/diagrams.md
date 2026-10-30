@@ -8,82 +8,48 @@ Source of truth for wiring: [`app/main.go`](../../app/main.go).
 
 ## 1. Current composition map
 
-The composition root owns the process. Modules are libraries with explicit seams;
-`app` passes every dependency in `build()`.
+The module-level composition is the shared map used by the README. The detailed
+wiring lives in [`app/main.go`](../../app/main.go) and the module directives.
 
 ```mermaid
 flowchart TB
-    subgraph Surface["Human surfaces"]
-        console["ui console<br/>CLI · TUI · web"]
-        fake["ui fake client<br/>offline deterministic"]
-    end
+    ui["aa-ui<br/>TUI + local web control plane"]
+    kernel["aa-kernel<br/>control plane"]
+    sync["aa-sync<br/>remote/offline/parallel"]
+    forge["aa-forge<br/>git/github orchestration"]
+    visualizer["aa-visualizer<br/>3D + time travel"]
+    toolbox["aa-toolbox<br/>plugins/MCP/workflows"]
+    contracts["aa-contracts<br/>schemas · RPC · generated types"]
+    obsv["aa-obsv<br/>work observation"]
+    memory["aa-memory<br/>system of record"]
+    registry["aa-registry<br/>durable definitions"]
+    runtime["aa-runtime<br/>worker/lifecycle/sandbox/inference"]
 
-    subgraph Composition["app composition root"]
-        daemon["aa serve<br/>HTTP control plane"]
-        state["projectstate<br/>projects · work · approvals"]
-        planes["obsplane · visplane · syncplane"]
-    end
-
-    subgraph Control["Control plane"]
-        kernel["kernel<br/>allocator · planner · scheduler · gates · context · joblearn"]
-        registry["registry<br/>roles · models · teams · routines · policies"]
-        toolbox["toolbox<br/>registry · policy · host · workflows"]
-    end
-
-    subgraph Execution["Execution"]
-        runtime["runtime<br/>worker · sandbox · intake · lifecycle"]
-        inference["runtime/inference<br/>Python sidecar, optional"]
-    end
-
-    subgraph Knowledge["Knowledge"]
-        memory["memory<br/>store · repo · projection · retrieval"]
-        obsv["obsv<br/>journal · protocol · reports"]
-        vis["visualizer<br/>replay · layout · browse"]
-    end
-
-    subgraph World["World"]
-        forge["forge<br/>git/GitHub lifecycle"]
-        sync["sync<br/>single-node fabric in v1"]
-    end
-
-    contracts["contracts v2<br/>schemas · RPC · generated Go/TS/Python"]
-
-    console --> daemon
-    fake --> console
-    daemon --> state
-    daemon --> planes
-    daemon --> kernel
-    daemon --> memory
-    daemon --> obsv
-    daemon --> vis
-    daemon --> sync
-    daemon --> toolbox
-    daemon --> registry
-    kernel --> runtime
-    kernel --> registry
-    kernel --> memory
-    kernel --> obsv
-    kernel --> toolbox
-    runtime -.->|optional sidecar| inference
-    runtime --> contracts
-    state --> memory
-    memory --> contracts
-    obsv --> contracts
-    vis --> contracts
-    toolbox --> contracts
-    forge -.->|memsync library| memory
-    forge --> contracts
-    sync --> contracts
-    registry --> contracts
+    ui --> kernel
+    ui --> visualizer
+    ui --> forge
+    ui --> sync
     kernel --> contracts
-    console --> contracts
+    sync --> contracts
+    forge --> contracts
+    visualizer --> contracts
+    toolbox --> contracts
+    obsv --> contracts
+    memory --> contracts
+    registry --> contracts
+    runtime --> contracts
+    kernel -.hosts.-> obsv
+    kernel --> registry
+    kernel --> runtime
+    kernel -.RPC.-> sync
+    kernel -.RPC.-> forge
+    visualizer -.subscribes.-> obsv
+    visualizer -.queries.-> memory
 ```
 
-Text fallback: console → app daemon → project state and planes; kernel dispatches
-to runtime and toolbox; memory is canonical; obsv and visualizer are read paths;
-forge and sync are world adapters; forge lifecycle/template and inference are
-libraries/optional services rather than default daemon wiring; contracts is the
-shared boundary.
+Text fallback: ui sits over the kernel and the world adapters; kernel hosts
+observation; memory and obsv back visualization; every module depends on
+contracts; kernel dispatches to runtime and registry.
 
 ## 2. Contracts and generated bindings
 

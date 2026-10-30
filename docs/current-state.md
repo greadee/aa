@@ -47,7 +47,7 @@ update records explain how the code got here and are not current-state claims.
 | Visualizer | Deterministic replay/layout/browse core | The Wails/React/Three 3D surface is deferred; core is data-only |
 | Inference | Python sidecar and provider abstraction | Optional; the deterministic core path needs no model |
 | Registry | Teams, routines, and policies stores | Default registries start empty; definitions are loaded per state root |
-| Media | Social-preview source and media manifest | Owner-supplied screenshots/video and the GitHub social-preview upload remain owner actions |
+| Media | Media request in `docs/media/README.md` | Product screenshots, GIF/video, and the GitHub social-preview upload remain owner actions |
 | Release | Version string and CI | No tags, installers, release workflow, or `CHANGELOG.md` until Phase 13 |
 
 ## Known limitations
@@ -61,8 +61,8 @@ update records explain how the code got here and are not current-state claims.
   execution authority.
 - **Visualization:** the 3D/Wails surface is not shipped; the shipped
   visualizer is the deterministic core and control-plane read model.
-- **Docs media:** the owner must provide or approve final screenshots/video and
-  upload the social preview; generated deterministic captures are committed.
+- **Docs media:** the owner must provide the product screenshots, GIF/video, and
+  social-preview upload; none are committed yet.
 - **Contracts:** binding parity compares field presence, optionality, and type
   categories in both directions. It is structural, not a full type-system
   equivalence proof; runtime fixture conformance covers values.

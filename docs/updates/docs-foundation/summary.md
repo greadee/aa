@@ -27,6 +27,9 @@ The docs entry/current-state slice (#88) landed before the README commit (#87) s
 every README link was valid at the time it was committed. That ordering is the
 only deviation from the plan's slice order.
 
+> **Follow-up (2026-10-30):** product captures were removed from the README and
+> are now an owner-provided media request in `docs/media/README.md`.
+
 ## Decisions and deviations
 
 - **MIT license** and repository metadata were recorded as planned.

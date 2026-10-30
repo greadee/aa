@@ -7,8 +7,6 @@ software engineering work performed by humans and AI agents.
 A deterministic control plane owns state and coordination. Models are workers
 behind a router. Every unit of work is observable, replayable, and attributable.
 
-![aa social preview](docs/media/social-preview.svg)
-
 ## Status
 
 The v1 core is implemented and composed in the `app/` daemon:
@@ -23,14 +21,12 @@ The v1 core is implemented and composed in the `app/` daemon:
 
 The forge lifecycle/template libraries, the optional Python inference sidecar,
 and the GitHub adapters exist in the repository but are not all wired into the
-default v1 daemon. The [current state](docs/current-state.md) page separates
-composed behavior from available libraries.
+default v1 daemon. See [current state](docs/current-state.md) for the precise
+boundary.
 
 Still in progress or deliberately deferred: real authn/authz, release packaging,
-performance/chaos testing, the Wails/React/Three visualizer surface, and the
-owner-supplied product media. See [current state](docs/current-state.md) and
-[known limitations](docs/current-state.md#known-limitations) for the precise
-boundary.
+performance/chaos testing, the Wails/React/Three visualizer surface, and product
+media. See [known limitations](docs/current-state.md#known-limitations).
 
 ## Quickstart
 
@@ -71,42 +67,68 @@ bearer token. **An empty token disables the check**, so always set a token
 outside local development. Loopback is not authentication. `AA_ROOT` selects the
 state directory (default `.aa`).
 
+## What you can do today
+
+| Persona | Actions |
+|---|---|
+| Engineer | Create and inspect projects, submit work packages, approve or reject human gates, inspect assignments, graphs, and results |
+| Operator | Run `selfcheck`, `serve`, and the console; inspect nodes, tools, and sync status; inspect registry definitions |
+| Auditor | Replay observation sessions, browse memory and reports, inspect the visualizer read model |
+
+The shipped surfaces are the CLI, TUI, and read-only web console. Execution is
+opt-in and disabled by default.
+
+## How work moves
+
+1. Create a project and submit a work package through the control-plane API or
+   console.
+2. Project state records the work package and seeds the scheduler graph.
+3. The scheduler creates an assignment and lease.
+4. A human gate approves or rejects the work.
+5. An approved assignment is dispatched to a runtime worker and sandbox.
+6. Result intake validates and deduplicates the result.
+7. Memory stores the canonical record; observation records the event trail.
+8. The console reads project state, graphs, assignments, events, and replay data.
+
+The full sequence and data-flow diagrams are in
+[docs/architecture/diagrams.md](docs/architecture/diagrams.md).
+
 ## Architecture
 
 ```mermaid
-flowchart LR
-    console["ui console<br/>CLI · TUI · web"]
-    app["app<br/>composition root + HTTP control plane"]
-    kernel["kernel<br/>allocator · scheduler · gates · context"]
-    runtime["runtime<br/>worker · sandbox · intake · inference (optional)"]
-    memory["memory<br/>records · projection · retrieval"]
-    registry["registry<br/>roles · models · teams · routines · policies"]
-    toolbox["toolbox<br/>tools · policy · workflows"]
-    forge["forge<br/>git/GitHub lifecycle"]
-    sync["sync<br/>single-node fabric in v1"]
-    obsv["obsv<br/>observation journal"]
-    vis["visualizer<br/>replay · layout · browse"]
-    contracts["contracts v2<br/>schemas · RPC · bindings"]
+flowchart TB
+    ui["aa-ui<br/>TUI + local web control plane"]
+    kernel["aa-kernel<br/>control plane"]
+    sync["aa-sync<br/>remote/offline/parallel"]
+    forge["aa-forge<br/>git/github orchestration"]
+    visualizer["aa-visualizer<br/>3D + time travel"]
+    toolbox["aa-toolbox<br/>plugins/MCP/workflows"]
+    contracts["aa-contracts<br/>schemas · RPC · generated types"]
+    obsv["aa-obsv<br/>work observation"]
+    memory["aa-memory<br/>system of record"]
+    registry["aa-registry<br/>durable definitions"]
+    runtime["aa-runtime<br/>worker/lifecycle/sandbox/inference"]
 
-    console --> app
-    app --> kernel
-    app --> memory
-    app --> obsv
-    app --> vis
-    app --> sync
-    app --> toolbox
-    app --> registry
-    kernel --> runtime
-    kernel --> registry
-    kernel --> memory
-    runtime --> contracts
-    memory --> contracts
-    toolbox --> contracts
-    forge --> contracts
-    sync --> contracts
-    obsv --> contracts
-    vis --> contracts
+    ui --> kernel
+    ui --> visualizer
+    ui --> forge
+    ui --> sync
     kernel --> contracts
+    sync --> contracts
+    forge --> contracts
+    visualizer --> contracts
+    toolbox --> contracts
+    obsv --> contracts
+    memory --> contracts
+    registry --> contracts
+    runtime --> contracts
+    kernel -.hosts.-> obsv
+    kernel --> registry
+    kernel --> runtime
+    kernel -.RPC.-> sync
+    kernel -.RPC.-> forge
+    visualizer -.subscribes.-> obsv
+    visualizer -.queries.-> memory
 ```
 
 The [current diagrams](docs/architecture/diagrams.md) show the as-built
@@ -132,37 +154,26 @@ design, decisions, and phase plan. The
 | [`visualizer`](docs/modules/visualizer/README.md) | Time-travel replay, deterministic layout, session browsing |
 | [`ui`](docs/modules/ui/README.md) | Unified interface: CLI, TUI, and read-only web surfaces |
 
-## Media
+## Media needed
 
-![Terminal capture of aa selfcheck](docs/media/terminal-selfcheck.svg)
+Product screenshots, GIFs, and demo video are not committed yet. Please provide:
 
-*`aa selfcheck` builds the composed graph and exercises each seam without a model
-or network.*
+- a terminal capture of `aa selfcheck`;
+- a TUI capture of `aa console --fake`;
+- a read-only web console capture from `aa console --web`;
+- a short demo video or GIF;
+- optionally, a social-preview image.
 
-![Terminal capture of the offline console](docs/media/console-tui.svg)
-
-*`aa console --fake` uses the deterministic fake control plane, so the console can
-be explored without a running daemon.*
-
-![Current aa v1 composition](docs/media/architecture.svg)
-
-*Current composition. The [diagram source](docs/architecture/diagrams.md) has the
-contracts, data-flow, deployment, and end-to-end sequence maps.*
-
-![Read-only web console content capture](docs/media/console-web.svg)
-
-*Read-only web surface served by `aa console --web` against the local control
-plane.*
-
-The [media manifest](docs/media/README.md) records formats, alt text, and the
-remaining owner-supplied video/social-preview actions. Assets are small and
-reproducible.
+The exact commands and format guidance are in
+[docs/media/README.md](docs/media/README.md). The README will link to the media
+once the owner-provided assets are available.
 
 ## Documentation
 
 - [Documentation entry point](docs/index/README.md)
 - [Current state and limitations](docs/current-state.md)
 - [Architecture](docs/architecture/README.md)
+- [Current diagrams](docs/architecture/diagrams.md)
 - [Module index](docs/index/modules.md)
 - [Phase and sprint index](docs/index/phases.md)
 - [GitHub process](docs/github-os/README.md)
