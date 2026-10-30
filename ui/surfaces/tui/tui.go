@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/greadee/aa/ui/command"
@@ -149,13 +150,31 @@ func (s *Surface) Handle(ctx context.Context, input string) bool {
 	return false
 }
 
-// Run drives a line-oriented loop over in/out until EOF or quit.
+const clearScreen = "\x1b[H\x1b[J"
+
+// supportsRedraw reports whether out looks like an interactive terminal, so the
+// surface can redraw in place instead of appending a new dashboard per input.
+func supportsRedraw(out io.Writer) bool {
+	f, ok := out.(*os.File)
+	if !ok {
+		return false
+	}
+	info, err := f.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
+}
+
+// Run drives a line-oriented loop over in/out until EOF or quit. On a terminal
+// the view is redrawn in place; pipes and tests keep the append-only output.
 func (s *Surface) Run(ctx context.Context, in io.Reader, out io.Writer) error {
 	if err := s.Refresh(ctx); err != nil {
 		return err
 	}
+	redraw := supportsRedraw(out)
 	sc := bufio.NewScanner(in)
 	for {
+		if redraw {
+			fmt.Fprint(out, clearScreen)
+		}
 		fmt.Fprintln(out, s.View())
 		fmt.Fprint(out, "> ")
 		if !sc.Scan() {

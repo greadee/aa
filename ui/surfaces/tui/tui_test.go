@@ -114,4 +114,7 @@ func TestRunUntilEOF(t *testing.T) {
 	if !strings.Contains(out.String(), "tool_screen") {
 		t.Fatalf("tools view not rendered:\n%s", out.String())
 	}
+	if strings.Contains(out.String(), "\x1b") {
+		t.Fatalf("non-terminal output must not contain ANSI redraw escapes:\n%q", out.String())
+	}
 }
