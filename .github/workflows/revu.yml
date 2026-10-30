@@ -1,4 +1,4 @@
-# Review engine (revu) — Shape A: single-file, trusted PR review.
+# Review engine (revu) v1.2.0 — Shape A: single-file, trusted PR review.
 #
 # Runs on same-repository pull requests. When REVU_PROVIDER_API_KEY is set the
 # semantic pass queries DeepSeek V4.1 Flash through OpenRouter; otherwise it
@@ -59,7 +59,7 @@ jobs:
             -d '{"model":"deepseek-flash","messages":[{"role":"user","content":"Reply with the single word ok"}],"max_tokens":8}'
           cat /tmp/dschat.json; echo
       - id: revu
-        uses: greadee/review-engine@v1
+        uses: greadee/review-engine@v1.2.0
         with:
           profile: pr
           semantic: ${{ secrets.REVU_PROVIDER_API_KEY != '' }}
