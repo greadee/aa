@@ -102,9 +102,11 @@ flowchart LR
     kernel --> contracts
 ```
 
-The [architecture record](docs/architecture/README.md) holds the target design,
-decisions, and phase plan. The [architecture index](docs/index/architecture.md)
-links the current maps and ADRs.
+The [current diagrams](docs/architecture/diagrams.md) show the as-built
+composition, contracts, work flow, control-plane deployment, and end-to-end
+sequence. The [architecture record](docs/architecture/README.md) holds the target
+design, decisions, and phase plan. The
+[architecture index](docs/index/architecture.md) links the current maps and ADRs.
 
 ## Modules
 

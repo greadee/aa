@@ -3,6 +3,7 @@
 | Doc | Description |
 |---|---|
 | [Current state](../current-state.md) | What is composed and working today |
+| [Current diagrams](../architecture/diagrams.md) | As-built composition, contracts, data flow, deployment, and E2E sequence |
 | [Optimized architecture](../architecture/README.md) | Full end-to-end architecture, module map, layering, contracts, memory model, tooling, testing, and the phase plan |
 | [Decisions](../architecture/README.md#12-architectural-decisions) | Architectural decision records with rationale |
 | [Terminology](../reference/terminology.md) | Canonical glossary and state/event registry |
