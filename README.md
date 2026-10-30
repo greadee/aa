@@ -78,22 +78,11 @@ state directory (default `.aa`).
 The shipped surfaces are the CLI, TUI, and read-only web console. Execution is
 opt-in and disabled by default.
 
-## How work moves
-
-1. Create a project and submit a work package through the control-plane API or
-   console.
-2. Project state records the work package and seeds the scheduler graph.
-3. The scheduler creates an assignment and lease.
-4. A human gate approves or rejects the work.
-5. An approved assignment is dispatched to a runtime worker and sandbox.
-6. Result intake validates and deduplicates the result.
-7. Memory stores the canonical record; observation records the event trail.
-8. The console reads project state, graphs, assignments, events, and replay data.
-
-The full sequence and data-flow diagrams are in
-[docs/architecture/diagrams.md](docs/architecture/diagrams.md).
-
 ## Architecture
+
+### Architecture overview
+
+The module-level composition is the shared map of responsibilities.
 
 ```mermaid
 flowchart TB
@@ -130,6 +119,87 @@ flowchart TB
     visualizer -.subscribes.-> obsv
     visualizer -.queries.-> memory
 ```
+
+### Runtime and deployment view
+
+```mermaid
+flowchart LR
+    subgraph MachineA["Machine A (authority)"]
+        host["aa host (kernel daemon)"]
+        obsSocket["obsv local socket"]
+        inferenceProc["aa-inference service (Python)"]
+        forgeProc["aa-forge adapters (git/gh)"]
+        sqlite["memory store (records + SQLite)"]
+        web["ui local web"]
+        tui["ui TUI"]
+    end
+    subgraph MachineB["Machine B (replica / worker)"]
+        syncNode["aa-sync node"]
+        obsvB["obsv host (read)"]
+    end
+    tui --> host
+    web --> host
+    host --> obsSocket
+    host --> inferenceProc
+    host --> forgeProc
+    host --> sqlite
+    host <--> syncNode
+    syncNode --> obsvB
+```
+
+- The **host** is the kernel daemon. It owns the store, the scheduler, the observation journal, and the control-plane API.
+- **aa-inference** runs as a local sidecar process reached over RPC; it is the only Python module.
+- **aa-sync** establishes paired, authenticated links between machines and moves work packages, artifacts, and offline changes.
+- Exactly one machine holds execution **authority** for a project in v1. Others are read-only replicas and workers.
+
+### Primary end-to-end flow
+
+```mermaid
+sequenceDiagram
+    participant U as User (ui)
+    participant K as aa-kernel
+    participant M as aa-memory
+    participant S as aa-inference
+    participant F as aa-forge
+    participant Sf as aa-inference/model
+    participant O as aa-obsv
+    participant G as Gates
+
+    U->>K: submit objective
+    K->>M: read project context + history
+    K->>K: plan (roles, work packages, DAG)
+    K->>F: create/attach issue + checkpoint
+    K->>S: route(work package)
+    S->>Sf: decode, classify, approval gate
+    Sf-->>S: decision + budget
+    S-->>K: route decision
+    K->>K: compile context + execution contract
+    K->>O: emit observation events
+    K->>Sf: execute (via inference)
+    Sf-->>K: result envelope (untrusted)
+    K->>G: verify + integrate + human gate
+    G-->>K: accepted
+    K->>M: record work history + learning candidate
+    K->>F: update issue/PR/checkpoint
+    M-->>U: visualizable, replayable history
+```
+
+### Memory and event layering
+
+```mermaid
+flowchart TB
+    L0["L0 Ephemeral — live observation stream (aa-obsv)"]
+    L1["L1 Working — context bundles (kernel context compiler)"]
+    L2["L2 Project — work/git/job/project history (aa-memory)"]
+    L3["L3 Institutional — issues + strategies (aa-memory)"]
+    L4["L4 Workforce — role learning (kernel engine, memory store)"]
+
+    L0 --> L1 --> L2 --> L3 --> L4
+    L4 -.feeds.-> L1
+```
+
+Each layer has a different authority, retention, and promotion rule. Only
+`aa-memory` is canonical and permanent.
 
 The [current diagrams](docs/architecture/diagrams.md) show the as-built
 composition, contracts, work flow, control-plane deployment, and end-to-end
