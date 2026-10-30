@@ -4,6 +4,12 @@
 >
 > **Migration note.** This repository is a clean import of the **aa** project from an earlier repository. The architecture is unchanged. The `ph0`–`ph3` commit history was re-created during the migration so that each phase lands as a reviewed pull request gated by CI; treat the history as a migration record, not the original development chronology.
 
+> **As-built note (Sprint 3, 2026-10-30).** This document is the target design
+> and decision record. The current composed behavior is in
+> [current-state.md](../current-state.md) and the [current diagrams](diagrams.md).
+> Where this document describes future work, the current-state page and the code
+> win for today's behavior.
+
 ## Table of contents
 
 1. [Overview](#1-overview)
@@ -27,7 +33,7 @@
 
 **aa** is a local-first platform for observing, planning, executing, verifying, and continuously learning from software engineering work performed by humans and AI agents across one or many machines. It is an "operating system for an AI engineering workforce": the model is a worker, the platform is the organization.
 
-The system is built from ten independently versioned modules joined by a single versioned contract layer. A deterministic control plane owns state and coordination. Models are reached only through a router. Every unit of work is observable, replayable, attributable, and promotable into institutional memory.
+The system is built from eleven product modules plus an `app` composition root, joined by a single versioned contract layer. A deterministic control plane owns state and coordination. Models are reached only through a router. Every unit of work is observable, replayable, attributable, and promotable into institutional memory.
 
 ```mermaid
 flowchart TB
@@ -94,7 +100,7 @@ flowchart TB
 
 ## 3. Current state and convergence
 
-Seven existing work areas converge into the ten target modules. The table below is the authority for what is reused, moved, or retired.
+Seven existing work areas converge into the target module set. The table below is the authority for what is reused, moved, or retired.
 
 | Existing area | What it is | Destination |
 |---|---|---|
@@ -417,7 +423,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Interfaces:** forge API, template engine, kernel RPC, memory sync.
 - **Language:** Go (adapters to `git` and `gh`).
 - **Reused assets:** `lightweight-github-os` templates and workflow.
-- **Remaining work:** all of it (new module).
+- **Status:** delivered as lifecycle, template, fake/real adapter, and memory sync; live GitHub adapter hardening is Phase 12 work.
 
 ### 5.8 aa-toolbox
 
@@ -426,7 +432,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Must not:** grant capabilities implicitly.
 - **Interfaces:** tool manifest, invocation RPC, workflow runtime.
 - **Language:** Go (+ MCP host).
-- **Remaining work:** all of it (new module).
+- **Status:** delivered as registry, policy engine, host, idempotent invocation, computer-use provider, and workflow runtime.
 
 ### 5.9 aa-visualizer
 
@@ -437,7 +443,7 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Language:** Go core + Wails + React/Three.
 - **Reused assets:** `agent-action-visualizer` graph/session/diff/replay/UI.
 - **Adopted (`ISS-OBSV-2`):** `obsv` `Replay`/`Subscribe` behind one `source` seam and one `adapter` mapping; the explicit `compat` profile normalizes `secondary_paths`/`access_sequence`; session-state projection, identity mapping, deterministic layout, replay cursor, live bridge, and retention are delivered under `ph8-visualizer`; a boundary guard enforces the single observation vocabulary.
-- **Remaining work:** the Wails + React/Three UI surface and the kernel-host socket.
+- **Status:** replay/layout/browse/live-bridge core delivered and composed. The Wails + React/Three UI surface and the kernel-host socket are deferred.
 
 ### 5.10 aa-ui
 
@@ -445,8 +451,8 @@ Each module lists: purpose · owns · must not · interfaces · language · reus
 - **Owns:** CLI/TUI and local web control plane behind pluggable **surfaces**; workflow configuration; plugin/MCP management; memory/issue/strategy/visualizer browsing; multi-machine status; approval and gate UI.
 - **Must not:** couple to module internals; it uses only the control-plane API and `contracts`.
 - **Interfaces:** control-plane API client, pluggable surface interface.
-- **Language:** Go (TUI + local web); a desktop surface can be added later.
-- **Remaining work:** all of it (new module, built last).
+- **Language:** Go (CLI + TUI + read-only local web); a desktop surface can be added later.
+- **Status:** CLI, TUI, and read-only web surfaces delivered over the control-plane client, including the offline fake client. The desktop surface is deferred to v2.
 
 ### 5.11 aa-registry
 
@@ -604,11 +610,21 @@ Each phase is a GitHub milestone with a tracking issue, a phase branch equal to 
 - **Exit:** every deferred module implemented (or removed) and composed in the daemon; repository audit clean.
 - **Testing:** per-module suites + control-plane integration.
 
-### Phase 12 — Hardening, auth & release
-- **Goal:** a releasable v1.
-- **Deliverables:** threat model and security review; real authn/authz (pairing, device keys, mTLS); performance/load; chaos/recovery; packaging/installers; release gates and versioning; docs completion; repository audits; migration guides.
-- **Exit:** release checklist complete; audits pass.
-- **Testing:** full matrix, security review, chaos, release-gate automation.
+### Phase 12 — Hardening, auth & security
+- **Goal:** make v1 secure and resilient.
+- **Deliverables:** threat model and security review; real authn/authz (pairing, device keys, mTLS); performance/load; chaos/recovery; security regression tests; repository audits; migration notes.
+- **Exit:** P0/P1 findings closed; auth is enforced; audits pass.
+- **Testing:** full matrix, security review, chaos/recovery.
+
+### Phase 13 — Release & distribution
+- **Goal:** a releasable, installable v1.
+- **Deliverables:** release gates and versioning; packaging/installers; signed artifacts; `CHANGELOG.md`; docs completion; migration guides; release workflow.
+- **Exit:** release checklist complete; artifacts reproducible; clean-install and upgrade paths pass.
+- **Testing:** release-gate automation, clean-install smoke, upgrade/migration.
+
+> **Program note (Sprint 3, 2026-10-30):** the Phase 12 security/hardening work
+> and the Phase 13 release work are separate planning phases. The repository
+> publishes those phase folders and plans only when each phase begins.
 
 ---
 
@@ -680,7 +696,7 @@ Each decision states the choice and the reasoning. These are the cross-cutting d
 | Contract churn while modules are being extracted | Version schemas early; freeze v1 before kernel work; conformance suite blocks regressions |
 | Python/Go/RPC boundary latency and error handling | Define deadlines, retries, and idempotency in the RPC contract; test with fakes |
 | AAV `obsv` compatibility (`secondary_paths`, `access_sequence`) | Resolved (`ISS-OBSV-2`): the explicit `visualizer/compat` profile normalizes them over the shared `obsv` allowlist; no AAV fork |
-| Scope creep across ten modules | `ph0` governance, strict phase exit criteria, and evidence gates |
+| Scope creep across modules | `ph0` governance, strict phase exit criteria, and evidence gates |
 | Learned features could mislead | Evidence gates with deterministic fallbacks; human approval stays authoritative |
 | Multi-machine parallelization without multi-writer history | Single authority; replicas read-only; revisit with a dedicated ADR |
 | Interface built too early | `aa-ui` is last; surfaces are pluggable; control-plane API is stable first |

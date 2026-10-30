@@ -1,0 +1,67 @@
+name: Audit finding
+description: A finding from a planned audit, with evidence and a disposition.
+title: "audit: "
+labels: ["audit"]
+body:
+  - type: textarea
+    id: finding
+    attributes:
+      label: Finding
+      description: One finding, precisely stated.
+    validations:
+      required: true
+  - type: textarea
+    id: classification
+    attributes:
+      label: Classification
+      description: Module, boundary, invariant, or category.
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options: [P0, P1, P2, P3]
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Files and lines, reproduction, or test output.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommendation
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Files and modules to change.
+    validations:
+      required: true
+  - type: input
+    id: phase
+    attributes:
+      label: Suggested phase
+      placeholder: Sprint N, Phase 12, Phase 13, or v2
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] finding fixed or explicitly deferred with a linked issue
+        - [ ] regression or conformance test added
+        - [ ] post-audit verification recorded
+    validations:
+      required: true

@@ -36,10 +36,11 @@ type Status struct {
 
 // Config configures the server.
 type Config struct {
-	// Version is the build version reported on /health.
+	// Version is the build version reported on /api/v1/health.
 	Version string
 	// Token, when set, is required as `Authorization: Bearer <token>` on every
-	// path except /health. Loopback alone is not authentication; this is only a
+	// path except /api/v1/health. An empty token disables the check. Loopback
+	// alone is not authentication; this is only a
 	// bearer-token carrying mechanism (real authn is a later phase).
 	Token string
 	// Status supplies the aggregate status. Optional.

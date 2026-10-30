@@ -33,6 +33,14 @@ console) and phase 11 (release hardening) are built against an agreed scope — 
 | D4 | **`sync`, `obsv`, `visualizer`, `registry/{teams,routines,policies}` and `runtime/lifecycle` are deferred to v2.** | Single-node v1 (D6); the console covers inspection; the reserveds have no behavior. |
 | D5 | **The v1 review gate (`revu`) runs static-only.** | Deterministic, no provider key required; the semantic pass stays available but off. |
 
+> **Superseded in part — 2026-10-30 (Sprint 3 docs foundation).** D4 was the
+> decision at the time. Phase 11 subsequently delivered `sync`, `obsv`,
+> `visualizer`, `registry/{teams,routines,policies}`, and `runtime/lifecycle`,
+> and the `app` daemon composes them. The desktop surface, the Wails/React/Three
+> visualizer surface, and multi-machine execution authority remain deferred.
+> The original decision and table are preserved as history; see
+> [current-state.md](../../current-state.md) for today's boundary.
+
 ## v1 definition of done
 
 **Surfaces in v1:**
@@ -61,6 +69,12 @@ core path, and a documented release artifact.
 | sync | no | **v2** (D4) |
 | obsv (module), visualizer, ui | no | **v2** (D4) |
 | registry: teams, routines, policies; runtime/lifecycle | reserved | **v2** (D4) |
+
+> **Composition update — 2026-10-30:** the rows above record the Sprint 2
+> starting state. The core modules in this table are now composed in `app/`;
+> the deferred desktop/3D surfaces remain out. Forge lifecycle/template and the
+> Python inference sidecar exist as libraries/optional services but are not all
+> wired into the default daemon. See [current-state.md](../../current-state.md).
 
 ## Control-plane server
 

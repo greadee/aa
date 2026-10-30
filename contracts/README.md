@@ -27,6 +27,8 @@ Phase 1 complete and merged: the schema spine, RPC and control-plane specs, Go/T
 
 Module update (trace contract): `trace.schema.json` (document contract 1.1) adds bounded, redacted per-step learning evidence. See [plan.md](../docs/modules/contracts/updates/trace-contract/plan.md) and [summary.md](../docs/modules/contracts/updates/trace-contract/summary.md).
 
+Binding parity is enforced by [tools/check_binding_parity.py](tools/check_binding_parity.py) and its self-tests. The gate reads Go shapes with `go/ast` through [tools/goastdump](tools/goastdump/main.go), then compares field names, optionality (Go `omitempty` vs TS `?` vs Python `NotRequired`/`Required`), and type categories in both directions across Go, TypeScript, and Python. Runtime fixture conformance still owns value validation.
+
 ## Directive
 
 [aa-contracts.md](aa-contracts.md) · Architecture: [../docs/architecture/README.md](../docs/architecture/README.md)
