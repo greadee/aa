@@ -5,17 +5,17 @@
   "ref": "681bf4518d1e8eb7b673bafebe010c8d57591065",
   "base": "origin/main",
   "head": "681bf4518d1e8eb7b673bafebe010c8d57591065",
-  "generated": "2026-10-30T05:37:38.148706192Z",
+  "generated": "2026-10-30T05:40:59.696334751Z",
   "findings": [],
   "resolved": null,
   "blockThreshold": "P1",
   "archiveURL": "",
   "coverage": {
     "selected": 74,
-    "analyzed": 49,
+    "analyzed": 24,
     "skipped": 0,
     "truncated": 0,
-    "failedBatches": 1,
+    "failedBatches": 2,
     "threshold": 1
   }
 }
