@@ -127,10 +127,29 @@ design, decisions, and phase plan. The
 
 ## Media
 
-The [media manifest](docs/media/README.md) defines the terminal capture, console
-screenshots, architecture image, and video slot, including alt text and owner
-actions. Assets are small and reproducible; see
-[docs/media/](docs/media/README.md).
+![Terminal capture of aa selfcheck](docs/media/terminal-selfcheck.svg)
+
+*`aa selfcheck` builds the composed graph and exercises each seam without a model
+or network.*
+
+![Terminal capture of the offline console](docs/media/console-tui.svg)
+
+*`aa console --fake` uses the deterministic fake control plane, so the console can
+be explored without a running daemon.*
+
+![Current aa v1 composition](docs/media/architecture.svg)
+
+*Current composition. The [diagram source](docs/architecture/diagrams.md) has the
+contracts, data-flow, deployment, and end-to-end sequence maps.*
+
+![Read-only web console content capture](docs/media/console-web.svg)
+
+*Read-only web surface served by `aa console --web` against the local control
+plane.*
+
+The [media manifest](docs/media/README.md) records formats, alt text, and the
+remaining owner-supplied video/social-preview actions. Assets are small and
+reproducible.
 
 ## Documentation
 

@@ -31,3 +31,6 @@ jobs:
             --include-fragments
             "./**/*.md"
           fail: true
+
+      - name: Check media references
+        run: python3 tools/docs/check_media.py
