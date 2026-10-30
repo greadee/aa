@@ -60,8 +60,9 @@ update records explain how the code got here and are not current-state claims.
   visualizer is the deterministic core and control-plane read model.
 - **Docs media:** the owner must provide or approve final screenshots/video and
   upload the social preview; generated deterministic captures are committed.
-- **Contracts:** field-level parity is enforced only after `ISS-CONTRACTS-1`
-  (#76) lands; before that, name coverage could mask shape drift.
+- **Contracts:** binding parity compares field presence, optionality, and type
+  categories in both directions. It is structural, not a full type-system
+  equivalence proof; runtime fixture conformance covers values.
 
 ## Deferred to v2
 

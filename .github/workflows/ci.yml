@@ -82,6 +82,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -100,6 +105,9 @@ jobs:
 
       - name: Binding parity
         run: python contracts/tools/check_binding_parity.py
+
+      - name: Binding parity tests
+        run: python -m unittest discover -s contracts/tools -p "test_*.py"
 
   inference:
     name: inference (py${{ matrix.python }})

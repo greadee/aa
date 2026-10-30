@@ -12,8 +12,13 @@ type TaskGraphNode struct {
 // TaskGraph is a versioned dependency graph over work packages.
 type TaskGraph struct {
 	Envelope
-	Nodes  []TaskGraphNode `json:"nodes"`
-	Digest string          `json:"digest,omitempty"`
+	// projectId and revision are required for task graphs even though the
+	// embedded Envelope tags them optional for other kinds. The explicit fields
+	// shadow the embedded ones for JSON shape and validation.
+	ProjectID string          `json:"projectId"`
+	Revision  *int            `json:"revision"`
+	Nodes     []TaskGraphNode `json:"nodes"`
+	Digest    string          `json:"digest,omitempty"`
 }
 
 // Validate checks the task-graph contract.
