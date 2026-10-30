@@ -47,10 +47,24 @@ func (s *Surface) Refresh(ctx context.Context) error {
 // View returns the rendered dashboard.
 func (s *Surface) View() string { return views.Render(s.model) }
 
+const helpText = "commands: :open <view> :project <id> :submit <title> :approve <gate> :create-project <id> <name> :refresh :quit/exit; keys: j/k, arrows, Tab"
+
 // Handle applies one input line (a single-key shortcut or a palette command)
 // and reports whether to quit.
 func (s *Surface) Handle(ctx context.Context, input string) bool {
-	line := strings.TrimSpace(input)
+	raw := strings.TrimRight(input, "\r\n")
+	line := strings.TrimSpace(raw)
+
+	// Line-oriented arrow-key and Tab handling. These sequences are submitted
+	// with Enter in the current non-raw terminal mode.
+	switch {
+	case raw == "\t" || line == "\x1b[B" || line == "\x1b[C":
+		s.model.Active = state.Cycle(s.model.Active, 1)
+		return false
+	case line == "\x1b[A" || line == "\x1b[D":
+		s.model.Active = state.Cycle(s.model.Active, -1)
+		return false
+	}
 
 	// Single-key shortcuts.
 	switch line {
@@ -66,7 +80,7 @@ func (s *Surface) Handle(ctx context.Context, input string) bool {
 		s.model.Active = state.Cycle(s.model.Active, -1)
 		return false
 	case "?":
-		s.model.Message = "commands: :open <view> :submit <title> :approve <gate> :create-project <id> <name> :refresh :quit"
+		s.model.Message = helpText
 		return false
 	}
 
@@ -75,10 +89,26 @@ func (s *Surface) Handle(ctx context.Context, input string) bool {
 		return false
 	}
 	switch act.Verb {
-	case command.Quit:
+	case command.Quit, command.Exit:
 		return true
 	case command.Help:
-		s.model.Message = "commands: :open <view> :submit <title> :approve <gate> :create-project <id> <name> :refresh :quit"
+		s.model.Message = helpText
+	case command.Project:
+		if len(act.Args) == 0 {
+			s.model.Message = "project: " + s.projectID
+			break
+		}
+		id := act.Args[0]
+		if _, err := s.client.Project(ctx, id); err != nil {
+			s.model.Message = "error: " + err.Error()
+			break
+		}
+		s.projectID = id
+		if err := s.Refresh(ctx); err != nil {
+			s.model.Message = "error: " + err.Error()
+		} else {
+			s.model.Message = "project " + id
+		}
 	case command.Open:
 		if len(act.Args) > 0 {
 			s.model.Active = state.View(act.Args[0])

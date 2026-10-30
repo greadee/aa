@@ -33,6 +33,20 @@ is [`app/main.go`](../../app/main.go).
 | `--fake` | off | Use the deterministic fake control plane; no server or network |
 | `--addr` | `127.0.0.1:7101` | Web listen address when `--web` is set |
 
+### Text console keys
+
+| Input | Meaning |
+|---|---|
+| `j`, `]`, Down, Right, Tab | Next view |
+| `k`, `[`, Up, Left | Previous view |
+| `:open <view>` | Jump to `projects`, `graph`, `memory`, `nodes`, `tools`, `reports`, or `approvals` |
+| `:project <id>` | Switch project and refresh the read models |
+| `?` | Show help |
+| `q`, `exit`, `:quit`, `:exit` | Quit |
+
+The text surface is line-oriented: arrow keys/Tab and commands are submitted
+with Enter.
+
 ## Environment
 
 | Variable | Meaning |
@@ -48,6 +62,7 @@ AA_CONTROL_TOKEN=dev-token aa serve
 aa console --token dev-token
 aa console --fake
 aa console --web --token dev-token
+aa console --web --fake
 curl http://127.0.0.1:7100/api/v1/health
 ```
 

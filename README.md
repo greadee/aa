@@ -52,6 +52,9 @@ go run ./app console --token dev-token
 
 # or the read-only web surface
 go run ./app console --web --token dev-token
+
+# offline web surface using the deterministic fake client
+go run ./app console --web --fake
 ```
 
 The console can also run fully offline against the deterministic fake control
@@ -60,6 +63,10 @@ plane:
 ```sh
 go run ./app console --fake
 ```
+
+Console keys: `j`/`k` or arrow keys/Tab cycle views, `:open <view>` jumps to a
+view, `:project <id>` switches projects, `?` shows help, and `q`/`exit` quit.
+The text surface is line-oriented, so submit each command with Enter.
 
 `aa serve` binds `127.0.0.1:7100` by default. When `--token` (or
 `AA_CONTROL_TOKEN`) is set, every path except `/api/v1/health` requires that

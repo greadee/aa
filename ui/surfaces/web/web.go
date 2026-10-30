@@ -73,6 +73,26 @@ const pageHTML = `<!doctype html>
 {{if .Work}}<table><tr><th>id</th><th>state</th><th>title</th></tr>{{range .Work}}<tr><td>{{.ID}}</td><td>{{.State}}</td><td>{{.Title}}</td></tr>{{end}}</table>{{else}}<p>(none)</p>{{end}}
 </section>
 
+<section><h2>Graph ({{.ProjectID}})</h2>
+{{if .Graph.Nodes}}<ul>{{range .Graph.Nodes}}<li>{{.WorkPackageID}} — {{.Readiness}}</li>{{end}}</ul>{{else}}<p>(none)</p>{{end}}
+</section>
+
+<section><h2>Memory</h2>
+<h3>Issues</h3>
+{{if .Issues}}<ul>{{range .Issues}}<li>{{.ID}} — {{.Status}} {{.Title}}</li>{{end}}</ul>{{else}}<p>(none)</p>{{end}}
+<h3>Strategies</h3>
+{{if .Strategies}}<ul>{{range .Strategies}}<li>{{.ID}} — {{.Lifecycle}} {{.Title}}</li>{{end}}</ul>{{else}}<p>(none)</p>{{end}}
+</section>
+
+<section><h2>Reports</h2>
+{{if .Sessions}}<ul>{{range .Sessions}}<li>{{.ID}} — events={{.EventCount}} project={{.ProjectID}}</li>{{end}}</ul>{{else}}<p>(no sessions)</p>{{end}}
+{{if .Report.SessionID}}<p>report {{.Report.SessionID}}: events={{.Report.Events}} sequences={{.Report.FirstSequence}}..{{.Report.LastSequence}}</p>{{end}}
+</section>
+
+<section><h2>Approvals</h2>
+{{if .Assignments}}<ul>{{range .Assignments}}<li>{{.ID}} — {{.State}}</li>{{end}}</ul>{{else}}<p>(none)</p>{{end}}
+</section>
+
 <section><h2>Nodes</h2>
 {{if .Nodes}}<ul>{{range .Nodes}}<li>{{.ID}} — {{.State}}</li>{{end}}</ul>{{else}}<p>(none)</p>{{end}}
 </section>
