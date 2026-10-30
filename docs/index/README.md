@@ -22,6 +22,8 @@ GitHub is the durable **execution** record. This `docs/` tree is the durable **k
 - **Module documentation (project history):** [../modules/README.md](../modules/README.md)
 - **Terminology and state registry:** [../reference/terminology.md](../reference/terminology.md)
 - **Process and GitHub OS:** [../github-os/README.md](../github-os/README.md)
+- **Definitions of Done:** [../github-os/definitions-of-done.md](../github-os/definitions-of-done.md)
+- **Contributing:** [../../CONTRIBUTING.md](../../CONTRIBUTING.md)
 - **Phase plans and summaries:** [../phases/README.md](../phases/README.md)
 - **Update phases:** [../updates/](../updates/)
 

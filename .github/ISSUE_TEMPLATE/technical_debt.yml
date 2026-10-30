@@ -1,0 +1,46 @@
+name: Technical debt
+description: Known weakness, deferred cleanup, or a shortcut that must be removed later.
+title: "debt: "
+labels: ["technical-debt"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is the weakness or shortcut?
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What can go wrong while this remains?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Files, lines, audit findings, or reproduction.
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommendation
+      description: The smallest correct fix and the trigger for doing it.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options: [P2, P3]
+    validations:
+      required: true
