@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation entry point
+    url: https://github.com/greadee/aa/blob/main/docs/index/README.md
+    about: Start here for the knowledge record, architecture, and process docs.
+  - name: Contributing guide
+    url: https://github.com/greadee/aa/blob/main/CONTRIBUTING.md
+    about: Setup, branch/commit rules, validation, and the definitions of done.

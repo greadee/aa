@@ -23,6 +23,11 @@ func TestWebReadOnly(t *testing.T) {
 	if resp.StatusCode != http.StatusOK || !strings.Contains(string(body), "aa console") || !strings.Contains(string(body), "Default") {
 		t.Fatalf("page = %d\n%s", resp.StatusCode, body)
 	}
+	for _, section := range []string{"Graph", "Memory", "Reports", "Approvals", "issue-demo", "strategy-demo", "session-demo"} {
+		if !strings.Contains(string(body), section) {
+			t.Fatalf("page missing %q:\n%s", section, body)
+		}
+	}
 
 	resp, err = http.Get(srv.URL + "/plain")
 	if err != nil {

@@ -12,7 +12,7 @@ coupling to module internals.
 ## Owns
 
 - The `cli` and `tui` surfaces.
-- (Reserved) the local web and desktop surfaces.
+- The read-only local web surface. The desktop surface is reserved for v2.
 - Workflow configuration.
 - Plugin and MCP management.
 - Memory, issue, strategy, and visualizer browsing.

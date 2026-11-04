@@ -15,7 +15,10 @@ A phase executes through one or more sprints. A sprint is **6–12 slices** prod
 | Sprint | Type | Branch | PR | Status |
 |---|---|---|---|---|
 | [issue-impl-sep28](../updates/issue-impl-sep28/plan.md) | update phase | `dev` | #21 | Complete |
+| [docs-foundation](../updates/docs-foundation/plan.md) | update phase | `docs/v1-foundation` | #93 | Complete |
 
-This sprint carried its own cadence: **one commit per issue/substage**, folding
-closely-related sub-tasks, instead of one commit per slice (plan SD-7, scoped to
-this sprint only). Summary: [summary.md](../updates/issue-impl-sep28/summary.md).
+The issue-impl sprint carried its own cadence: **one commit per issue/substage**,
+folding closely-related sub-tasks, instead of one commit per slice (plan SD-7,
+scoped to this sprint only). Summary: [summary.md](../updates/issue-impl-sep28/summary.md).
+
+Docs foundation summary: [summary.md](../updates/docs-foundation/summary.md).

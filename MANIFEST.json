@@ -55,6 +55,23 @@
     "docs/updates/architecture-refactor-1/plan.md",
     "docs/updates/architecture-refactor-1/summary.md",
     "docs/updates/issue-impl-sep28/plan.md",
-    "docs/updates/issue-impl-sep28/summary.md"
+    "docs/updates/issue-impl-sep28/summary.md",
+    "LICENSE.md",
+    "CONTRIBUTING.md",
+    "docs/README.md",
+    "docs/current-state.md",
+    "docs/architecture/diagrams.md",
+    "docs/media/README.md",
+    "docs/github-os/definitions-of-done.md",
+    "docs/updates/docs-foundation/plan.md",
+    "docs/reference/cli.md",
+    "docs/updates/docs-foundation/summary.md",
+    "docs/updates/docs-foundation/plan.uml",
+    "docs/updates/docs-foundation/summary.uml",
+    "tools/docs/check_links.py",
+    "tools/docs/check_media.py",
+    "tools/docs/check_templates.py",
+    "contracts/tools/goastdump/main.go",
+    "contracts/tools/test_check_binding_parity.py"
   ]
 }

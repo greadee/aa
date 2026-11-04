@@ -21,7 +21,7 @@ func Render(m state.Model) string {
 		b.WriteByte('\n')
 	}
 	b.WriteByte('\n')
-	fmt.Fprintf(&b, "projects=%d nodes=%d    : palette  ? help", m.Status.Projects, m.Status.Nodes)
+	fmt.Fprintf(&b, "projects=%d nodes=%d    j/k or arrows/Tab: views  :open  ?: help  q/exit: quit", m.Status.Projects, m.Status.Nodes)
 	if m.Message != "" {
 		fmt.Fprintf(&b, "    %s", m.Message)
 	}
@@ -58,13 +58,13 @@ func contentLines(m state.Model) []string {
 	case state.ViewGraph:
 		return graphLines(m)
 	case state.ViewMemory:
-		return []string{"(issues & strategies are served at /projects/{id}/issues|strategies)"}
+		return memoryLines(m)
 	case state.ViewNodes:
 		return nodesLines(m)
 	case state.ViewTools:
 		return toolsLines(m)
 	case state.ViewReports:
-		return []string{"(learning reports: pending phase-9 read model)"}
+		return reportsLines(m)
 	case state.ViewApprovals:
 		return approvalsLines(m)
 	default:
@@ -150,6 +150,57 @@ func toolsLines(m state.Model) []string {
 			sb = " sandbox"
 		}
 		lines = append(lines, fmt.Sprintf("  %-14s %-8s%s", t.ID, t.Kind, sb))
+	}
+	return lines
+}
+
+func memoryLines(m state.Model) []string {
+	lines := []string{"MEMORY (" + m.ProjectID + ")"}
+	lines = append(lines, "", "ISSUES")
+	if len(m.Issues) == 0 {
+		lines = append(lines, "  (none)")
+	}
+	for _, issue := range m.Issues {
+		status := issue.Status
+		if issue.Severity != "" {
+			status = status + " " + issue.Severity
+		}
+		lines = append(lines, fmt.Sprintf("  %-14s %-10s %s", issue.ID, status, issue.Title))
+	}
+	lines = append(lines, "", "STRATEGIES")
+	if len(m.Strategies) == 0 {
+		lines = append(lines, "  (none)")
+	}
+	for _, strategy := range m.Strategies {
+		lines = append(lines, fmt.Sprintf("  %-14s %-10s %s", strategy.ID, strategy.Lifecycle, strategy.Title))
+	}
+	return lines
+}
+
+func reportsLines(m state.Model) []string {
+	lines := []string{"REPORTS"}
+	if len(m.Sessions) == 0 {
+		return append(lines, "  (no sessions)")
+	}
+	lines = append(lines, "", "SESSIONS")
+	for _, session := range m.Sessions {
+		lines = append(lines, fmt.Sprintf("  %-16s events=%d project=%s", session.ID, session.EventCount, session.ProjectID))
+	}
+	if m.Report.SessionID != "" {
+		lines = append(lines, "", "REPORT ("+m.Report.SessionID+")")
+		lines = append(lines, fmt.Sprintf("  events=%d sequences=%d..%d", m.Report.Events, m.Report.FirstSequence, m.Report.LastSequence))
+		for _, count := range m.Report.BySourceType {
+			lines = append(lines, fmt.Sprintf("  source %-12s %d", count.Label, count.Count))
+		}
+		for _, count := range m.Report.ByConfidence {
+			lines = append(lines, fmt.Sprintf("  confidence %-8s %d", count.Label, count.Count))
+		}
+		if len(m.Report.WorkPackages) > 0 {
+			lines = append(lines, "  work packages: "+strings.Join(m.Report.WorkPackages, ", "))
+		}
+		if len(m.Report.Actors) > 0 {
+			lines = append(lines, "  actors: "+strings.Join(m.Report.Actors, ", "))
+		}
 	}
 	return lines
 }

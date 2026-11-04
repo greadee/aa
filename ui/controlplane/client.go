@@ -84,6 +84,49 @@ type Tool struct {
 	Sandbox bool   `json:"sandbox,omitempty"`
 }
 
+// MemoryItem is an issue or strategy memory read-model entry.
+type MemoryItem struct {
+	ContractVersion string `json:"contractVersion,omitempty"`
+	Kind            string `json:"kind,omitempty"`
+	ID              string `json:"id"`
+	ProjectID       string `json:"projectId,omitempty"`
+	Title           string `json:"title,omitempty"`
+	Status          string `json:"status,omitempty"`
+	Severity        string `json:"severity,omitempty"`
+	Lifecycle       string `json:"lifecycle,omitempty"`
+	Guidance        string `json:"guidance,omitempty"`
+}
+
+// VisualizerSession is one browsable observation/visualizer session.
+type VisualizerSession struct {
+	ID            string   `json:"id"`
+	ProjectID     string   `json:"projectId,omitempty"`
+	Actors        []string `json:"actors,omitempty"`
+	StartSequence int      `json:"startSequence"`
+	EndSequence   int      `json:"endSequence"`
+	EventCount    int      `json:"eventCount"`
+	StartedAt     string   `json:"startedAt,omitempty"`
+	EndedAt       string   `json:"endedAt,omitempty"`
+}
+
+// ObservationCount is one labelled count in an observation report.
+type ObservationCount struct {
+	Label string `json:"label"`
+	Count int    `json:"count"`
+}
+
+// ObservationReport is the deterministic report over one session.
+type ObservationReport struct {
+	SessionID     string             `json:"sessionId"`
+	Events        int                `json:"events"`
+	FirstSequence int                `json:"firstSequence"`
+	LastSequence  int                `json:"lastSequence"`
+	BySourceType  []ObservationCount `json:"bySourceType"`
+	ByConfidence  []ObservationCount `json:"byConfidence"`
+	WorkPackages  []string           `json:"workPackages,omitempty"`
+	Actors        []string           `json:"actors,omitempty"`
+}
+
 // Error is a governed control-plane error.
 type Error struct {
 	Status  int
@@ -108,6 +151,10 @@ type Client interface {
 	Decide(ctx context.Context, gateID, decision, actor, reason string) error
 	Nodes(ctx context.Context) ([]Node, error)
 	Tools(ctx context.Context) ([]Tool, error)
+	Issues(ctx context.Context, projectID string) ([]MemoryItem, error)
+	Strategies(ctx context.Context, projectID string) ([]MemoryItem, error)
+	VisualizerSessions(ctx context.Context) ([]VisualizerSession, error)
+	ObservationReport(ctx context.Context, sessionID string) (ObservationReport, error)
 }
 
 // HTTPClient is an Client over the control plane's HTTP/JSON API.
@@ -260,5 +307,33 @@ func (c *HTTPClient) Nodes(ctx context.Context) ([]Node, error) {
 func (c *HTTPClient) Tools(ctx context.Context) ([]Tool, error) {
 	var out []Tool
 	err := c.do(ctx, http.MethodGet, "/tools", nil, &out)
+	return out, err
+}
+
+// Issues implements Client.
+func (c *HTTPClient) Issues(ctx context.Context, projectID string) ([]MemoryItem, error) {
+	var out []MemoryItem
+	err := c.do(ctx, http.MethodGet, "/projects/"+projectID+"/issues", nil, &out)
+	return out, err
+}
+
+// Strategies implements Client.
+func (c *HTTPClient) Strategies(ctx context.Context, projectID string) ([]MemoryItem, error) {
+	var out []MemoryItem
+	err := c.do(ctx, http.MethodGet, "/projects/"+projectID+"/strategies", nil, &out)
+	return out, err
+}
+
+// VisualizerSessions implements Client.
+func (c *HTTPClient) VisualizerSessions(ctx context.Context) ([]VisualizerSession, error) {
+	var out []VisualizerSession
+	err := c.do(ctx, http.MethodGet, "/visualizer/sessions", nil, &out)
+	return out, err
+}
+
+// ObservationReport implements Client.
+func (c *HTTPClient) ObservationReport(ctx context.Context, sessionID string) (ObservationReport, error) {
+	var out ObservationReport
+	err := c.do(ctx, http.MethodGet, "/observations/"+sessionID+"/report", nil, &out)
 	return out, err
 }

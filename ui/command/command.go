@@ -15,8 +15,10 @@ const (
 	Submit  = "submit"
 	Approve = "approve"
 	Create  = "create-project"
+	Project = "project"
 	Help    = "help"
 	Quit    = "quit"
+	Exit    = "exit"
 )
 
 // ErrEmpty is returned for an empty command line.

@@ -1,4 +1,5 @@
-// Package visualizer is aa's time-travel work history and 3D graph module.
+// Package visualizer is aa's time-travel work history and deterministic
+// graph-layout module. The Wails/React/Three surface is deferred.
 //
 // It projects the shared event taxonomy into a graph, lays that graph out
 // deterministically, and replays it. Live and replay share one projection and

@@ -116,8 +116,10 @@ func (fakeBackend) Graph(projectID string) (v2.TaskGraph, bool) {
 	}
 	rev := 1
 	return v2.TaskGraph{
-		Envelope: v2.Envelope{ContractVersion: "2.0", Kind: "task_graph", ID: "graph_p1", ProjectID: "p1", Revision: &rev},
-		Nodes:    []v2.TaskGraphNode{{WorkPackageID: "wp-1", Readiness: v2.ReadinessReady}},
+		Envelope:  v2.Envelope{ContractVersion: "2.0", Kind: "task_graph", ID: "graph_p1"},
+		ProjectID: "p1",
+		Revision:  &rev,
+		Nodes:     []v2.TaskGraphNode{{WorkPackageID: "wp-1", Readiness: v2.ReadinessReady}},
 	}, true
 }
 func (fakeBackend) SubmitWork(projectID, title string, dependsOn []string) (string, error) {

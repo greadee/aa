@@ -1,0 +1,51 @@
+@startuml
+title v1 docs foundation — sprint plan
+
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+start
+
+:Open Sprint 3 issues and PR against dev;
+note right
+  #85..#92 docs slices
+  #76 contract parity
+end note
+
+partition "Foundation" {
+  :Finalize issue/PR DoD and templates (#85);
+  :Add MIT license and repository metadata (#86);
+}
+
+partition "Public surface" {
+  :Rewrite README product, status, quickstart (#87);
+  :Add media and captures (#90);
+  :Add current architecture diagrams (#89);
+}
+
+partition "Knowledge record" {
+  :Consolidate docs entry and audience paths (#88);
+  :Add current state and limitations (#88);
+  :Reconcile stale claims with dated notes (#91);
+}
+
+partition "Contract gate" {
+  :Replace name-only binding parity;
+  :Compare names, types, optionality, direction;
+  :Add grouped declaration and drift self-tests (#76);
+}
+
+partition "Closeout" {
+  :Link check, anchors, quickstart, template render;
+  :Post-docs audit with coverage ledger;
+  :Close issues and merge PR to dev (#92);
+}
+
+stop
+
+note right
+  Historical phase and update records are preserved.
+  Supersession is recorded, not rewritten.
+end note
+
+@enduml

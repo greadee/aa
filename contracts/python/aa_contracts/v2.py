@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional, TypedDict
+from typing import Any, Callable, Dict, List, NotRequired, Optional, TypedDict
 
 CONTRACT_VERSION = "2.0"
 
@@ -320,413 +320,416 @@ def dumps(data: Dict[str, Any], indent: Optional[int] = 2) -> str:
 # Static shape (TypedDict). Runtime validation is performed by validate().
 # ---------------------------------------------------------------------------
 
-class Reference(TypedDict, total=False):
+class Reference(TypedDict, total=True):
     kind: str
     id: str
-    version: str
+    version: NotRequired[str]
 
 
-class Actor(TypedDict, total=False):
+class Actor(TypedDict, total=True):
     kind: str
     id: str
-    role: str
-    workerId: str
-    model: str
+    role: NotRequired[str]
+    workerId: NotRequired[str]
+    model: NotRequired[str]
 
 
 class Budget(TypedDict, total=False):
-    maxCalls: int
-    maxTokens: int
-    maxCostUsd: float
-    maxDurationSeconds: int
+    maxCalls: NotRequired[int]
+    maxTokens: NotRequired[int]
+    maxCostUsd: NotRequired[float]
+    maxDurationSeconds: NotRequired[int]
 
 
-class Provenance(TypedDict, total=False):
+class Provenance(TypedDict, total=True):
     source: str
     producedAt: str
-    producedBy: Actor
-    confidence: str
-    evidence: List[Reference]
-    contentHash: str
+    producedBy: NotRequired[Actor]
+    confidence: NotRequired[str]
+    evidence: NotRequired[List[Reference]]
+    contentHash: NotRequired[str]
 
 
-class Envelope(TypedDict, total=False):
+class Envelope(TypedDict, total=True):
     contractVersion: str
     kind: str
     id: str
-    projectId: str
-    createdAt: str
-    revision: int
-    provenance: Provenance
+    projectId: NotRequired[str]
+    createdAt: NotRequired[str]
+    revision: NotRequired[int]
+    provenance: NotRequired[Provenance]
 
 
-class EventAggregate(TypedDict, total=False):
+class EventAggregate(TypedDict, total=True):
     kind: str
     id: str
-    version: int
+    version: NotRequired[int]
 
 
-class Event(Envelope, total=False):
+class Event(Envelope, total=True):
     sequence: int
     occurredAt: str
-    recordedAt: str
+    recordedAt: NotRequired[str]
     type: str
     aggregate: EventAggregate
     actor: Actor
-    causationId: str
-    correlationId: str
-    payload: Dict[str, Any]
+    causationId: NotRequired[str]
+    correlationId: NotRequired[str]
+    payload: NotRequired[Dict[str, Any]]
 
 
-class WorkPackage(Envelope, total=False):
+class WorkPackage(Envelope, total=True):
     title: str
-    description: str
+    description: NotRequired[str]
     state: str
-    role: str
-    dependencies: List[str]
-    inputs: List[Reference]
-    deliverables: List[str]
+    role: NotRequired[str]
+    dependencies: NotRequired[List[str]]
+    inputs: NotRequired[List[Reference]]
+    deliverables: NotRequired[List[str]]
     acceptance: List[str]
-    budget: Budget
-    risk: str
+    scope: NotRequired[Scope]
+    budget: NotRequired[Budget]
+    risk: NotRequired[str]
 
 
-class TaskGraph(Envelope, total=False):
+class TaskGraph(Envelope, total=True):
     projectId: str
     revision: int
     nodes: List[Dict[str, Any]]
-    digest: str
+    digest: NotRequired[str]
 
 
-class ExecutionContract(Envelope, total=False):
+class ExecutionContract(Envelope, total=True):
     workPackageId: str
     assignmentId: str
     capabilities: List[str]
-    denied: List[str]
-    runtime: Dict[str, Any]
-    workspace: Dict[str, Any]
+    denied: NotRequired[List[str]]
+    runtime: NotRequired[Dict[str, Any]]
+    workspace: NotRequired[Dict[str, Any]]
     budget: Budget
-    gates: List[str]
-    expiresAt: str
-    digest: str
+    gates: NotRequired[List[str]]
+    expiresAt: NotRequired[str]
+    digest: NotRequired[str]
 
 
-class ResultEnvelope(Envelope, total=False):
+class ResultEnvelope(Envelope, total=True):
     attemptId: str
     assignmentId: str
     workPackageId: str
     status: str
-    summary: str
-    artifacts: List[Dict[str, Any]]
-    tests: List[Dict[str, Any]]
-    telemetryRef: Reference
-    failure: Dict[str, Any]
-    producedBy: Actor
+    summary: NotRequired[str]
+    artifacts: NotRequired[List[Dict[str, Any]]]
+    tests: NotRequired[List[Dict[str, Any]]]
+    telemetryRef: NotRequired[Reference]
+    failure: NotRequired[Dict[str, Any]]
+    producedBy: NotRequired[Actor]
 
 
-class Telemetry(Envelope, total=False):
+class Telemetry(Envelope, total=True):
     attemptId: str
-    assignmentId: str
+    assignmentId: NotRequired[str]
     metricVersion: str
     outcome: str
-    calls: Dict[str, int]
-    tokens: Dict[str, int]
-    costUsd: float
-    durationMs: int
-    resources: Dict[str, Any]
-    versions: Dict[str, str]
+    calls: NotRequired[Dict[str, int]]
+    tokens: NotRequired[Dict[str, int]]
+    costUsd: NotRequired[float]
+    durationMs: NotRequired[int]
+    resources: NotRequired[Dict[str, Any]]
+    versions: NotRequired[Dict[str, str]]
 
 
-class TraceStep(TypedDict, total=False):
+class TraceStep(TypedDict, total=True):
     sequence: int
-    at: str
+    at: NotRequired[str]
     phase: str
-    actor: Actor
-    operation: str
-    target: Reference
-    inputHash: str
-    outputHash: str
+    actor: NotRequired[Actor]
+    operation: NotRequired[str]
+    target: NotRequired[Reference]
+    inputHash: NotRequired[str]
+    outputHash: NotRequired[str]
     outcome: str
-    errorClass: str
-    durationMs: int
-    tokens: Dict[str, int]
-    costUsd: float
-    redacted: bool
-    evidence: List[Reference]
+    errorClass: NotRequired[str]
+    durationMs: NotRequired[int]
+    tokens: NotRequired[Dict[str, int]]
+    costUsd: NotRequired[float]
+    redacted: NotRequired[bool]
+    evidence: NotRequired[List[Reference]]
 
 
-class Trace(Envelope, total=False):
+class Trace(Envelope, total=True):
     attemptId: str
-    assignmentId: str
-    workPackageId: str
-    redactionVersion: str
-    truncated: bool
+    assignmentId: NotRequired[str]
+    workPackageId: NotRequired[str]
+    redactionVersion: NotRequired[str]
+    truncated: NotRequired[bool]
     steps: List[TraceStep]
 
 
-class ProjectRecord(Envelope, total=False):
+class ProjectRecord(Envelope, total=True):
     name: str
     state: str
     layoutVersion: str
-    authorityId: str
-    replicaIds: List[str]
-    records: List[Reference]
-    digest: str
+    authorityId: NotRequired[str]
+    replicaIds: NotRequired[List[str]]
+    records: NotRequired[List[Reference]]
+    digest: NotRequired[str]
 
 
-class MemoryRecord(Envelope, total=False):
+class MemoryRecord(Envelope, total=True):
     level: str
     lifecycle: str
-    title: str
+    title: NotRequired[str]
     content: Dict[str, Any]
-    applicability: Dict[str, Any]
-    evidence: List[Reference]
-    confidence: float
-    supersedes: str
+    applicability: NotRequired[Dict[str, Any]]
+    evidence: NotRequired[List[Reference]]
+    confidence: NotRequired[float]
+    supersedes: NotRequired[str]
 
 
-class Issue(Envelope, total=False):
+class Issue(Envelope, total=True):
     title: str
     type: str
     status: str
-    severity: str
-    body: str
-    milestone: str
-    forgeRef: Reference
-    links: Dict[str, Any]
-    deferredTo: str
+    severity: NotRequired[str]
+    body: NotRequired[str]
+    milestone: NotRequired[str]
+    forgeRef: NotRequired[Reference]
+    links: NotRequired[Dict[str, Any]]
+    deferredTo: NotRequired[str]
 
 
-class Strategy(Envelope, total=False):
+class Strategy(Envelope, total=True):
     title: str
     lifecycle: str
     guidance: str
-    whenToUse: str
-    whenNotToUse: str
-    applicability: Dict[str, Any]
-    evidence: List[Reference]
-    supersedes: str
+    whenToUse: NotRequired[str]
+    whenNotToUse: NotRequired[str]
+    applicability: NotRequired[Dict[str, Any]]
+    evidence: NotRequired[List[Reference]]
+    supersedes: NotRequired[str]
 
 
-class RouteRequest(Envelope, total=False):
-    attemptId: str
+class RouteRequest(Envelope, total=True):
+    attemptId: NotRequired[str]
     prompt: str
-    context: str
-    policy: str
-    budget: Budget
-    metadata: Dict[str, Any]
+    context: NotRequired[str]
+    policy: NotRequired[str]
+    budget: NotRequired[Budget]
+    routingDecision: NotRequired[RoutingDecision]
+    metadata: NotRequired[Dict[str, Any]]
 
 
-class RouteResponse(Envelope, total=False):
+class RouteResponse(Envelope, total=True):
     requestId: str
     route: str
     decisionLevel: str
-    plannerTier: str
-    executorTier: str
-    reviewTier: str
+    plannerTier: NotRequired[str]
+    executorTier: NotRequired[str]
+    reviewTier: NotRequired[str]
     requiresHumanApproval: bool
-    blockedReason: str
-    estimatedCostUsd: float
-    reasons: List[str]
+    blockedReason: NotRequired[str]
+    estimatedCostUsd: NotRequired[float]
+    reasons: NotRequired[List[str]]
 
 
 class SandboxSpec(TypedDict, total=False):
-    required: bool
-    kind: str
-    network: bool
+    required: NotRequired[bool]
+    kind: NotRequired[str]
+    network: NotRequired[bool]
 
 
-class ToolManifest(Envelope, total=False):
+class ToolManifest(Envelope, total=True):
     name: str
     toolKind: str
     version: str
-    description: str
+    description: NotRequired[str]
     capabilities: List[str]
-    permissions: List[str]
-    inputSchema: Dict[str, Any]
-    outputSchema: Dict[str, Any]
-    sandbox: SandboxSpec
-    endpoint: str
+    permissions: NotRequired[List[str]]
+    inputSchema: NotRequired[Dict[str, Any]]
+    outputSchema: NotRequired[Dict[str, Any]]
+    sandbox: NotRequired[SandboxSpec]
+    endpoint: NotRequired[str]
 
 
-class Workflow(Envelope, total=False):
-    name: str
+class Workflow(Envelope, total=True):
+    name: NotRequired[str]
     version: str
-    description: str
-    budget: Budget
+    description: NotRequired[str]
+    budget: NotRequired[Budget]
     steps: List[Dict[str, Any]]
 
 
-class WorkflowStep(TypedDict, total=False):
+class WorkflowStep(TypedDict, total=True):
     id: str
     kind: str
-    role: str
-    toolId: str
-    dependsOn: List[str]
-    retries: int
-    gates: List[str]
-    onFailure: str
-    config: Dict[str, Any]
+    role: NotRequired[str]
+    toolId: NotRequired[str]
+    dependsOn: NotRequired[List[str]]
+    retries: NotRequired[int]
+    gates: NotRequired[List[str]]
+    onFailure: NotRequired[str]
+    config: NotRequired[Dict[str, Any]]
 
 
-class TaskGraphNode(TypedDict, total=False):
+class TaskGraphNode(TypedDict, total=True):
     workPackageId: str
-    dependsOn: List[str]
+    dependsOn: NotRequired[List[str]]
     readiness: str
 
 
-class RoutingDecision(TypedDict, total=False):
+class RoutingDecision(TypedDict, total=True):
     locality: str
     tier: str
-    blocked: bool
-    reason: str
-    estimatedCostUsd: float
-    decisionLevel: str
-    requiresHumanApproval: bool
+    blocked: NotRequired[bool]
+    reason: NotRequired[str]
+    estimatedCostUsd: NotRequired[float]
+    decisionLevel: NotRequired[str]
+    requiresHumanApproval: NotRequired[bool]
 
 
-class TeamSpec(Envelope, total=False):
+class TeamSpec(Envelope, total=True):
     title: str
-    roles: List[str]
+    roles: NotRequired[List[str]]
 
 
-class ModelSpec(Envelope, total=False):
+class ModelSpec(Envelope, total=True):
     provider: str
     identifier: str
-    modelVersion: str
-    capabilities: List[str]
-    contextWindow: int
-    toolUse: bool
-    locality: str
-    available: bool
-    costPer1kInput: float
-    costPer1kOutput: float
-    latencyMs: int
+    modelVersion: NotRequired[str]
+    capabilities: NotRequired[List[str]]
+    contextWindow: NotRequired[int]
+    toolUse: NotRequired[bool]
+    locality: NotRequired[str]
+    available: NotRequired[bool]
+    costPer1kInput: NotRequired[float]
+    costPer1kOutput: NotRequired[float]
+    latencyMs: NotRequired[int]
 
 
-class RoleSpec(Envelope, total=False):
+class RoleSpec(Envelope, total=True):
     title: str
-    capabilities: List[str]
-    rules: List[str]
-    tools: List[str]
-    permissions: List[str]
-    contextExpectations: List[str]
-    evalCriteria: List[str]
-    observability: List[str]
-    costExpectation: str
+    capabilities: NotRequired[List[str]]
+    rules: NotRequired[List[str]]
+    tools: NotRequired[List[str]]
+    permissions: NotRequired[List[str]]
+    contextExpectations: NotRequired[List[str]]
+    evalCriteria: NotRequired[List[str]]
+    observability: NotRequired[List[str]]
+    costExpectation: NotRequired[str]
 
 
-class RoutineStage(TypedDict, total=False):
+class RoutineStage(TypedDict, total=True):
     id: str
     title: str
-    teams: List[str]
-    roles: List[str]
-    gates: List[str]
+    teams: NotRequired[List[str]]
+    roles: NotRequired[List[str]]
+    gates: NotRequired[List[str]]
 
 
-class Routine(Envelope, total=False):
+class Routine(Envelope, total=True):
     name: str
     version: str
-    description: str
-    teams: List[str]
-    roles: List[str]
+    description: NotRequired[str]
+    teams: NotRequired[List[str]]
+    roles: NotRequired[List[str]]
     stages: List[RoutineStage]
-    inputs: List[str]
-    outputs: List[str]
-    observability: List[str]
+    inputs: NotRequired[List[str]]
+    outputs: NotRequired[List[str]]
+    observability: NotRequired[List[str]]
 
 
-class WorkUnit(TypedDict, total=False):
+class WorkUnit(TypedDict, total=True):
     id: str
     title: str
-    outputs: List[str]
-    completion: List[str]
-    dependsOn: List[str]
+    outputs: NotRequired[List[str]]
+    completion: NotRequired[List[str]]
+    dependsOn: NotRequired[List[str]]
 
 
-class WorkPlan(Envelope, total=False):
-    sourceWorkflow: Reference
+class WorkPlan(Envelope, total=True):
+    sourceWorkflow: NotRequired[Reference]
     units: List[WorkUnit]
-    constraints: List[str]
+    constraints: NotRequired[List[str]]
 
 
-class PlanAssignment(TypedDict, total=False):
+class PlanAssignment(TypedDict, total=True):
     role: str
-    model: str
-    workers: int
+    model: NotRequired[str]
+    workers: NotRequired[int]
 
 
 class ExecutionPlan(Envelope, total=False):
-    workPlan: Reference
-    assignments: List[PlanAssignment]
-    budget: Budget
-    concurrency: int
-    placement: List[str]
-    constraints: List[str]
+    workPlan: NotRequired[Reference]
+    assignments: NotRequired[List[PlanAssignment]]
+    budget: NotRequired[Budget]
+    concurrency: NotRequired[int]
+    placement: NotRequired[List[str]]
+    constraints: NotRequired[List[str]]
 
 
 class Scope(TypedDict, total=False):
-    allowed: List[str]
-    inspect: List[str]
-    forbidden: List[str]
+    allowed: NotRequired[List[str]]
+    inspect: NotRequired[List[str]]
+    forbidden: NotRequired[List[str]]
 
 
 class CallCounts(TypedDict, total=False):
-    total: int
-    local: int
-    cloud: int
-    retries: int
+    total: NotRequired[int]
+    local: NotRequired[int]
+    cloud: NotRequired[int]
+    retries: NotRequired[int]
 
 
 class TokenCounts(TypedDict, total=False):
-    input: int
-    output: int
+    input: NotRequired[int]
+    output: NotRequired[int]
 
 
-class ResultArtifact(TypedDict, total=False):
+class ResultArtifact(TypedDict, total=True):
     kind: str
     id: str
-    hash: str
+    hash: NotRequired[str]
+    uri: NotRequired[str]
 
 
-class TestResult(TypedDict, total=False):
+class TestResult(TypedDict, total=True):
     name: str
     outcome: str
-    durationMs: int
+    durationMs: NotRequired[int]
 
 
 class Failure(TypedDict, total=False):
-    class_: str
-    message: str
-    retryable: bool
+    class_: NotRequired[str]
+    message: NotRequired[str]
+    retryable: NotRequired[bool]
 
 
-class RuntimeSpec(TypedDict, total=False):
+class RuntimeSpec(TypedDict, total=True):
     kind: str
-    provider: str
-    model: str
-    nodeId: str
+    provider: NotRequired[str]
+    model: NotRequired[str]
+    nodeId: NotRequired[str]
 
 
 class WorkspaceSpec(TypedDict, total=False):
-    required: bool
-    kind: str
-    root: str
+    required: NotRequired[bool]
+    kind: NotRequired[str]
+    root: NotRequired[str]
 
 
-class MemoryContent(TypedDict, total=False):
+class MemoryContent(TypedDict, total=True):
     summary: str
-    details: str
-    tags: List[str]
+    details: NotRequired[str]
+    tags: NotRequired[List[str]]
 
 
 class Applicability(TypedDict, total=False):
-    roles: List[str]
-    languages: List[str]
+    roles: NotRequired[List[str]]
+    languages: NotRequired[List[str]]
 
 
 class IssueLinks(TypedDict, total=False):
-    workPackages: List[str]
-    commits: List[str]
-    pullRequests: List[Reference]
-    adrs: List[str]
+    workPackages: NotRequired[List[str]]
+    commits: NotRequired[List[str]]
+    pullRequests: NotRequired[List[Reference]]
+    adrs: NotRequired[List[str]]

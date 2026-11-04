@@ -3,6 +3,12 @@
 # Phase and integration PRs regularly touch more than the default 60-file
 # review budget. Keep the coverage gate strict while allowing the complete diff
 # to be reviewed instead of silently truncating it.
+#
+# deepseek-flash is evaluated with response_format disabled; keep the provider
+# in that mode so the semantic parser receives plain JSON text.
+provider:
+  supportsJsonFormat: false
+
 review:
   maxFiles: 250
   maxFileBytes: 500000

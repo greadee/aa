@@ -1,8 +1,8 @@
 # aa-visualizer
 
-Time-travel work history, debugging, and 3D graph visualization.
+Time-travel work history, debugging, deterministic graph layout, and replay. The Wails/React/Three surface is deferred.
 
-- **Owns:** 3D graph, replay, session trails, live bridge, and memory session browsing.
+- **Owns:** deterministic 3D layout and graph projection, replay, session trails, live bridge, and memory session browsing.
 - **Must not:** own the observation protocol, transport, or event-store; own canonical history.
 - **Status:** delivered in `ph8-visualizer` and composed into the `app/` control plane in phase 11: replay/live over the daemon's single `obsv` transport, canonical browsing over `memory`, retained replay metadata, and the `/visualizer/*` read model. The shared `obsv` protocol and the `compat` profile replace the protocol, IPC, and event-store duplicated from AAV (see the [module update](../docs/modules/visualizer/updates/obsv-adoption/plan.md), `ISS-OBSV-2`). The Wails/Three UI surface is the remaining follow-up.
 - **Directive:** [aa-visualizer.md](aa-visualizer.md)

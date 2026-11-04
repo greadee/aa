@@ -13,7 +13,7 @@ Define every object and protocol that crosses a module boundary, exactly once, a
 - JSON Schemas for all cross-module objects.
 - The RPC/transport specification.
 - Generated Go, TypeScript, and Python bindings.
-- The conformance suite.
+- The conformance suite and the cross-language binding parity gate.
 - Schema versioning and compatibility policy.
 - The control-plane OpenAPI document.
 

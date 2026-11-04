@@ -1,0 +1,59 @@
+name: Feature or task
+description: A bounded capability, refactor, or documentation deliverable.
+title: "feat: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this is done?
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Behavior and constraints, not a step-by-step implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] observable behavior
+        - [ ] tests added or updated
+        - [ ] failure paths handled
+        - [ ] documentation updated where required
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and blockers
+      description: Linked issues or external actions required first.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - contracts
+        - registry
+        - runtime
+        - obsv
+        - kernel
+        - memory
+        - sync
+        - forge
+        - toolbox
+        - visualizer
+        - ui
+        - app
+        - docs / process
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes

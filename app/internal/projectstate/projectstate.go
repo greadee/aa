@@ -488,10 +488,10 @@ func (s *State) Graph(projectID string) (v2.TaskGraph, bool) {
 			ContractVersion: v2.Version,
 			Kind:            "task_graph",
 			ID:              "graph_" + projectID,
-			ProjectID:       projectID,
-			Revision:        &revision,
 		},
-		Nodes: nodes,
+		ProjectID: projectID,
+		Revision:  &revision,
+		Nodes:     nodes,
 	}, true
 }
 

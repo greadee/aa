@@ -352,6 +352,7 @@ export interface RouteRequest extends Envelope {
   context?: string;
   policy?: RoutingPolicy;
   budget?: Budget;
+  routingDecision?: RoutingDecision;
   metadata?: Record<string, unknown>;
 }
 
@@ -461,7 +462,7 @@ export interface WorkPlan extends Envelope {
 }
 
 export interface PlanAssignment {
-  role?: Identifier;
+  role: Identifier;
   model?: Identifier;
   workers?: number;
 }

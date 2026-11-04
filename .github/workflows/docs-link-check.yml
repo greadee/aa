@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
     paths:
       - "**/*.md"
       - "docs/**"
@@ -22,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # External URLs are intentionally unchecked here (offline); add a scheduled
+      # online run if external link rot becomes a maintenance concern.
       - name: Check links
         uses: lycheeverse/lychee-action@v2
         with:
@@ -31,3 +34,14 @@ jobs:
             --include-fragments
             "./**/*.md"
           fail: true
+
+      - name: Check media references
+        run: python3 tools/docs/check_media.py
+
+      - name: Check local links and anchors
+        run: python3 tools/docs/check_links.py
+
+      - name: Validate issue and PR templates
+        run: |
+          python3 -m pip install --quiet pyyaml
+          python3 tools/docs/check_templates.py

@@ -22,11 +22,12 @@ Read only the module required for the current task. The task router lives in [..
 | [documentation-system.md](documentation-system.md) | Updating the documentation tree and indexes |
 | [git-workflow.md](git-workflow.md) | Branching, committing, and merging |
 | [model-selection.md](model-selection.md) | Choosing a model class for a slice |
+| [definitions-of-done.md](definitions-of-done.md) | Issue/PR completion bar and closeout evidence |
 
 ## Templates
 
 - `templates/phase/` — phase `plan.md`, `plan.uml`, `summary.md`, `summary.uml`, `adr.md`, and issue docs
-- `templates/github/` — tracking issue, PRs, issues, audit findings, progress updates
+- `templates/github/` — tracking issue, PRs, issues, audit findings, progress, blocker, scope-change, decision, and completion comments
 - `templates/feature/` — feature README, implementation, testing, and pitfalls
 - `templates/issues/` — umbrella problem and sub-problem documents
 - `templates/module/` — module update `plan` and `summary`
