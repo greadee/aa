@@ -59,7 +59,7 @@ jobs:
             -d '{"model":"deepseek-flash","messages":[{"role":"user","content":"Reply with the single word ok"}],"max_tokens":8}'
           cat /tmp/dschat.json; echo
       - id: revu
-        uses: greadee/review-engine@v1.2.0
+        uses: greadee/review-engine@v1.3.0
         with:
           profile: pr
           semantic: ${{ secrets.REVU_PROVIDER_API_KEY != '' }}
