@@ -13,7 +13,8 @@ review:
   maxFiles: 250
   maxFileBytes: 500000
   # Keep each semantic request small enough for deepseek-flash to return
-  # complete, bounded JSON. The automatic defaults are 25 files / 150000 bytes.
+  # complete, bounded JSON. The workflow also passes these as action inputs because
+  # PR review policy is read from the base revision (main) until this lands there.
   maxBatchFiles: 10
   maxBatchBytes: 60000
   coverageThreshold: 1.0

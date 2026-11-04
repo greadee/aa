@@ -75,6 +75,8 @@ jobs:
           publish: "true"
           comment: ${{ inputs.closeout == true && 'false' || 'true' }}
           block: "true"
+          max-batch-files: "10"
+          max-batch-bytes: "60000"
       - name: Post closeout review comment
         if: ${{ always() && inputs.closeout == true }}
         env:
