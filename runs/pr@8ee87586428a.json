@@ -1,0 +1,25 @@
+{
+  "id": "pr@8ee87586428a",
+  "profile": "pr",
+  "repository": "greadee/aa",
+  "ref": "8ee87586428a62dfbe2433d0593bb9d76bcc068d",
+  "base": "origin/main",
+  "head": "8ee87586428a62dfbe2433d0593bb9d76bcc068d",
+  "generated": "2026-11-04T19:11:28.849134418Z",
+  "findings": [],
+  "resolved": null,
+  "blockThreshold": "P1",
+  "archiveURL": "",
+  "coverage": {
+    "selected": 75,
+    "analyzed": 25,
+    "skipped": 0,
+    "truncated": 0,
+    "failedBatches": 2,
+    "threshold": 1,
+    "errors": [
+      "reviewer: model returned no bounded JSON object",
+      "reviewer: model returned no bounded JSON object"
+    ]
+  }
+}
